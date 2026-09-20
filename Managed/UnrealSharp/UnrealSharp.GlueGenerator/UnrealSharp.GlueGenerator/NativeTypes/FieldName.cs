@@ -44,9 +44,9 @@ public readonly struct FieldName : IEquatable<FieldName>
         FullName = MakeFullName(Namespace, SourceName);
     }
 
-    public FieldName(FieldName source, string sourceName)
-        : this(sourceName, source.Namespace, source.AssemblyName, source.FieldType)
+    public static FieldName InScopeOf(FieldName scope, string sourceName, FieldType fieldType)
     {
+        return new FieldName(sourceName, scope.Namespace, scope.AssemblyName, fieldType);
     }
 
     public static FieldName Member(string sourceName)

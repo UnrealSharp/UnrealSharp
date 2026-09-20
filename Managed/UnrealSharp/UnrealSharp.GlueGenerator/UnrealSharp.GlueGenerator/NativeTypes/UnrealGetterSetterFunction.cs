@@ -13,7 +13,7 @@ public record UnrealGetterSetterFunction : UnrealFunction
         _propertyName = property.FieldName.SourceName;
         string newSourceName =
             HasReturnValue ? $"Get{property.FieldName.SourceName}" : $"Set{property.FieldName.SourceName}";
-        FieldName = new FieldName(FieldName, newSourceName);
+        FieldName = FieldName.InScopeOf(FieldName, newSourceName, FieldType.Unknown);
     }
 
     protected override void ExportInvokeMethodCallSignature(GeneratorStringBuilder builder)

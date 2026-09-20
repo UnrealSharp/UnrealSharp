@@ -116,7 +116,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     private void AppendDelegateWrapper(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        UnrealDelegateFunction delegateFunction = new UnrealDelegateFunction(
+        UnrealFunction delegateFunction = new UnrealFunction(
             EFunctionFlags.None,
             WrapperDelegateName,
             Outer!.FieldName.Namespace,
@@ -132,7 +132,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         if (ReturnType is TaskPropertyBase taskReturn && taskReturn.HasTemplateParameters)
         {
             UnrealProperty resultParam = taskReturn.TemplateParameters[0];
-            resultParam.FieldName = new FieldName(resultParam.FieldName, ResultParamName);
+            resultParam.FieldName = FieldName.Member(ResultParamName);
             resultParam.PropertyFlags = 0;
             resultParam.MakeParameter();
             properties.Add(resultParam);
@@ -186,9 +186,11 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     private MulticastDelegateProperty CreateMulticastDelegate(UnrealClass asyncWrapperClass, string eventName)
     {
-        FieldName unrealDelegateType = new FieldName(asyncWrapperClass.FieldName,
-            DelegateProperty.MakeDelegateSignatureName(WrapperDelegateName));
-        FieldName managedDelegateType = new FieldName(asyncWrapperClass.FieldName, WrapperDelegateName);
+        FieldName unrealDelegateType = new FieldName(DelegateProperty.MakeDelegateSignatureName(WrapperDelegateName),
+            asyncWrapperClass.FieldName.Namespace, asyncWrapperClass.FieldName.AssemblyName, FieldType.Delegate);
+
+        FieldName managedDelegateType =
+            FieldName.InScopeOf(asyncWrapperClass.FieldName, WrapperDelegateName, FieldType.Unknown);
 
         FieldProperty signatureField = new FieldProperty(
             PropertyType.SignatureDelegate,

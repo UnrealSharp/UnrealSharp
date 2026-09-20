@@ -99,7 +99,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         else
         {
             ReturnType = PropertyFactory.CreateProperty(returnType, returnType, this);
-            ReturnType.FieldName = new FieldName(ReturnType.FieldName, "ReturnValue");
+            ReturnType.FieldName = FieldName.Member(SourceGenUtilities.ReturnValueName);
             ReturnType.MakeReturnParameter();
 
             hasOutParams = true;

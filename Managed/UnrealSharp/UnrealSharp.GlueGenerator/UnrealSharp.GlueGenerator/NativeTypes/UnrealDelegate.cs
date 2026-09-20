@@ -18,17 +18,18 @@ public record UnrealDelegate : UnrealType
     public override FieldType FieldType => FieldType.Delegate;
     private readonly UnrealFunctionBase _delegateSignature;
     private readonly DelegateType _delegateType;
-    private string managedDelegateName;
+    private readonly string _managedDelegateName;
 
     public UnrealDelegate(DelegateType delegateType, ISymbol typeSymbol) : base(typeSymbol)
     {
         INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol)typeSymbol;
 
         _delegateType = delegateType;
-        managedDelegateName = namedTypeSymbol.Name;
-        _delegateSignature = new UnrealDelegateFunction(namedTypeSymbol.DelegateInvokeMethod!, this);
-        _delegateSignature.FieldName = new FieldName(typeSymbol, FieldType.Delegate);
-        FieldName = new FieldName(FieldName, DelegateProperty.MakeDelegateSignatureName(FieldName.SourceName));
+        _managedDelegateName = namedTypeSymbol.Name;
+        _delegateSignature = new UnrealFunction(namedTypeSymbol.DelegateInvokeMethod!, this);
+
+        FieldName = new FieldName(DelegateProperty.MakeDelegateSignatureName(FieldName.SourceName),
+            FieldName.EngineName, FieldName.Namespace, FieldName.AssemblyName, FieldType.Delegate);
         _delegateSignature.FieldName = FieldName;
 
         ApplyFunctionFlags(delegateType);
@@ -42,8 +43,12 @@ public record UnrealDelegate : UnrealType
     {
         _delegateType = delegateType;
         _delegateSignature = delegateSignature;
-        managedDelegateName = FieldName.SourceName;
-        FieldName = new FieldName(FieldName, DelegateProperty.MakeDelegateSignatureName(FieldName.SourceName));
+        _managedDelegateName = FieldName.SourceName;
+
+        FieldName = new FieldName(DelegateProperty.MakeDelegateSignatureName(_managedDelegateName),
+            FieldName.Namespace, FieldName.AssemblyName, FieldType.Delegate);
+
+        _delegateSignature.FieldName = FieldName;
         ApplyFunctionFlags(delegateType);
     }
 
@@ -94,7 +99,7 @@ public record UnrealDelegate : UnrealType
             .WithNativePtr(_delegateSignature.FunctionNativePtr)
             .WithSourceName(delegateWrapperClassName)
             .WithDeclarationName(delegateWrapperClassName)
-            .Extends($"{baseTypeName}<{managedDelegateName}>");
+            .Extends($"{baseTypeName}<{_managedDelegateName}>");
 
         typeDeclarationBuilder.Build(builder);
 
@@ -117,7 +122,7 @@ public record UnrealDelegate : UnrealType
             _delegateSignature.ExportBackingVariables(builder);
         }
 
-        builder.AppendLine($"protected override {managedDelegateName} GetInvoker() => Invoker;");
+        builder.AppendLine($"protected override {_managedDelegateName} GetInvoker() => Invoker;");
 
         builder.AppendLine($"private void Invoker({args})");
         builder.OpenBrace();
@@ -132,7 +137,7 @@ public record UnrealDelegate : UnrealType
         builder.AppendLine($"public static class {extensionsClassName}");
         builder.OpenBrace();
         builder.AppendLine(
-            $"public static void Invoke(this TMulticastDelegate<{managedDelegateName}> del{(args.Length > 0 ? ", " : string.Empty)}{args})");
+            $"public static void Invoke(this TMulticastDelegate<{_managedDelegateName}> del{(args.Length > 0 ? ", " : string.Empty)}{args})");
         builder.Append($" => del.InnerDelegate.Invoke({parameters});");
         builder.CloseBrace();
     }
@@ -140,7 +145,7 @@ public record UnrealDelegate : UnrealType
     public void AppendFunctionAsDelegate(GeneratorStringBuilder builder)
     {
         builder.AppendLine(
-            $"public delegate {_delegateSignature.ReturnType.ManagedType} {_delegateSignature.FieldName.SourceName}({string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterDeclaration()))});");
+            $"public delegate {_delegateSignature.ReturnType.ManagedType} {_managedDelegateName}({string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterDeclaration()))});");
     }
 
     public override void PopulateJsonObject(JsonWriter jsonWriter)
