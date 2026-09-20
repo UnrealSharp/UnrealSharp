@@ -6,39 +6,47 @@ UnrealSharp is a free, open-source plugin for writing Unreal Engine 5 games in C
 
 ## Features
 
-- **Unreal Engine API in C#**: Derive from any UClass. Implement Actors, ActorComponents, and more in C# with access to the Unreal Engine API.
+- **Unreal Engine API in C#**: Derive from any `UClass`. Implement Actors, ActorComponents, and more in C# with full access to the Unreal Engine API.
 - **Generated bindings**: The C# API is automatically generated from all reflected C++ code. This includes the engine, plugins, and your own project, so any new reflected types or members are immediately available for use in C#.
 - **Hot reload**: Recompile and reload C# code without restarting the editor.
 - **Full .NET ecosystem**: Pull in any NuGet package you need.
 - **MIT licensed**
 
-## Supported platforms
+## Games made with UnrealSharp
 
-| Platform | Status   |
-|----------|----------|
-| Windows  | Supported |
-| macOS    | Supported |
-| Linux    | Planned  |
-| iOS      | Planned  |
-| Android  | Planned  |
+- [Ballistic Brews (Steam Page)](https://store.steampowered.com/app/4095000/Ballistic_Brews/)
+- [Forged: Reconquest (Steam Page)](https://store.steampowered.com/app/3509080/Forged_Reconquest/)
+- [Prompt Crisis (Steam Page)](https://store.steampowered.com/app/5203720/Prompt_Crisis/)
 
-## Prerequisites
-
-- Unreal Engine 5.6 - 5.8
-- .NET 10.0.5 or newer
-- A C++ project (strongly recommended, pure Blueprint projects work but are harder to support)
-
-## Getting started
-
-Visit the website's [Get Started](https://www.unrealsharp.com/getting-started/quickstart) page!
-
-If you want to contribute with documentation, you can contribute to this [repository](https://github.com/UnrealSharp/unrealsharp.github.io)!
+Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/UnrealSharp/issues) or submit a PR to add your project here!
 
 ## Sample projects
 
 - [Sample Defense Game](https://github.com/UnrealSharp/UnrealSharp-SampleDefenseGame) built for Mini Jam 174.
 - [Slime Guzzler](https://github.com/UnrealSharp/Epic-MegaJam-Project) Epic MegaJam 2025 entry.
 - [UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropout) Epic's Cropout sample, ported from Blueprints to C#.
+
+## Supported platforms
+
+| Platform | Status |
+|---|---|
+| Windows | Supported |
+| macOS | Supported |
+| Linux | Planned |
+| iOS | Planned |
+| Android | Planned |
+
+## Prerequisites
+
+- Unreal Engine 5.6 – 5.8
+- .NET 10.0.5 or newer
+- A C++ project (strongly recommended, pure Blueprint projects work, but are harder to provide support for)
+
+## Getting started
+
+Visit the website's [Get Started](https://www.unrealsharp.com/getting-started/quickstart) page!
+
+If you want to contribute to the documentation, check out the [docs repository](https://github.com/UnrealSharp/unrealsharp.github.io)!
 
 ## Code example
 
@@ -147,25 +155,3 @@ public partial class AResourceBase : AActor, IInteractable
         SetActorHiddenInGame(bIsPickedUp);
     }
 }
-```
-
-## Links
-
-- [Documentation](https://www.unrealsharp.com/) and [FAQ](https://www.unrealsharp.com/faq)
-- [Roadmap](https://github.com/orgs/UnrealSharp/projects/3)
-- [Discord community](https://discord.gg/HQuJUYFxeV)
-- [Documentation repo](https://github.com/UnrealSharp/unrealsharp.github.io)
-
-## Contributing
-I accept pull requests and any contributions you make are **greatly appreciated**.
-
-## License
-
-MIT. See [`LICENSE`](LICENSE) for the full text.
-
-## Contact
-
-Discord: **olsson.** (yes, with the dot at the end), or just join the [Discord server](https://discord.gg/HQuJUYFxeV).
-
-## Special Thanks
-I'd like to give a huge shoutout to [MonoUE](https://mono-ue.github.io/) (Sadly abandoned :( ) for the great resource for integrating C# into Unreal Engine. Some of the systems are modified versions of their integration, and it's been a real time saver. 
