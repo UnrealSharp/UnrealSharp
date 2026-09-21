@@ -509,6 +509,7 @@ public class FunctionExporter
 
         if (function.IsBlueprintCallable())
         {
+            ExportDeprecation(builder, function);
             builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
         
             builder.OpenBrace();
@@ -540,6 +541,7 @@ public class FunctionExporter
             builder.CloseBrace();
         }
         
+        ExportDeprecation(builder, function);
         builder.AppendLine($"void Invoke_{function.EngineName}(IntPtr buffer, IntPtr returnBuffer)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
@@ -676,7 +678,7 @@ public class FunctionExporter
         foreach (FunctionOverload overload in Overloads)
         {
             builder.AppendLine();
-            ExportDeprecation(builder);
+            ExportDeprecation(builder, Function);
 
             string returnType = "void";
             string returnStatement = "";
@@ -746,7 +748,7 @@ public class FunctionExporter
     {
         builder.AppendLine();
         builder.AppendTooltip(Function);
-        ExportDeprecation(builder);
+        ExportDeprecation(builder, Function);
 
         string returnManagedType = "void";
         if (ReturnValueTranslator != null)
@@ -853,7 +855,7 @@ public class FunctionExporter
         foreach (FunctionOverload overload in Overloads)
         {
             builder.AppendLine();
-            ExportDeprecation(builder);
+            ExportDeprecation(builder, Function);
 
             string returnType = "void";
             string returnStatement = "";
@@ -910,7 +912,6 @@ public class FunctionExporter
     void ExportFunction(GeneratorStringBuilder builder)
     {
         builder.AppendLine();
-        ExportDeprecation(builder);
         ExportSpecializationGetter(builder);
         
         ExportSignature(builder, Modifiers);
@@ -1071,6 +1072,7 @@ public class FunctionExporter
     void ExportSignature(GeneratorStringBuilder builder, string protection)
     {
         builder.AppendTooltip(Function);
+        ExportDeprecation(builder, Function);
 
         AttributeBuilder attributeBuilder = new AttributeBuilder(Function);
         
@@ -1141,11 +1143,11 @@ public class FunctionExporter
     }
     
 
-    void ExportDeprecation(GeneratorStringBuilder builder)
+    public static void ExportDeprecation(GeneratorStringBuilder builder, UhtFunction function)
     {
-        if (Function.HasMetadata("DeprecatedFunction"))
+        if (function.HasMetadata("DeprecatedFunction"))
         {
-            string deprecationMessage = Function.GetMetadata("DeprecationMessage");
+            string deprecationMessage = function.GetMetadata("DeprecationMessage");
             if (deprecationMessage.Length == 0)
             {
                 deprecationMessage = "This function is deprecated.";
@@ -1155,7 +1157,7 @@ public class FunctionExporter
                 // Remove nested quotes
                 deprecationMessage = deprecationMessage.Replace("\"", "");
             }
-            builder.AppendLine($"[Obsolete(\"{Function.SourceName} is deprecated: {deprecationMessage}\")]");
+            builder.AppendLine($"[Obsolete(\"{function.SourceName} is deprecated: {deprecationMessage}\")]");
         }
     }
 
