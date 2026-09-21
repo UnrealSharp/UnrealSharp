@@ -7,15 +7,15 @@ struct FCSSpawnActorParameters
 {
 	GENERATED_BODY()
 	
-	UPROPERTY()
+	UPROPERTY(meta = (Nullable))
 	TObjectPtr<AActor> Owner = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(meta = (Nullable))
 	TObjectPtr<APawn> Instigator = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(meta = (Nullable))
 	TObjectPtr<AActor> Template = nullptr;
-	
+
 	UPROPERTY()
 	FName Name;
 

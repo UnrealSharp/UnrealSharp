@@ -86,13 +86,13 @@ public static class InterfaceExporter
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
+        stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName}? obj)");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine($"UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.ToNative(nativeBuffer, arrayIndex, obj);");
         stringBuilder.CloseBrace();
         stringBuilder.AppendLine();
 
-        stringBuilder.AppendLine($"public static {interfaceName} FromNative(IntPtr nativeBuffer, int arrayIndex)");
+        stringBuilder.AppendLine($"public static {interfaceName}? FromNative(IntPtr nativeBuffer, int arrayIndex)");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine($"return UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.FromNative(nativeBuffer, arrayIndex);");
         stringBuilder.CloseBrace();

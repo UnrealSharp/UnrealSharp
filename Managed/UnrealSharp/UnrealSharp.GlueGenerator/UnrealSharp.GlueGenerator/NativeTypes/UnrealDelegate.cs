@@ -145,7 +145,7 @@ public record UnrealDelegate : UnrealType
     public void AppendFunctionAsDelegate(GeneratorStringBuilder builder)
     {
         builder.AppendLine(
-            $"public delegate {_delegateSignature.ReturnType.ManagedType} {_managedDelegateName}({string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterDeclaration()))});");
+            $"public delegate {_delegateSignature.ReturnType.ManagedTypeWithNullability} {_managedDelegateName}({string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterDeclaration()))});");
     }
 
     public override void PopulateJsonObject(JsonWriter jsonWriter)

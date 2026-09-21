@@ -12,12 +12,13 @@ public class InterfacePropertyTranslator : SimpleTypePropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtInterfaceProperty interfaceProperty = (UhtInterfaceProperty)property;
-        return interfaceProperty.InterfaceClass.GetFullManagedName();
+        return $"{interfaceProperty.InterfaceClass.GetFullManagedName()}?";
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
-        return $"{GetManagedType(property)}Marshaller";
+        UhtInterfaceProperty interfaceProperty = (UhtInterfaceProperty)property;
+        return $"{interfaceProperty.InterfaceClass.GetFullManagedName()}Marshaller";
     }
 
     public override bool CanSupportGenericType(UhtProperty property) => true;

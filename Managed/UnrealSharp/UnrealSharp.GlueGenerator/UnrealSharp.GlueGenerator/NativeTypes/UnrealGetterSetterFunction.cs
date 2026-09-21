@@ -20,7 +20,7 @@ public record UnrealGetterSetterFunction : UnrealFunction
     {
         if (HasReturnValue)
         {
-            builder.AppendLine($"{ReturnType.ManagedType} returnValue = {_propertyName};");
+            builder.AppendLine($"{ReturnType.ManagedTypeWithNullability} returnValue = {_propertyName};");
         }
         else
         {

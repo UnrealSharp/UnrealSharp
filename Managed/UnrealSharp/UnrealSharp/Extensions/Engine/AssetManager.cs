@@ -160,7 +160,7 @@ public partial class UAssetManager
         List<UObject> loadedObjects = new(loadedAssets.Count);
         foreach (FPrimaryAssetId assetId in loadedAssets)
         {
-            if (assetId.AssetClass.Value.IsValid)
+            if (assetId.AssetClass is { IsValid: true })
             {
                 var loaded = SystemLibrary.GetClass(assetId);
 

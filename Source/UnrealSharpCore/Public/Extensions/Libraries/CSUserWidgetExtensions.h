@@ -24,7 +24,7 @@ public:
 	static ULocalPlayer* GetOwningLocalPlayer(UUserWidget* UserWidget);
 
 	UFUNCTION(meta=(ScriptMethod, UserWidgetClass = "/Script/UMG.UserWidget", DeterminesOutputType = "UserWidgetClass"))
-	static UUserWidget* CreateWidget(UObject* WorldContextObject, const TSubclassOf<UUserWidget>& UserWidgetClass, APlayerController* OwningController);
+	static UUserWidget* CreateWidget(UObject* WorldContextObject, const TSubclassOf<UUserWidget>& UserWidgetClass, UPARAM(meta = (Nullable)) APlayerController* OwningController);
 
 	UFUNCTION(meta=(ScriptMethod, UserWidgetClass = "/Script/UMG.UserWidget", DeterminesOutputType = "UserWidgetClass"))
 	static UUserWidget* CreateWidget_WithWidget(UUserWidget* OwningWidget, const TSubclassOf<UUserWidget>& UserWidgetClass);

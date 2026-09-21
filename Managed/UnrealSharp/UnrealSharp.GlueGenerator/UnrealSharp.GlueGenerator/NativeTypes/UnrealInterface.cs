@@ -64,9 +64,9 @@ public record UnrealInterface : UnrealClassBase
         string marshallerDeclaration = $"UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{FieldName.SourceName}>";
 
         builder.AppendLine(
-            $"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {FieldName.SourceName} obj) => {marshallerDeclaration}.ToNative(nativeBuffer, arrayIndex, obj);");
+            $"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {FieldName.SourceName}? obj) => {marshallerDeclaration}.ToNative(nativeBuffer, arrayIndex, obj);");
         builder.AppendLine(
-            $"public static {FieldName.SourceName} FromNative(IntPtr nativeBuffer, int arrayIndex) => {marshallerDeclaration}.FromNative(nativeBuffer, arrayIndex);");
+            $"public static {FieldName.SourceName}? FromNative(IntPtr nativeBuffer, int arrayIndex) => {marshallerDeclaration}.FromNative(nativeBuffer, arrayIndex);");
 
         builder.CloseBrace();
     }

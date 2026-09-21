@@ -313,7 +313,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         UnrealFunctionBase factory = BuildFactoryFunctionMetadata(asyncWrapperClass, isStatic);
 
         string parameterList =
-            string.Join(", ", factory.Properties.Select(p => $"{p.ManagedType} {p.FieldName.SourceName}"));
+            string.Join(", ", factory.Properties.Select(p => p.GetParameterDeclaration()));
         string ownerExpression = isStatic ? StaticOuterExpression : TargetParamName;
         string callTarget = isStatic ? Outer!.FieldName.SourceName : TargetParamName;
         string arguments = BuildArguments(factory, hasCancellationToken);

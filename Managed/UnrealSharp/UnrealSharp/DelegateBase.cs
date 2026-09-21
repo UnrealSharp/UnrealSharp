@@ -99,7 +99,8 @@ public abstract class TDelegateBase<T> where T : Delegate
 
     internal TDelegateBase()
     {
-        InnerDelegate = (DelegateBase<T>) Activator.CreateInstance(Wrapper);
+        InnerDelegate = (DelegateBase<T>?) Activator.CreateInstance(Wrapper)
+            ?? throw new InvalidOperationException($"Could not create delegate wrapper '{Wrapper.FullName}'.");
     }
     
     /// <summary>

@@ -44,6 +44,8 @@ public record UnrealProperty : UnrealType
 
     public ManagedTypeName ManagedType;
 
+    public string ManagedTypeWithNullability => $"{ManagedType}{this.GetNullableAnnotation()}";
+
     public RefKind ReferenceKind;
 
     public bool CanInstanceMarshallerBeStatic = false;
@@ -66,12 +68,12 @@ public record UnrealProperty : UnrealType
     protected string FromNative => ".FromNative";
 
     public string CallToNative => MarshallerType + ToNative;
-    public string CallFromNative => MarshallerType + FromNative;
+    public virtual string CallFromNative => MarshallerType + FromNative;
 
     public virtual string NullValue => $"default({ManagedType})";
 
     public string GetParameterDeclaration() =>
-        $"{ReferenceKind.RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {FieldName.SourceName}";
+        $"{ReferenceKind.RefKindToString()}{ManagedTypeWithNullability} {FieldName.SourceName}";
 
     public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{FieldName.SourceName}";
 
@@ -222,12 +224,11 @@ public record UnrealProperty : UnrealType
             return;
         }
 
-        string nullableSign = IsNullable ? "?" : string.Empty;
         string partialDeclaration = IsPartial ? "partial " : string.Empty;
         string isRequiredSign = IsRequired ? "required " : string.Empty;
 
         builder.AppendLine(
-            $"{Accessibility.AccessibilityToString()}{isRequiredSign}{partialDeclaration}{ManagedType}{nullableSign} {FieldName.SourceName}");
+            $"{Accessibility.AccessibilityToString()}{isRequiredSign}{partialDeclaration}{ManagedTypeWithNullability} {FieldName.SourceName}");
         builder.OpenBrace();
 
         if (GetterMethod != null)

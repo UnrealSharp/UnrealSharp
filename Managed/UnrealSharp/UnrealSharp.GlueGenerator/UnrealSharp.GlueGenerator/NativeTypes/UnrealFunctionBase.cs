@@ -289,7 +289,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         foreach (UnrealProperty parameter in Properties)
         {
             parameter.ExportFromNative(builder, SourceGenUtilities.Buffer,
-                $"{parameter.ManagedType} {parameter.FieldName.SourceName} = ");
+                $"{parameter.ManagedTypeWithNullability} {parameter.FieldName.SourceName} = ");
         }
 
         ExportInvokeMethodCallSignature(builder);
@@ -309,7 +309,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
     protected virtual void ExportInvokeMethodCallSignature(GeneratorStringBuilder builder)
     {
-        string returnAssignment = HasReturnValue ? $"{ReturnType.ManagedType} returnValue = " : string.Empty;
+        string returnAssignment = HasReturnValue ? $"{ReturnType.ManagedTypeWithNullability} returnValue = " : string.Empty;
         string functionToCall = NeedsImplementationFunction
             ? $"{FieldName.SourceName}_Implementation"
             : FieldName.SourceName;
@@ -347,7 +347,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         if (HasReturnValue)
         {
-            string assignment = $"{ReturnType.ManagedType} returnValue = ";
+            string assignment = $"{ReturnType.ManagedTypeWithNullability} returnValue = ";
             ReturnType.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, assignment);
             builder.AppendLine("return returnValue;");
         }

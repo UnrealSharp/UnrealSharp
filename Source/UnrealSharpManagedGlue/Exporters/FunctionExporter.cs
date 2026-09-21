@@ -270,19 +270,11 @@ public class FunctionExporter
                     paramsStringCallGenerics += $"{refQualifier}{parameterName}";
                 }
 
-                paramsStringCallNative += $"{refQualifier}{parameterName}";
-                paramString += $"{refQualifier}{parameterManagedType} {parameterName}";
-
-                if (!isGenericClassParam)
-                {
-                    paramStringApiWithDefaultsWithGenerics += $"{refQualifier}{parameterManagedType} {parameterName}";
-                }
-
-                if ((hasDefaultParameters || cppDefaultValue.Length > 0) && OverloadMode == OverloadMode.AllowOverloads)
+                bool exportDefault = (hasDefaultParameters || cppDefaultValue.Length > 0) && OverloadMode == OverloadMode.AllowOverloads;
+                string csharpDefaultValue = "";
+                if (exportDefault)
                 {
                     hasDefaultParameters = true;
-                    string csharpDefaultValue = "";
-                    
                     if (cppDefaultValue.Length == 0 || cppDefaultValue == "None")
                     {
                         csharpDefaultValue = translator.GetNullValue(parameter);
@@ -291,7 +283,23 @@ public class FunctionExporter
                     {
                         csharpDefaultValue = translator.ConvertCppDefaultValue(cppDefaultValue, Function, parameter);
                     }
-                    
+
+                    if (csharpDefaultValue == "null" && !parameterManagedType.EndsWith("?", StringComparison.Ordinal))
+                    {
+                        parameterManagedType += "?";
+                    }
+                }
+
+                paramsStringCallNative += $"{refQualifier}{parameterName}";
+                paramString += $"{refQualifier}{parameterManagedType} {parameterName}";
+
+                if (!isGenericClassParam)
+                {
+                    paramStringApiWithDefaultsWithGenerics += $"{refQualifier}{parameterManagedType} {parameterName}";
+                }
+
+                if (exportDefault)
+                {
                     if (!string.IsNullOrEmpty(csharpDefaultValue))
                     {
                         string defaultValue = $" = {csharpDefaultValue}";

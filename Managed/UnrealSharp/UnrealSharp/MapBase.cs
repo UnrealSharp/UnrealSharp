@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Interop;
@@ -93,7 +94,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         return true;
     }
 
-    protected bool TryGetInternal(TKey key, out TValue? value)
+    protected bool TryGetInternal(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
         var index = IndexOf(key);
         if (index >= 0)
@@ -618,7 +619,7 @@ public class ObservableMapMarshaller<TKey, TValue>(IntPtr mapProperty,
 {
     public override TMap<TKey, TValue> MakeWrapper(IntPtr nativeBuffer)
     {
-        var map = new TMap<TKey, TValue>(mapProperty, nativeBuffer, keyFromNative, keyToNative, valueFromNative, valueToNative);
+        var map = base.MakeWrapper(nativeBuffer);
         map.MakeObservable(nativeObject);
         return map;
     }

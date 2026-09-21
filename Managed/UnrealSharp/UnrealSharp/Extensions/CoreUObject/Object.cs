@@ -615,7 +615,7 @@ public partial class UObject
     /// <summary>
     /// Creates a widget of the specified type using a parent widget as context.
     /// </summary>
-    /// <param name="parentWidget"> The parent widget used for world. </param>
+    /// <param name="owningWidget"> The widget used as the world context. </param>
     /// <param name="widgetClass"> The class of the widget to create. </param>
     /// <typeparam name="T"> The type of the widget to create. </typeparam>
     /// <returns>The created widget instance.</returns>
