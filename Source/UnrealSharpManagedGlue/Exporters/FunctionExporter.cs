@@ -181,6 +181,11 @@ public class FunctionExporter
                 Modifiers = ScriptGeneratorUtilities.PublicKeyword;
             }
             
+            if (FunctionName == nameof(ToString) && !Function.HasParameters)
+            {
+                Modifiers += "new ";
+            }
+
             InvokeFirstArgument = "NativeObject";
         }
 
