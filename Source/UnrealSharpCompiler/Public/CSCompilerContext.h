@@ -45,4 +45,3 @@ private:
 
 	void CreateDummyBlueprintVariables(const TArray<FCSPropertyReflectionData>& Properties) const;
 };
-

@@ -20,6 +20,7 @@ public static class IncrementalCompilationManager
                || state.Driver == null
                || state.InitialCompilation == null
                || state.TreesByPath == null
+               || state.RemovedTreesByPath == null
                || state.Generators == null;
     }
 
@@ -56,8 +57,10 @@ public static class IncrementalCompilationManager
             return;
         }
 
+        state.RemovedTreesByPath ??= new Dictionary<string, SyntaxTree>(StringComparer.OrdinalIgnoreCase);
         state.InitialCompilation = state.InitialCompilation!.RemoveSyntaxTrees(existingTree);
         state.TreesByPath.Remove(fullPath);
+        state.RemovedTreesByPath[fullPath] = existingTree;
     }
 
     public static void RecompileChangedFile(string projectName, string filepath)
@@ -108,7 +111,17 @@ public static class IncrementalCompilationManager
             }
         }
 
-        if (state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingTree))
+        state.RemovedTreesByPath ??= new Dictionary<string, SyntaxTree>(StringComparer.OrdinalIgnoreCase);
+        state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingTree);
+        SyntaxTree? previousTree = existingTree;
+        if (previousTree == null)
+        {
+            state.RemovedTreesByPath.TryGetValue(fullPath, out previousTree);
+        }
+
+        SyntaxUtilities.LookForChangesInUnrealTypes(newTree, previousTree, foundProject);
+
+        if (existingTree != null)
         {
             state.InitialCompilation = state.InitialCompilation!.ReplaceSyntaxTree(existingTree, newTree);
         }
@@ -117,9 +130,8 @@ public static class IncrementalCompilationManager
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
 
-        SyntaxUtilities.LookForChangesInUnrealTypes(newTree, existingTree, foundProject);
-
         state.TreesByPath[fullPath] = newTree;
+        state.RemovedTreesByPath.Remove(fullPath);
 
         stopwatch.Stop();
         LogUnrealSharpEditor.Log($"Processed dirty file '{Path.GetFileName(filepath)}' in project '{projectName}' in {stopwatch.Elapsed.TotalMilliseconds:F2}ms.");
@@ -236,7 +248,7 @@ public static class IncrementalCompilationManager
         }
 
         string outputDir = Path.GetDirectoryName(assemblies[0])!;
-        
+
         LoadOrderOptions loadOrderOptions = new LoadOrderOptions() { Collectible = true, Priority = 0 };
         AssemblyUtilities.EmitLoadOrder(assemblies, outputDir, loadOrderOptions, "UserCode");
     }

@@ -6,6 +6,7 @@
 #include "EditorSubsystem.h"
 #include "UnrealSharpEditor.h"
 #include "IDirectoryWatcher.h"
+#include "UObject/StructOnScope.h"
 #include "CSHotReloadSubsystem.generated.h"
 
 enum EHotReloadStatus : uint8
@@ -52,6 +53,13 @@ public:
 	void NotifyNewType() { bDetectedNewManagedType = true;}
 
 private:
+	void TrackManagedObjectsForRecovery(const TArray<UCSManagedAssembly*>& Assemblies);
+	void RecoverManagedObjects();
+	void TransferManagedObjectRecovery(const TMap<UObject*, UObject*>& Replacements);
+
+	// Owned by the subsystem; weak keys do not retain reinstanced/deleted objects.
+	TSet<TWeakObjectPtr<UObject>> PendingManagedObjectRecovery;
+	TMap<TWeakObjectPtr<UObject>, TUniquePtr<FStructOnScope>> PreservedManagedObjectData;
 	
 	void AddDirectoryToWatch(const FString& Directory, FName ProjectName);
 	
