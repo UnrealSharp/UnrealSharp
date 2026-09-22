@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,11 +45,16 @@ public static class CsProjectUtilities
 
         StringComparer Comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
-        XmlNodeList? ExistingReferences = document.SelectNodes("//ItemGroup/ProjectReference");
-        HashSet<string> ExistingIncludes = ExistingReferences!
+        HashSet<string> ExistingProjects = document
+            .SelectNodes("//ItemGroup/ProjectReference")!
             .OfType<XmlElement>()
             .Select(element => element.GetAttribute("Include"))
-            .Where(include => !string.IsNullOrEmpty(include))
+            .ToHashSet(Comparer);
+
+        HashSet<string> ExistingDlls = document
+            .SelectNodes("//ItemGroup/Reference")!
+            .OfType<XmlElement>()
+            .Select(element => element.GetAttribute("Include"))
             .ToHashSet(Comparer);
 
         bool Modified = false;
@@ -61,14 +66,35 @@ public static class CsProjectUtilities
                 continue;
             }
 
+            bool IsDll = Path.GetExtension(Dependency).Equals(".dll", StringComparison.OrdinalIgnoreCase);
+
             string RelativePath = GetRelativePath(projectFolder, Dependency);
-            if (!ExistingIncludes.Add(RelativePath))
+            string DependencyName = Path.GetFileNameWithoutExtension(Dependency);
+
+            bool WasAdded = IsDll
+                ? ExistingDlls.Add(DependencyName)
+                : ExistingProjects.Add(RelativePath);
+
+            if (!WasAdded)
             {
                 continue;
             }
 
-            XmlElement ProjectReference = document.CreateElement("ProjectReference");
-            ProjectReference.SetAttribute("Include", RelativePath);
+            string ReferenceType = IsDll ? "Reference" : "ProjectReference";
+            XmlElement ProjectReference = document.CreateElement(ReferenceType);
+            if (IsDll)
+            {
+                ProjectReference.SetAttribute("Include", DependencyName);
+
+                XmlElement HintPath = document.CreateElement("HintPath");
+                HintPath.InnerText = RelativePath;
+                ProjectReference.AppendChild(HintPath);
+            }
+            else
+            {
+                ProjectReference.SetAttribute("Include", RelativePath);
+            }
+
             itemGroup.AppendChild(ProjectReference);
             Modified = true;
         }
