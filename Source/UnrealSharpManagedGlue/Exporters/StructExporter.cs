@@ -91,7 +91,7 @@ public static class StructExporter
 
         if (isCopyable)
         {
-            stringBuilder.AppendLine(isDestructible ? "private NativeStructHandle NativeHandle;" : "private byte[] Allocation;");
+            stringBuilder.AppendLine(isDestructible ? "private NativeStructHandle? NativeHandle;" : "private byte[]? Allocation;");
         }
         
         // For manual exports we just want to generate attributes

@@ -9,10 +9,10 @@ public record ContainerProperty : TemplateProperty
     private Func<string> ContainerMarshaller => Outer is UnrealClass ? GetFieldMarshaller : GetCopyMarshaller;
 
     public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(),
-        TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+        TemplateParameters.Select(t => t.ManagedTypeWithNullability).ToArray());
 
     public string ObservableMarshallerType => MakeMarshallerType(GetObservableMarshaller(),
-        TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+        TemplateParameters.Select(t => t.ManagedTypeWithNullability).ToArray());
 
     public override bool NeedsCachedMarshaller => true;
     public virtual bool IsObservable => false;

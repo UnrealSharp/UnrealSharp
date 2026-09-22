@@ -17,7 +17,7 @@ public record TemplateProperty : UnrealProperty
                 return string.Empty;
             }
 
-            return MakeMarshallerType(field, TemplateParameters.Select(t => t.ManagedType.Text).ToArray());
+            return MakeMarshallerType(field, TemplateParameters.Select(t => t.ManagedTypeWithNullability).ToArray());
         }
     }
 
@@ -54,7 +54,7 @@ public record TemplateProperty : UnrealProperty
         {
             ManagedType = ManagedTypeName.Generic(
                 namedTypeSymbol.ConstructedFrom.ToDisplayString(NoTypeArgumentsFormat),
-                TemplateParameters.Select(t => $"{t.ManagedType}{t.GetNullableAnnotation()}"));
+                TemplateParameters.Select(t => t.ManagedTypeWithNullability));
         }
         else
         {
@@ -68,7 +68,7 @@ public record TemplateProperty : UnrealProperty
     {
         MarshallerType = marshaller;
         TemplateParameters = templateParameters;
-        ManagedType = ManagedTypeName.Generic(openType.Text, TemplateParameters.Select(t => t.ManagedType.Text));
+        ManagedType = ManagedTypeName.Generic(openType.Text, TemplateParameters.Select(t => t.ManagedTypeWithNullability));
     }
 
     public string MakeMarshallerType(string marshallerName, params string[] innerTypes)

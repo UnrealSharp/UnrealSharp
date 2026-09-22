@@ -48,7 +48,7 @@ public record UnrealFunction : UnrealFunctionBase
     {
         string virtualModifier = _isImplementationMethodVirtual ? "virtual " : string.Empty;
         builder.AppendLine(
-            $"{Accessibility.AccessibilityToString()}{virtualModifier}partial {ReturnType.ManagedType} {FieldName.SourceName}_Implementation({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.FieldName.SourceName}"))});");
+            $"{Accessibility.AccessibilityToString()}{virtualModifier}partial {ReturnType.ManagedTypeWithNullability} {FieldName.SourceName}_Implementation({string.Join(", ", Properties.Select(p => p.GetParameterDeclaration()))});");
     }
 
     public void ExportWrapperMethod(GeneratorStringBuilder builder, string modifiers)
@@ -70,7 +70,7 @@ public record UnrealFunction : UnrealFunctionBase
         builder.AppendLine();
 
         builder.AppendLine(
-            $"{Accessibility.AccessibilityToString()}{modifiers}{ReturnType.ManagedType} {FieldName.SourceName}({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.FieldName.SourceName}"))})");
+            $"{Accessibility.AccessibilityToString()}{modifiers}{ReturnType.ManagedTypeWithNullability} {FieldName.SourceName}({string.Join(", ", Properties.Select(p => p.GetParameterDeclaration()))})");
         builder.OpenBrace();
 
         if (FunctionFlags.HasFlag(EFunctionFlags.Event))
