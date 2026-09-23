@@ -31,6 +31,28 @@ public abstract record UnrealClassBase : UnrealStruct
         AsyncFunctions.List.Add(function);
     }
 
+    public void ExportInvokeDependencies(GeneratorStringBuilder builder)
+    {
+        foreach (UnrealFunctionBase function in Functions.List)
+        {
+            Preserve(function);
+        }
+
+        foreach (var property in Properties.List)
+        {
+            Preserve(property.GetterMethod?.CustomPropertyMethod);
+            Preserve(property.SetterMethod?.CustomPropertyMethod);
+        }
+
+        void Preserve(UnrealFunctionBase? function)
+        {
+            if (function != null)
+            {
+                builder.AppendLine($"[System.Diagnostics.CodeAnalysis.DynamicDependency(\"Invoke_{function.FieldName.SourceName}\", typeof({FieldName}))]");
+            }
+        }
+    }
+
     public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
         base.PopulateJsonObject(jsonWriter);

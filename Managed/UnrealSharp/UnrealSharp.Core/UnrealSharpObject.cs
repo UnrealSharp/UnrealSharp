@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace UnrealSharp.Core;
@@ -9,7 +10,7 @@ namespace UnrealSharp.Core;
 /// </summary>
 public class UnrealSharpObject : IDisposable
 {
-    internal static unsafe IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
+    internal static unsafe IntPtr Create([DynamicallyAccessedMembers(UnrealTypeRegistry.Constructors)] Type typeToCreate, IntPtr nativeObjectPtr)
     {
         const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         ConstructorInfo? foundDefaultCtor = typeToCreate.GetConstructor(bindingFlags, Type.EmptyTypes);

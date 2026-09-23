@@ -94,7 +94,7 @@ public static class SyntaxUtilities
         }
         
         Assembly assembly = (Assembly) plugin.Assembly!.Target!;
-        return assembly.GetType(fullTypeName, throwOnError: false);
+        return UnrealTypeRegistry.FindType(assembly, fullTypeName);
     }
 
     private static bool HasConstructorChanged(BaseTypeDeclarationSyntax newBaseType,

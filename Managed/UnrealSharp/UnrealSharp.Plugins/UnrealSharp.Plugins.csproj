@@ -13,6 +13,7 @@
     </PropertyGroup>
     
     <ItemGroup>
+        <EmbeddedResource Include="ILLink.Descriptors.xml" LogicalName="ILLink.Descriptors.xml" />
         <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj"/>
         <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj"/>
         <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
