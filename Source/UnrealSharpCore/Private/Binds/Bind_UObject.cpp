@@ -202,6 +202,14 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 			&& Object->GetClass()->ImplementsInterface(InterfaceClass);
 	}
 	
+#if WITH_EDITOR
+	// UObject::Modify(): record the object in the active transaction and mark its package dirty.
+	bool Modify(UObject* Object, bool bAlwaysMarkDirty)
+	{
+		return IsValid(Object) && Object->Modify(bAlwaysMarkDirty);
+	}
+#endif
+	
 	BIND_UNREALSHARP_FUNCTION(CreateNewObject)
 	BIND_UNREALSHARP_FUNCTION(GetTransientPackage)
 	BIND_UNREALSHARP_FUNCTION(NativeGetName)
@@ -217,4 +225,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 	BIND_UNREALSHARP_FUNCTION(StaticLoadClass)
 	BIND_UNREALSHARP_FUNCTION(StaticLoadObject)
 	BIND_UNREALSHARP_FUNCTION(ImplementsInterface)
+#if WITH_EDITOR
+	BIND_UNREALSHARP_FUNCTION(Modify)
+#endif
 }

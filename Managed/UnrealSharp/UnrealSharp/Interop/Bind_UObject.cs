@@ -21,4 +21,7 @@ public static unsafe partial class Bind_UObject
     public static delegate* unmanaged<IntPtr, IntPtr> GetOuter;
     public static delegate* unmanaged<IntPtr, IntPtr, string, IntPtr>  StaticLoadClass;
     public static delegate* unmanaged<IntPtr, IntPtr, string, IntPtr>  StaticLoadObject;
+#if WITH_EDITOR
+    public static delegate* unmanaged<IntPtr, NativeBool, NativeBool> Modify;
+#endif
 }

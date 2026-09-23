@@ -678,6 +678,24 @@ public partial class UObject
     {
         return !(left == right);
     }
+
+#if WITH_EDITOR
+    /// <summary>
+    /// Records the object in the active transaction and marks its package dirty, like UObject::Modify() in C++.
+    /// Property setters from C# bypass the transaction and dirty systems, so editor tools should call this first.
+    /// </summary>
+    /// <param name="bAlwaysMarkDirty">Mark the package dirty even without an active transaction.</param>
+    /// <returns>Whether the object was saved to the transaction buffer.</returns>
+    public bool Modify(bool bAlwaysMarkDirty = true)
+    {
+        if (IsDestroyed)
+        {
+            return false;
+        }
+
+        return Bind_UObject.CallModify(NativeObject, bAlwaysMarkDirty.ToNativeBool()).ToManagedBool();
+    }
+#endif
 }
 
 public static class UObjectExtensions
