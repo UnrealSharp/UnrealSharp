@@ -18,6 +18,11 @@ public class Plugin
     
     public Plugin(AssemblyName assemblyName, bool isCollectible, string assemblyPath)
     {
+        if (!PluginLoader.EnableDynamicLoading && isCollectible)
+        {
+            throw new NotSupportedException("Collectible plugins require UnrealSharp.EnableDynamicLoading and an untrimmed runtime.");
+        }
+
         AssemblyName = assemblyName;
         
         Assembly? existingAssembly = AssemblyCache.GetUniqueAssembly(assemblyName.Name!);
@@ -37,9 +42,13 @@ public class Plugin
             
             _loadContext = existingLoadContext;
         }
-        else
+        else if (PluginLoader.EnableDynamicLoading)
         {
             _loadContext = new PluginLoadContext(assemblyName.Name!, new AssemblyDependencyResolver(assemblyPath), isCollectible);
+        }
+        else
+        {
+            _loadContext = AssemblyLoadContext.Default;
         }
     }
 
