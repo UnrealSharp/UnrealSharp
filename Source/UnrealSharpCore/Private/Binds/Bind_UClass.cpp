@@ -49,6 +49,13 @@ DECLARE_UNREALSHARP_BINDER(Bind_UClass)
 
 	void* GetDefault(UClass* Class)
 	{
+#if WITH_EDITOR
+		if (UCSSkeletonClass* Skeleton = Cast<UCSSkeletonClass>(Class))
+		{
+			Class = Skeleton->GetGeneratedClass();
+		}
+#endif
+
 		return UCSManager::Get().FindManagedObject(Class->GetDefaultObject());
 	}
 
