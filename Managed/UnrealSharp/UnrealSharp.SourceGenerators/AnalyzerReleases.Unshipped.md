@@ -18,3 +18,4 @@
 | US0012  | Usage       | Error    | UFunctionConflictAnalyzer |
 | US0013  | Category    | Error    | DefaultComponentAnalyzer  |
 | US0014  | Category    | Error    | DefaultComponentAnalyzer  |
+| US0100  | UnrealSharp | Error    | NativeCallbacksWrapperGenerator |
