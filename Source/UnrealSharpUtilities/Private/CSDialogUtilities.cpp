@@ -76,10 +76,16 @@ FCSCommandError UnrealSharp::Dialogs::MakeOkCancelDialogOnError()
 {
 	return FCSCommandError::CreateLambda([](const FString& ErrorOutput)
 	{
-		UE_LOGFMT(LogUnrealSharpUtilities, Error, "{0}", ErrorOutput);
+		if (IsHeadless())
+		{
+			// The command already logged the error. Don't exit here: RequestExit(true) exits with code 0 on
+			// Windows, so a failed headless build would look like a success. The caller fails instead
+			// (see FUnrealSharpCoreModule::StartupModule).
+			UE_LOGFMT(LogUnrealSharpUtilities, Display, "Running headless, not showing the OK/Cancel dialog for this error.");
+			return;
+		}
 
-		// Headless, nobody can press OK: treat it like Cancel, as FMessageDialog does with -unattended.
-		EAppReturnType::Type Result = OpenMessageDialog(EAppMsgType::OkCancel, EAppReturnType::Cancel, FText::FromString(ErrorOutput));
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::OkCancel, FText::FromString(ErrorOutput));
 
 		if (Result == EAppReturnType::Cancel)
 		{

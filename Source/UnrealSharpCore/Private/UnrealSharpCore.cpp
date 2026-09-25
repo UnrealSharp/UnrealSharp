@@ -20,9 +20,8 @@ void FUnrealSharpCoreModule::StartupModule()
 	{
 		if (UnrealSharp::Dialogs::IsHeadless())
 		{
-			// Nobody can fix it and retry, so stop instead of looping forever.
+			// Nobody can fix it and retry, so stop with a non-zero exit code instead of looping forever.
 			UE_LOGFMT(LogUnrealSharp, Fatal, "UnrealSharp could not be initialized, see the errors above.");
-			return;
 		}
 	}
 #endif
