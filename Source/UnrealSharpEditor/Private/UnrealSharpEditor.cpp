@@ -492,12 +492,14 @@ void FUnrealSharpEditorModule::PackageProject()
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
-	Arguments.Add(TEXT("TargetPlatform"), FPlatformMisc::GetUBTPlatform());
-#if PLATFORM_CPU_ARM_FAMILY
-	Arguments.Add(TEXT("TargetArchitecture"), TEXT("arm64"));
-#else
-	Arguments.Add(TEXT("TargetArchitecture"), TEXT("x64"));
-#endif
+	const FString TargetPlatform = FPlatformMisc::GetUBTPlatform();
+	Arguments.Add(TEXT("TargetPlatform"), TargetPlatform);
+
+	// LinuxArm64 is arm64-only; elsewhere keep the automation tool's default architecture.
+	if (TargetPlatform == TEXT("LinuxArm64"))
+	{
+		Arguments.Add(TEXT("TargetArchitecture"), TEXT("arm64"));
+	}
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
