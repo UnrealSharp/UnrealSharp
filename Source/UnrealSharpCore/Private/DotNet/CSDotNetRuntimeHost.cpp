@@ -1,9 +1,6 @@
 #include "DotNet/CSDotNetRuntimeHost.h"
 
 #include "CSBindsRegistry.h"
-#include "CSInteropTypeTraits.h"
-#include "CSManagedCallbacksCache.h"
-#include "CSManagedGCHandle.h"
 #include "UnrealSharpCore.h"
 #include "CSDotnetUtilties.h"
 #include "CSManagedPluginCallbacks.h"
@@ -15,23 +12,6 @@
 using namespace UnrealSharp;
 
 static_assert(sizeof(DotNetUtilities::FHostChar) == sizeof(char_t), "FHostChar does not match hostfxr's char_t.");
-
-// Everything handed to or called through managed code must keep the same layout and calling convention on every platform.
-static_assert(sizeof(TCHAR) == sizeof(char16_t), "Managed code passes TCHAR strings as UTF-16 (C# char*).");
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FInitializeUnrealSharp);
-CS_ASSERT_INTEROP_SAFE_TYPE(FCSInitializationResult);
-CS_ASSERT_INTEROP_SAFE_TYPE(FGCHandleIntPtr);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedPluginCallbacks::LoadPluginCallback);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedPluginCallbacks::UnloadPluginCallback);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_CreateNewManagedObject);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_CreateNewManagedObjectWrapper);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_InvokeManagedMethod);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_InvokeDelegate);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_GetManagedMethod);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_GetManagedTypeHandle);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_InitializeStructure);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_Dispose);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedCallbacks::ManagedCallbacks_FreeHandle);
 
 FCSDotNetRuntimeHost::~FCSDotNetRuntimeHost()
 {

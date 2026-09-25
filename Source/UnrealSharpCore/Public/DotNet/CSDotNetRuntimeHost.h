@@ -6,6 +6,7 @@
 #include <hostfxr.h>
 
 #include "HAL/PlatformProcess.h"
+#include "CSInteropTypeTraits.h"
 
 struct FCSManagedCallbacks;
 struct FCSManagedPluginCallbacks;
@@ -21,8 +22,13 @@ struct FCSInitializationResult
 };
 
 static_assert(sizeof(FCSInitializationResult) == 1 + FCSInitializationResult::MessageCapacity, "FCSInitializationResult must match the managed layout.");
+CS_ASSERT_INTEROP_SAFE_TYPE(FCSInitializationResult);
 
 using FInitializeUnrealSharp = void (*)(const UTF8CHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks*, FCSInitializationResult*);
+CS_ASSERT_INTEROP_SAFE_FUNCTION(FInitializeUnrealSharp);
+
+// Managed code passes TCHAR strings as UTF-16 (C# char*).
+static_assert(sizeof(TCHAR) == sizeof(char16_t), "TCHAR must be a 16-bit character.");
 
 struct FCSDotNetLayout
 {

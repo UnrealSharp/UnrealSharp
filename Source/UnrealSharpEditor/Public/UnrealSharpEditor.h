@@ -5,6 +5,7 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 #include "CSInteropTypeTraits.h"
+#include "CSUnmanagedArrayView.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -21,16 +22,6 @@ class UCSManager;
 class IAssetTools;
 class FCSScriptBuilder;
 
-// Trivially-copyable mirror of the managed UnmanagedArray struct. A TArray passed by value is
-// non-trivial, so the SysV x86-64 ABI (Linux/Mac) passes it by hidden reference while .NET passes
-// the 16-byte managed struct in registers; this POD matches the managed side on every platform.
-struct FCSUnmanagedArrayView
-{
-    const void* Data = nullptr;
-    int32 ArrayNum = 0;
-    int32 ArrayMax = 0;
-};
-
 struct FCSManagedEditorCallbacks
 {
     FCSManagedEditorCallbacks() = default;
@@ -42,6 +33,13 @@ struct FCSManagedEditorCallbacks
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
     using FLoadSignature = void(__stdcall*)(const TCHAR*, void*);
+
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileDirtyProjects);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileChangedFile);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRemoveSourceFile);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FForceManagedGC);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FOpenSolution);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FLoadSignature);
 
     FRecompileDirtyProjects RecompileDirtyProjects = nullptr;
     FRecompileChangedFile RecompileChangedFile = nullptr;
@@ -55,14 +53,7 @@ struct FCSManagedEditorCallbacks
 };
 
 // Filled in by managed code (FManagedUnrealSharpEditorCallbacks) and passed across the boundary by value.
-CS_ASSERT_INTEROP_SAFE_TYPE(FCSUnmanagedArrayView);
 CS_ASSERT_INTEROP_SAFE_TYPE(FCSManagedEditorCallbacks);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FRecompileDirtyProjects);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FRecompileChangedFile);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FRemoveSourceFile);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FForceManagedGC);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FOpenSolution);
-CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FLoadSignature);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSOnBuildingToolbar, FMenuBuilder&);
