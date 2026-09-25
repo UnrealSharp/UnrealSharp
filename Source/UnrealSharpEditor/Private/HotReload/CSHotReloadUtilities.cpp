@@ -38,7 +38,7 @@ void FCSHotReloadUtilities::CollectDirtiedFiles(const TArray<FFileChangeData>& C
 	for (const FFileChangeData& Change : ChangedFiles)
 	{
 		FString NormalizedPath = Change.Filename;
-		NormalizedPath.ReplaceInline(TEXT("/"), TEXT("\\"));
+		FPaths::MakePlatformFilename(NormalizedPath);
 		
 		if (HasFileBeenDirtied(OutDirtied, NormalizedPath, Change.Action))
 		{
