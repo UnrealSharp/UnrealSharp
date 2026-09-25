@@ -115,12 +115,8 @@ void FCSPropertyGeneratorManager::Initialize()
 
 void FCSPropertyGeneratorManager::Shutdown()
 {
-	if (Instance == nullptr)
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Property generator is not initialized"));
-		return;
-	}
-
+	// The manager is created lazily by FCSPropertyFactory::EnsureInitialized the first time a managed type
+	// creates a property, so it is legitimately absent in sessions that never did.
 	Instance.Reset();
 }
 
