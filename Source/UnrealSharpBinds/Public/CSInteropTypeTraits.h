@@ -90,6 +90,7 @@ constexpr bool IsInteropSafeType()
  *   accesses. Pass such values as void* and copy them with FMemory::Memcpy.
  * - Pointers to UObject and FField types are always allowed, since those objects are always natively allocated.
  * - Pointers to incomplete types are allowed: code that only sees the forward declaration cannot access the pointee.
+ *   Completeness is decided at the first check in a translation unit, so include the full type before asserting.
  *
  * Necessary but not sufficient for MSVC, whose register vs. hidden-pointer return rules are stricter (x64: no
  * user-declared constructors for 8-byte returns; ARM64: only aggregates are HFAs).
