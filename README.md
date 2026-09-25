@@ -46,7 +46,7 @@ Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/U
 
 Linux support is experimental. It has been tested with the UE 5.8 prebuilt (installed) engine, the engine's bundled clang toolchain and .NET 10 on x86-64; packaged Linux builds have not been tested yet.
 
-- Install the .NET 10 SDK (for example with `dotnet-install.sh` into `~/.dotnet`) and make sure the editor can find it: either put a real `dotnet` on `PATH` or start the editor with `DOTNET_ROOT` set, e.g. `DOTNET_ROOT=~/.dotnet ./UnrealEditor MyGame.uproject`. Version-manager shims (mise, asdf) on `PATH` are skipped in favour of the real SDK.
+- Install the .NET 10 SDK, for example with `dotnet-install.sh` into `~/.dotnet` or from your distribution's packages. The editor looks for it in `DOTNET_ROOT` first (e.g. `DOTNET_ROOT=~/.dotnet ./UnrealEditor MyGame.uproject`), then follows the `dotnet` executable on `PATH` to the real SDK directory, so `/usr/bin/dotnet` symlinks work. Version-manager shims (mise, asdf) are skipped because they have no `sdk/` folder next to them.
 - Opening the C# solution from the editor uses `xdg-open`, so associate `.sln` files with your IDE (e.g. Rider).
 - The editor can run unattended (`-unattended`, `-nullrhi`): C# compile and hot-reload errors are then logged instead of blocking on a modal dialog.
 

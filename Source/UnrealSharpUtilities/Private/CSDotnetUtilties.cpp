@@ -8,6 +8,64 @@
 #include "UnrealSharpUtils.h"
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+
+#if !defined(_WIN32)
+#include <limits.h>
+#include <stdlib.h>
+#endif
+
+namespace
+{
+	// An SDK root contains the dotnet host next to an sdk/ folder. Version-manager shims (mise, asdf) have no sdk/.
+	bool IsDotNetSdkRoot(const FString& Directory)
+	{
+#if defined(_WIN32)
+		const TCHAR* HostName = TEXT("dotnet.exe");
+#else
+		const TCHAR* HostName = TEXT("dotnet");
+#endif
+		return FPaths::FileExists(FPaths::Combine(Directory, HostName)) && FPaths::DirectoryExists(FPaths::Combine(Directory, TEXT("sdk")));
+	}
+
+	FString WithTrailingSlash(FString Directory)
+	{
+		if (!Directory.EndsWith(TEXT("/")) && !Directory.EndsWith(TEXT("\\")))
+		{
+			Directory += TEXT("/");
+		}
+		return Directory;
+	}
+
+#if !defined(_WIN32)
+	// Finds the SDK root behind a dotnet executable on PATH, e.g. /usr/bin/dotnet -> /usr/lib/dotnet/dotnet.
+	FString FindDotNetSdkRootOnPath(const TArray<FString>& PathEntries)
+	{
+		for (const FString& Entry : PathEntries)
+		{
+			const FString Candidate = FPaths::Combine(Entry, TEXT("dotnet"));
+			if (!FPaths::FileExists(Candidate))
+			{
+				continue;
+			}
+
+			char ResolvedPath[PATH_MAX];
+			if (realpath(TCHAR_TO_UTF8(*Candidate), ResolvedPath) == nullptr)
+			{
+				continue;
+			}
+
+			const FString SdkRoot = FPaths::GetPath(UTF8_TO_TCHAR(ResolvedPath));
+			if (IsDotNetSdkRoot(SdkRoot))
+			{
+				return WithTrailingSlash(SdkRoot);
+			}
+		}
+
+		return FString();
+	}
+#endif
+}
 
 static TAutoConsoleVariable<int32> CVarSimulateNoDotNetSDK(
 	TEXT("UnrealSharp.SimulateNoDotNetSDK"),
@@ -46,6 +104,13 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 	}
 #endif
 
+	// DOTNET_ROOT is the standard way to point hosts at a user-local SDK (e.g. ~/.dotnet from dotnet-install.sh).
+	const FString DotNetRootVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("DOTNET_ROOT"));
+	if (!DotNetRootVariable.IsEmpty() && IsDotNetSdkRoot(DotNetRootVariable))
+	{
+		return WithTrailingSlash(DotNetRootVariable);
+	}
+
 #if defined(__APPLE__)
 	constexpr const TCHAR* DefaultDotNetPath = TEXT("/usr/local/share/dotnet/");
 	if (FPaths::DirectoryExists(DefaultDotNetPath))
@@ -58,6 +123,15 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 
 	TArray<FString> Paths;
 	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
+
+#if !defined(_WIN32)
+	// Prefer the real SDK behind a dotnet executable on PATH (follows /usr/bin/dotnet style symlinks).
+	const FString SdkRootOnPath = FindDotNetSdkRootOnPath(Paths);
+	if (!SdkRootOnPath.IsEmpty())
+	{
+		return SdkRootOnPath;
+	}
+#endif
 
 #if defined(_WIN32)
 	const FString PathMarker = TEXT("Program Files\\dotnet\\");
@@ -79,7 +153,7 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 			break;
 		}
 
-		DotNetPathFromEnv = Path;
+		DotNetPathFromEnv = WithTrailingSlash(Path);
 		break;
 	}
 
@@ -175,6 +249,23 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
 		Dialogs::ShowError(FText::FromString(DialogText));
 		return false;
+	}
+
+	// Child processes (RunUAT, MSBuild started by the managed editor code) look for `dotnet` on PATH, and RunUAT
+	// replaces DOTNET_ROOT with the engine's bundled runtime, which has no SDK. If the SDK was found through
+	// DOTNET_ROOT or a symlink, put its directory on this process's PATH so they use the same SDK.
+	if (!DotNetInstallationPath.IsEmpty())
+	{
+		const FString SdkDirectory = DotNetInstallationPath.LeftChop(1);
+		const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
+
+		TArray<FString> PathEntries;
+		PathVariable.ParseIntoArray(PathEntries, FPlatformMisc::GetPathVarDelimiter());
+
+		if (!PathEntries.Contains(SdkDirectory) && !PathEntries.Contains(DotNetInstallationPath))
+		{
+			FPlatformMisc::SetEnvironmentVar(TEXT("PATH"), *(SdkDirectory + FPlatformMisc::GetPathVarDelimiter() + PathVariable));
+		}
 	}
 
 	FString UnrealSharpLibraryPath = Paths::GetUnrealSharpPluginsPath();
