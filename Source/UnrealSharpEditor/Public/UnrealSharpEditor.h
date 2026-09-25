@@ -52,7 +52,6 @@ struct FCSManagedEditorCallbacks
     FLoadSignature LoadProject = nullptr;
 };
 
-// Filled in by managed code (FManagedUnrealSharpEditorCallbacks) and passed across the boundary by value.
 CS_ASSERT_INTEROP_SAFE_TYPE(FCSManagedEditorCallbacks);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);

@@ -470,7 +470,6 @@ void FUnrealSharpEditorModule::PackageProject()
 	}
 
 #if PLATFORM_LINUX
-	// Linux packages are started through the <Project>.sh launcher at the archive root.
 	const TCHAR* LauncherExtension = TEXT(".sh");
 #else
 	const TCHAR* LauncherExtension = TEXT(".exe");
@@ -493,7 +492,6 @@ void FUnrealSharpEditorModule::PackageProject()
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
-	// Package for the platform and architecture the editor runs on; the automation tool defaults to Win64/x64.
 	Arguments.Add(TEXT("TargetPlatform"), FPlatformMisc::GetUBTPlatform());
 #if PLATFORM_CPU_ARM_FAMILY
 	Arguments.Add(TEXT("TargetArchitecture"), TEXT("arm64"));

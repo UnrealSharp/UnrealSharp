@@ -17,7 +17,7 @@
 
 namespace
 {
-	// An SDK root contains the dotnet host next to an sdk/ folder. Version-manager shims (mise, asdf) have no sdk/.
+	// Version-manager shims (mise, asdf) have no sdk/ folder next to them.
 	bool IsDotNetSdkRoot(const FString& Directory)
 	{
 #if defined(_WIN32)
@@ -38,7 +38,6 @@ namespace
 	}
 
 #if !defined(_WIN32)
-	// Finds the SDK root behind a dotnet executable on PATH, e.g. /usr/bin/dotnet -> /usr/lib/dotnet/dotnet.
 	FString FindDotNetSdkRootOnPath(const TArray<FString>& PathEntries)
 	{
 		for (const FString& Entry : PathEntries)
@@ -104,7 +103,6 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 	}
 #endif
 
-	// DOTNET_ROOT is the standard way to point hosts at a user-local SDK (e.g. ~/.dotnet from dotnet-install.sh).
 	const FString DotNetRootVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("DOTNET_ROOT"));
 	if (!DotNetRootVariable.IsEmpty() && IsDotNetSdkRoot(DotNetRootVariable))
 	{
@@ -125,7 +123,7 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
 
 #if !defined(_WIN32)
-	// Prefer the real SDK behind a dotnet executable on PATH (follows /usr/bin/dotnet style symlinks).
+	// Follows symlinks such as /usr/bin/dotnet.
 	const FString SdkRootOnPath = FindDotNetSdkRootOnPath(Paths);
 	if (!SdkRootOnPath.IsEmpty())
 	{
@@ -251,9 +249,7 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 		return false;
 	}
 
-	// Child processes (RunUAT, MSBuild started by the managed editor code) look for `dotnet` on PATH, and RunUAT
-	// replaces DOTNET_ROOT with the engine's bundled runtime, which has no SDK. If the SDK was found through
-	// DOTNET_ROOT or a symlink, put its directory on this process's PATH so they use the same SDK.
+	// RunUAT overrides DOTNET_ROOT and the managed editor runs `dotnet`, so child processes need the SDK on PATH.
 	if (!DotNetInstallationPath.IsEmpty())
 	{
 		const FString SdkDirectory = DotNetInstallationPath.LeftChop(1);

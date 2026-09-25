@@ -78,9 +78,7 @@ FCSCommandError UnrealSharp::Dialogs::MakeOkCancelDialogOnError()
 	{
 		if (IsHeadless())
 		{
-			// The command already logged the error. Don't exit here: RequestExit(true) exits with code 0 on
-			// Windows, so a failed headless build would look like a success. The caller fails instead
-			// (see FUnrealSharpCoreModule::StartupModule).
+			// RequestExit(true) exits with 0 on Windows; let StartupModule fail instead.
 			UE_LOGFMT(LogUnrealSharpUtilities, Display, "Running headless, not showing the OK/Cancel dialog for this error.");
 			return;
 		}

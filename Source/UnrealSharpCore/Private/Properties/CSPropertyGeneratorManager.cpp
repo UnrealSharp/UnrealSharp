@@ -115,8 +115,7 @@ void FCSPropertyGeneratorManager::Initialize()
 
 void FCSPropertyGeneratorManager::Shutdown()
 {
-	// The manager is created lazily by FCSPropertyFactory::EnsureInitialized the first time a managed type
-	// creates a property, so it is legitimately absent in sessions that never did.
+	// Created lazily, so it may never have been initialized.
 	Instance.Reset();
 }
 

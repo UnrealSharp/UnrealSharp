@@ -3,9 +3,7 @@
 #include "CoreMinimal.h"
 #include "CSInteropTypeTraits.h"
 
-// Trivially copyable mirror of the managed UnmanagedArray struct (TArray's { Data, ArrayNum, ArrayMax } layout).
-// Pass this instead of a TArray by value: TArray is not trivially copyable, so the SysV x86-64 ABI passes it by
-// hidden reference while .NET passes the 16-byte managed struct in registers.
+// TArray isn't trivially copyable; SysV passes it by hidden reference. Mirrors the managed UnmanagedArray.
 struct FCSUnmanagedArrayView
 {
 	const void* Data = nullptr;

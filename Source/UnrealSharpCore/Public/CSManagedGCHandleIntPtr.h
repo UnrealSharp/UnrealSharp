@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "CSInteropTypeTraits.h"
 
-// A GCHandle as managed code sees it (IntPtr). Crosses the boundary by value in the managed callbacks.
 struct FGCHandleIntPtr
 {
 	bool operator==(const FGCHandleIntPtr& Other) const = default;

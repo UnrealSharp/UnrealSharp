@@ -11,8 +11,7 @@
 struct FCSManagedCallbacks;
 struct FCSManagedPluginCallbacks;
 
-// Mirrors UnrealSharp.Plugins.FCSInitializationResult. Managed code writes the exception text into Message as a
-// null-terminated UTF-8 string.
+// Mirrors UnrealSharp.Plugins.FCSInitializationResult.
 struct FCSInitializationResult
 {
 	static constexpr int32 MessageCapacity = 4096;
@@ -27,7 +26,6 @@ CS_ASSERT_INTEROP_SAFE_TYPE(FCSInitializationResult);
 using FInitializeUnrealSharp = void (*)(const UTF8CHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks*, FCSInitializationResult*);
 CS_ASSERT_INTEROP_SAFE_FUNCTION(FInitializeUnrealSharp);
 
-// Managed code passes TCHAR strings as UTF-16 (C# char*).
 static_assert(sizeof(TCHAR) == sizeof(char16_t), "TCHAR must be a 16-bit character.");
 
 struct FCSDotNetLayout

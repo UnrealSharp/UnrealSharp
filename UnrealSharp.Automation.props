@@ -10,8 +10,7 @@
         <UE5Rules_DefineConstants>$([System.Text.RegularExpressions.Regex]::Replace($(UE5Rules_DefineConstants), '\s+', ''))</UE5Rules_DefineConstants>
     </PropertyGroup>
 
-    <!-- Installed (launcher/prebuilt) engines don't ship Engine/Intermediate/Build/BuildRulesProjects,
-         so fall back to Engine/Build/Build.version to detect UE 5.8+. -->
+    <!-- Installed engines have no BuildRulesProjects; read Build.version instead. -->
     <PropertyGroup Condition="!Exists('$(UE5RulesProjPath)') And Exists('$(UEBuildVersionPath)')">
         <UEBuildVersionContent>$([System.IO.File]::ReadAllText('$(UEBuildVersionPath)'))</UEBuildVersionContent>
         <UEMajorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEBuildVersionContent), '"MajorVersion"\s*:\s*(?&lt;v&gt;\d+)').Groups['v'].Value)</UEMajorVersion>

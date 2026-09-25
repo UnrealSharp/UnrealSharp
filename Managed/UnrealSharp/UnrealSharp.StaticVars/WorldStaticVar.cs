@@ -19,7 +19,6 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly FDelegateHandle _onWorldCleanupHandle;
     
-    // Native code keeps the function pointer, so the delegate must live as long as this object.
     private readonly FWorldDelegates.FWorldCleanupEvent _onWorldCleanupDelegate;
     
     public FWorldStaticVar()

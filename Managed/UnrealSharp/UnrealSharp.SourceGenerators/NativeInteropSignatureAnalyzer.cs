@@ -7,7 +7,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace UnrealSharp.SourceGenerators;
 
-// Runtime marshalling turns bool into a 4-byte BOOL and char into a 1-byte ANSI char, neither of which matches C++.
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class NativeInteropSignatureAnalyzer : DiagnosticAnalyzer
 {
@@ -73,7 +72,6 @@ public class NativeInteropSignatureAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    // Returns the bool/char type found in the value itself or in the instance fields of a struct passed by value/ref.
     private static ITypeSymbol? FindNonBlittable(ITypeSymbol type, HashSet<ITypeSymbol> visited)
     {
         if (type.SpecialType is SpecialType.System_Boolean or SpecialType.System_Char)

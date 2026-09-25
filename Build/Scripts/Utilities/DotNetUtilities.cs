@@ -188,9 +188,7 @@ public static class DotNetUtilities
 		}
 	}
 
-	// Resolves symlinks (e.g. /usr/bin/dotnet -> /usr/lib/dotnet/dotnet) and rejects shims
-	// (mise/asdf/snap wrappers) that don't sit next to an "sdk" folder, since the SDK path is
-	// derived from the executable's directory.
+	// Follows symlinks and skips shims (mise, asdf) that have no sdk/ folder next to them.
 	private static bool TryResolveSdkHost(string candidate, out string? resolved)
 	{
 		resolved = null;

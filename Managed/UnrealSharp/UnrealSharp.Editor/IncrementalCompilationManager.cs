@@ -316,7 +316,6 @@ public static class IncrementalCompilationManager
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         string assemblyPath = GetAssemblyOutputPath(project);
-        // Portable PDBs are used on every platform; PluginLoadContext loads them from <assembly>.pdb.
         string symbolsPath = GetOutputPath(project, ".pdb");
         string assemblyTempPath = assemblyPath + ".tmp";
         string symbolsTempPath = symbolsPath + ".tmp";
