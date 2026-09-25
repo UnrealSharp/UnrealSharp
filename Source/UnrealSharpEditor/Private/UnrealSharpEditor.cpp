@@ -468,7 +468,14 @@ void FUnrealSharpEditorModule::PackageProject()
 		return;
 	}
 
-	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + TEXT(".exe");
+#if PLATFORM_LINUX
+	// Linux packages are started through the <Project>.sh launcher at the archive root.
+	const TCHAR* LauncherExtension = TEXT(".sh");
+#else
+	const TCHAR* LauncherExtension = TEXT(".exe");
+#endif
+	
+	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + LauncherExtension;
 	if (!FPaths::FileExists(ExecutablePath))
 	{
 		FString DialogText = FString::Printf(TEXT("The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."), FApp::GetProjectName(), *ArchiveDirectory);
@@ -485,6 +492,8 @@ void FUnrealSharpEditorModule::PackageProject()
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
+	// Package for the platform the editor runs on; the automation tool defaults to Win64 otherwise.
+	Arguments.Add(TEXT("TargetPlatform"), FPlatformMisc::GetUBTPlatform());
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
