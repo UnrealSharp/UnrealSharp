@@ -4,6 +4,7 @@
 #include "CSEditorCommands.h"
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
+#include "CSInteropTypeTraits.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -52,6 +53,16 @@ struct FCSManagedEditorCallbacks
     FLoadSignature LoadSolutionAsync = nullptr;
     FLoadSignature LoadProject = nullptr;
 };
+
+// Filled in by managed code (FManagedUnrealSharpEditorCallbacks) and passed across the boundary by value.
+CS_ASSERT_INTEROP_SAFE_TYPE(FCSUnmanagedArrayView);
+CS_ASSERT_INTEROP_SAFE_TYPE(FCSManagedEditorCallbacks);
+CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FRecompileDirtyProjects);
+CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FRecompileChangedFile);
+CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FRemoveSourceFile);
+CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FForceManagedGC);
+CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FOpenSolution);
+CS_ASSERT_INTEROP_SAFE_FUNCTION(FCSManagedEditorCallbacks::FLoadSignature);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSOnBuildingToolbar, FMenuBuilder&);
