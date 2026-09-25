@@ -14,8 +14,9 @@
          so fall back to Engine/Build/Build.version to detect UE 5.8+. -->
     <PropertyGroup Condition="!Exists('$(UE5RulesProjPath)') And Exists('$(UEBuildVersionPath)')">
         <UEBuildVersionContent>$([System.IO.File]::ReadAllText('$(UEBuildVersionPath)'))</UEBuildVersionContent>
+        <UEMajorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEBuildVersionContent), '"MajorVersion"\s*:\s*(?&lt;v&gt;\d+)').Groups['v'].Value)</UEMajorVersion>
         <UEMinorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEBuildVersionContent), '"MinorVersion"\s*:\s*(?&lt;v&gt;\d+)').Groups['v'].Value)</UEMinorVersion>
-        <UE5Rules_DefineConstants Condition="'$(UEMinorVersion)' != '' And $(UEMinorVersion) &gt;= 8">UE_5_8_OR_LATER</UE5Rules_DefineConstants>
+        <UE5Rules_DefineConstants Condition="'$(UEMajorVersion)' != '' And '$(UEMinorVersion)' != '' And ($(UEMajorVersion) &gt; 5 Or ($(UEMajorVersion) == 5 And $(UEMinorVersion) &gt;= 8))">UE_5_8_OR_LATER</UE5Rules_DefineConstants>
     </PropertyGroup>
 
     <PropertyGroup>
