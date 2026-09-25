@@ -17,7 +17,22 @@
 
 namespace
 {
-	// Version-manager shims (mise, asdf) have no sdk/ folder next to them.
+	bool IsUnrealBundledDotNet(const FString& Directory)
+	{
+		return Directory.Replace(TEXT("\\"), TEXT("/")).Contains(TEXT("/Binaries/ThirdParty/DotNet/"));
+	}
+
+	bool HasSdkForMajorVersion(const FString& Directory)
+	{
+		TArray<FString> SdkVersions;
+		IFileManager::Get().FindFiles(SdkVersions, *FPaths::Combine(Directory, TEXT("sdk"), TEXT("*")), false, true);
+
+		const FString MajorPrefix = FString::Printf(TEXT("%d."), DOTNET_MAJOR_VERSION_INT);
+		return SdkVersions.ContainsByPredicate([&MajorPrefix](const FString& Version) { return Version.StartsWith(MajorPrefix); });
+	}
+
+	// Same rules as TryResolveSdkHost in Build/Scripts/Utilities/DotNetUtilities.cs. Version-manager shims (mise, asdf)
+	// have no sdk/ folder, and the engine's bundled .NET (set as DOTNET_ROOT by RunUAT) may be older than we need.
 	bool IsDotNetSdkRoot(const FString& Directory)
 	{
 #if defined(_WIN32)
@@ -25,7 +40,10 @@ namespace
 #else
 		const TCHAR* HostName = TEXT("dotnet");
 #endif
-		return FPaths::FileExists(FPaths::Combine(Directory, HostName)) && FPaths::DirectoryExists(FPaths::Combine(Directory, TEXT("sdk")));
+		return !IsUnrealBundledDotNet(Directory)
+			&& FPaths::FileExists(FPaths::Combine(Directory, HostName))
+			&& HasSdkForMajorVersion(Directory)
+			&& !UnrealSharp::DotNetUtilities::GetLatestHostFxrPath(Directory).IsEmpty();
 	}
 
 	FString WithTrailingSlash(FString Directory)
@@ -111,7 +129,7 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 
 #if defined(__APPLE__)
 	constexpr const TCHAR* DefaultDotNetPath = TEXT("/usr/local/share/dotnet/");
-	if (FPaths::DirectoryExists(DefaultDotNetPath))
+	if (IsDotNetSdkRoot(DefaultDotNetPath))
 	{
 		return DefaultDotNetPath;
 	}
@@ -149,6 +167,11 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 		{
 			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Found path to DotNet, but the directory doesn't exist: {0}", Path);
 			break;
+		}
+
+		if (!IsDotNetSdkRoot(Path))
+		{
+			continue;
 		}
 
 		DotNetPathFromEnv = WithTrailingSlash(Path);
@@ -249,19 +272,17 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 		return false;
 	}
 
-	// RunUAT overrides DOTNET_ROOT and the managed editor runs `dotnet`, so child processes need the SDK on PATH.
+	// RunUAT overrides DOTNET_ROOT and the managed editor runs `dotnet`, so child processes need this SDK first on PATH.
 	if (!DotNetInstallationPath.IsEmpty())
 	{
 		const FString SdkDirectory = DotNetInstallationPath.LeftChop(1);
-		const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
 
 		TArray<FString> PathEntries;
-		PathVariable.ParseIntoArray(PathEntries, FPlatformMisc::GetPathVarDelimiter());
+		FPlatformMisc::GetEnvironmentVariable(TEXT("PATH")).ParseIntoArray(PathEntries, FPlatformMisc::GetPathVarDelimiter());
+		PathEntries.RemoveAll([&](const FString& Entry) { return Entry == SdkDirectory || Entry == DotNetInstallationPath; });
+		PathEntries.Insert(SdkDirectory, 0);
 
-		if (!PathEntries.Contains(SdkDirectory) && !PathEntries.Contains(DotNetInstallationPath))
-		{
-			FPlatformMisc::SetEnvironmentVar(TEXT("PATH"), *(SdkDirectory + FPlatformMisc::GetPathVarDelimiter() + PathVariable));
-		}
+		FPlatformMisc::SetEnvironmentVar(TEXT("PATH"), *FString::Join(PathEntries, FPlatformMisc::GetPathVarDelimiter()));
 	}
 
 	FString UnrealSharpLibraryPath = Paths::GetUnrealSharpPluginsPath();

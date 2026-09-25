@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace UnrealSharp.Automation.Utilities;
 
@@ -206,17 +207,26 @@ public static class DotNetUtilities
 				ResolvedPath = Target.FullName;
 			}
 		}
-		catch (IOException)
+		catch (Exception Ex) when (Ex is IOException or UnauthorizedAccessException)
 		{
+			LoggerUtilities.LogUnrealSharpWarning($"Could not resolve the symlink {candidate}, using it as is: {Ex.Message}");
 		}
 
-		if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(ResolvedPath)!, "sdk")) || IsUnrealBundledDotNet(ResolvedPath))
+		string SdkRoot = Path.GetDirectoryName(ResolvedPath)!;
+		if (IsUnrealBundledDotNet(ResolvedPath) || !HasSdkForMajorVersion(SdkRoot))
 		{
 			return false;
 		}
 
 		resolved = ResolvedPath;
 		return true;
+	}
+
+	private static bool HasSdkForMajorVersion(string sdkRoot)
+	{
+		string SdkDirectory = Path.Combine(sdkRoot, "sdk");
+		return Directory.Exists(SdkDirectory)
+			&& Directory.EnumerateDirectories(SdkDirectory).Any(directory => Path.GetFileName(directory).StartsWith($"{DotnetMajorVersion}."));
 	}
 
 	private static bool IsUnrealBundledDotNet(string dotnetPath)
