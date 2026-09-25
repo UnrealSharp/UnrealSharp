@@ -82,7 +82,7 @@ bool FCSDotNetRuntimeHost::InitializeManagedRuntime()
 
 	if (!InitializationResult.bSuccess)
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp! Exception:\n{0}", InitializationResult.Message);
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp! Exception:\n{0}", FString(StringCast<TCHAR>(InitializationResult.Message)));
 	}
 
 #if !(UE_BUILD_SHIPPING)
