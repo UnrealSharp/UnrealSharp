@@ -493,8 +493,13 @@ void FUnrealSharpEditorModule::PackageProject()
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
-	// Package for the platform the editor runs on; the automation tool defaults to Win64 otherwise.
+	// Package for the platform and architecture the editor runs on; the automation tool defaults to Win64/x64.
 	Arguments.Add(TEXT("TargetPlatform"), FPlatformMisc::GetUBTPlatform());
+#if PLATFORM_CPU_ARM_FAMILY
+	Arguments.Add(TEXT("TargetArchitecture"), TEXT("arm64"));
+#else
+	Arguments.Add(TEXT("TargetArchitecture"), TEXT("x64"));
+#endif
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
