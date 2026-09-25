@@ -32,7 +32,7 @@ Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/U
 |---|---|
 | Windows | Supported |
 | macOS | Supported |
-| Linux | Planned |
+| Linux | Experimental (editor, x86-64) |
 | iOS | Planned |
 | Android | Planned |
 
@@ -41,6 +41,14 @@ Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/U
 - Unreal Engine 5.6 – 5.8
 - .NET 10.0.5 or newer
 - A C++ project (strongly recommended, pure Blueprint projects work, but are harder to provide support for)
+
+### Linux notes
+
+Linux support is experimental. It has been tested with the UE 5.8 prebuilt (installed) engine, the engine's bundled clang toolchain and .NET 10 on x86-64; packaged Linux builds have not been tested yet.
+
+- Install the .NET 10 SDK (for example with `dotnet-install.sh` into `~/.dotnet`) and make sure the editor can find it: either put a real `dotnet` on `PATH` or start the editor with `DOTNET_ROOT` set, e.g. `DOTNET_ROOT=~/.dotnet ./UnrealEditor MyGame.uproject`. Version-manager shims (mise, asdf) on `PATH` are skipped in favour of the real SDK.
+- Opening the C# solution from the editor uses `xdg-open`, so associate `.sln` files with your IDE (e.g. Rider).
+- The editor can run unattended (`-unattended`, `-nullrhi`): C# compile and hot-reload errors are then logged instead of blocking on a modal dialog.
 
 ## Getting started
 
