@@ -19,10 +19,12 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly FDelegateHandle _onWorldCleanupHandle;
     
+    private readonly FWorldDelegates.FWorldCleanupEvent _onWorldCleanupDelegate;
+    
     public FWorldStaticVar()
     {
-        FWorldDelegates.FWorldCleanupEvent onWorldCleanupDelegate = OnWorldCleanup;
-        IntPtr onWorldCleanup = Marshal.GetFunctionPointerForDelegate(onWorldCleanupDelegate);
+        _onWorldCleanupDelegate = OnWorldCleanup;
+        IntPtr onWorldCleanup = Marshal.GetFunctionPointerForDelegate(_onWorldCleanupDelegate);
         Bind_FWorldDelegates.CallBindOnWorldCleanup(onWorldCleanup, out _onWorldCleanupHandle);
     }
     

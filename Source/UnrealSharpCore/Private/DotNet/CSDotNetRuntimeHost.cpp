@@ -62,7 +62,7 @@ bool FCSDotNetRuntimeHost::InitializeManagedRuntime()
 
 	if (!InitializationResult.bSuccess)
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp! Exception:\n{0}", InitializationResult.Message);
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp! Exception:\n{0}", FString(StringCast<TCHAR>(InitializationResult.Message)));
 	}
 
 #if !(UE_BUILD_SHIPPING)
@@ -199,8 +199,8 @@ load_assembly_and_get_function_pointer_fn FCSDotNetRuntimeHost::ConfigureRuntime
 
 	hostfxr_initialize_parameters InitializeParameters;
 	InitializeParameters.size = sizeof(hostfxr_initialize_parameters);
-	InitializeParameters.host_path = HostPathConv.Get();
-	InitializeParameters.dotnet_root = DotNetRootConv.Get();
+	InitializeParameters.host_path = reinterpret_cast<const char_t*>(HostPathConv.Get());
+	InitializeParameters.dotnet_root = reinterpret_cast<const char_t*>(DotNetRootConv.Get());
 
 	hostfxr_handle HostFXR_Handle = nullptr;
 	int32 ErrorCode;
@@ -208,7 +208,7 @@ load_assembly_and_get_function_pointer_fn FCSDotNetRuntimeHost::ConfigureRuntime
 	if (Layout.bSelfContained)
 	{
 		DotNetUtilities::FHostStringConversion AppAssemblyConv = StringCast<DotNetUtilities::FHostChar>(*Layout.AppAssemblyPath);
-		const char_t* Args[] = { (AppAssemblyConv.Get()) };
+		const char_t* Args[] = { reinterpret_cast<const char_t*>(AppAssemblyConv.Get()) };
 		ErrorCode = Hostfxr_InitForCommandLine(UE_ARRAY_COUNT(Args), Args, &InitializeParameters, &HostFXR_Handle);
 	}
 	else

@@ -38,7 +38,7 @@ void FCSHotReloadUtilities::CollectDirtiedFiles(const TArray<FFileChangeData>& C
 	for (const FFileChangeData& Change : ChangedFiles)
 	{
 		FString NormalizedPath = Change.Filename;
-		NormalizedPath.ReplaceInline(TEXT("/"), TEXT("\\"));
+		FPaths::MakePlatformFilename(NormalizedPath);
 		
 		if (HasFileBeenDirtied(OutDirtied, NormalizedPath, Change.Action))
 		{
@@ -101,7 +101,8 @@ bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssemb
 		AssemblyNames.Add(Assembly->GetName());
 	}
 	
-	return UnrealSharpEditorModule.GetManagedEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, AssemblyNames);
+	const FCSUnmanagedArrayView AssemblyNamesView = FCSUnmanagedArrayView::FromArray(AssemblyNames);
+	return UnrealSharpEditorModule.GetManagedEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, AssemblyNamesView);
 }
 
 void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<FCSObjectID>& RebuiltTypes)
@@ -129,7 +130,7 @@ void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<FCSObjectID>& 
 		bool bNeedsRecompile = false;
 		for (const UEdGraph* Graph : Graphs)
 		{
-			for (const TObjectPtr Node : Graph->Nodes)
+			for (const TObjectPtr<UEdGraphNode>& Node : Graph->Nodes)
 			{
 				if (!IsNodeAffectedByReload(Node, RebuiltTypes))
 				{

@@ -4,6 +4,8 @@
 #include "CSEditorCommands.h"
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
+#include "CSInteropTypeTraits.h"
+#include "CSUnmanagedArrayView.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -24,13 +26,20 @@ struct FCSManagedEditorCallbacks
 {
     FCSManagedEditorCallbacks() = default;
     
-    using FRecompileDirtyProjects = bool(__stdcall*)(void*, TArray<FString>);
+    using FRecompileDirtyProjects = bool(__stdcall*)(void*, FCSUnmanagedArrayView);
     using FRecompileChangedFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
     using FRemoveSourceFile = void(__stdcall*)(const TCHAR*, const TCHAR*);
     
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
     using FLoadSignature = void(__stdcall*)(const TCHAR*, void*);
+
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileDirtyProjects);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileChangedFile);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRemoveSourceFile);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FForceManagedGC);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FOpenSolution);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FLoadSignature);
 
     FRecompileDirtyProjects RecompileDirtyProjects = nullptr;
     FRecompileChangedFile RecompileChangedFile = nullptr;
@@ -42,6 +51,8 @@ struct FCSManagedEditorCallbacks
     FLoadSignature LoadSolutionAsync = nullptr;
     FLoadSignature LoadProject = nullptr;
 };
+
+CS_ASSERT_INTEROP_SAFE_TYPE(FCSManagedEditorCallbacks);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSOnBuildingToolbar, FMenuBuilder&);

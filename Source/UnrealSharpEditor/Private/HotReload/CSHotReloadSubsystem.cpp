@@ -1,5 +1,6 @@
 #include "HotReload/CSHotReloadSubsystem.h"
 
+#include "CSDialogUtilities.h"
 #include "CSInstallationUtilities.h"
 #include "CSManager.h"
 #include "CSStyle.h"
@@ -128,7 +129,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
 	{
 		CurrentHotReloadStatus = FailedToCompile;
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Compilation Failed")));
+		UnrealSharp::Dialogs::ShowError(FText::FromString(ExceptionMessage), LOCTEXT("CompilationFailedTitle", "C# Compilation Failed"));
 		return;
 	}
 	
@@ -342,7 +343,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	FString ExceptionMessage;
 	if (!FCSHotReloadUtilities::ApplyDirtiedFiles(ProjectName.ToString(), DirtiedFiles, ExceptionMessage))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Hot Reload Error")));
+		UnrealSharp::Dialogs::ShowError(FText::FromString(ExceptionMessage), LOCTEXT("HotReloadErrorTitle", "C# Hot Reload Error"));
 		return;
 	}
 	

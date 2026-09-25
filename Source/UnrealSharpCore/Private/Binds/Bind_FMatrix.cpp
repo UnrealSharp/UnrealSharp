@@ -2,11 +2,12 @@
 
 DECLARE_UNREALSHARP_BINDER(Bind_FMatrix)
 {
-	void FromRotator(FMatrix* Matrix, const FRotator Rotator)
+	// FMatrix is 16-byte aligned, managed memory isn't.
+	void FromRotator(void* OutMatrix, const FRotator Rotator)
 	{
-		*Matrix = Rotator.Quaternion().ToMatrix();
+		const FMatrix Matrix = Rotator.Quaternion().ToMatrix();
+		FMemory::Memcpy(OutMatrix, &Matrix, sizeof(FMatrix));
 	}
 	
 	BIND_UNREALSHARP_FUNCTION(FromRotator)
 }
-

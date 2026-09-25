@@ -8,6 +8,81 @@
 #include "UnrealSharpUtils.h"
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+
+#if !defined(_WIN32)
+#include <limits.h>
+#include <stdlib.h>
+#endif
+
+namespace
+{
+	bool IsUnrealBundledDotNet(const FString& Directory)
+	{
+		return Directory.Replace(TEXT("\\"), TEXT("/")).Contains(TEXT("/Binaries/ThirdParty/DotNet/"));
+	}
+
+	bool HasSdkForMajorVersion(const FString& Directory)
+	{
+		TArray<FString> SdkVersions;
+		IFileManager::Get().FindFiles(SdkVersions, *FPaths::Combine(Directory, TEXT("sdk"), TEXT("*")), false, true);
+
+		const FString MajorPrefix = FString::Printf(TEXT("%d."), DOTNET_MAJOR_VERSION_INT);
+		return SdkVersions.ContainsByPredicate([&MajorPrefix](const FString& Version) { return Version.StartsWith(MajorPrefix); });
+	}
+
+	// Same rules as TryResolveSdkHost in Build/Scripts/Utilities/DotNetUtilities.cs. Version-manager shims (mise, asdf)
+	// have no sdk/ folder, and the engine's bundled .NET (set as DOTNET_ROOT by RunUAT) may be older than we need.
+	bool IsDotNetSdkRoot(const FString& Directory)
+	{
+#if defined(_WIN32)
+		const TCHAR* HostName = TEXT("dotnet.exe");
+#else
+		const TCHAR* HostName = TEXT("dotnet");
+#endif
+		return !IsUnrealBundledDotNet(Directory)
+			&& FPaths::FileExists(FPaths::Combine(Directory, HostName))
+			&& HasSdkForMajorVersion(Directory)
+			&& !UnrealSharp::DotNetUtilities::GetLatestHostFxrPath(Directory).IsEmpty();
+	}
+
+	FString WithTrailingSlash(FString Directory)
+	{
+		if (!Directory.EndsWith(TEXT("/")) && !Directory.EndsWith(TEXT("\\")))
+		{
+			Directory += TEXT("/");
+		}
+		return Directory;
+	}
+
+#if !defined(_WIN32)
+	FString FindDotNetSdkRootOnPath(const TArray<FString>& PathEntries)
+	{
+		for (const FString& Entry : PathEntries)
+		{
+			const FString Candidate = FPaths::Combine(Entry, TEXT("dotnet"));
+			if (!FPaths::FileExists(Candidate))
+			{
+				continue;
+			}
+
+			char ResolvedPath[PATH_MAX];
+			if (realpath(TCHAR_TO_UTF8(*Candidate), ResolvedPath) == nullptr)
+			{
+				continue;
+			}
+
+			const FString SdkRoot = FPaths::GetPath(UTF8_TO_TCHAR(ResolvedPath));
+			if (IsDotNetSdkRoot(SdkRoot))
+			{
+				return WithTrailingSlash(SdkRoot);
+			}
+		}
+
+		return FString();
+	}
+#endif
+}
 
 static TAutoConsoleVariable<int32> CVarSimulateNoDotNetSDK(
 	TEXT("UnrealSharp.SimulateNoDotNetSDK"),
@@ -46,9 +121,15 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 	}
 #endif
 
+	const FString DotNetRootVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("DOTNET_ROOT"));
+	if (!DotNetRootVariable.IsEmpty() && IsDotNetSdkRoot(DotNetRootVariable))
+	{
+		return WithTrailingSlash(DotNetRootVariable);
+	}
+
 #if defined(__APPLE__)
 	constexpr const TCHAR* DefaultDotNetPath = TEXT("/usr/local/share/dotnet/");
-	if (FPaths::DirectoryExists(DefaultDotNetPath))
+	if (IsDotNetSdkRoot(DefaultDotNetPath))
 	{
 		return DefaultDotNetPath;
 	}
@@ -58,6 +139,15 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 
 	TArray<FString> Paths;
 	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
+
+#if !defined(_WIN32)
+	// Follows symlinks such as /usr/bin/dotnet.
+	const FString SdkRootOnPath = FindDotNetSdkRootOnPath(Paths);
+	if (!SdkRootOnPath.IsEmpty())
+	{
+		return SdkRootOnPath;
+	}
+#endif
 
 #if defined(_WIN32)
 	const FString PathMarker = TEXT("Program Files\\dotnet\\");
@@ -79,7 +169,12 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 			break;
 		}
 
-		DotNetPathFromEnv = Path;
+		if (!IsDotNetSdkRoot(Path))
+		{
+			continue;
+		}
+
+		DotNetPathFromEnv = WithTrailingSlash(Path);
 		break;
 	}
 
@@ -173,8 +268,21 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 	if (DotNetInstallationPath.IsEmpty() && !InstallationUtilities::IsUnrealSharpInstalled())
 	{
 		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		Dialogs::ShowError(FText::FromString(DialogText));
 		return false;
+	}
+
+	// RunUAT overrides DOTNET_ROOT and the managed editor runs `dotnet`, so child processes need this SDK first on PATH.
+	if (!DotNetInstallationPath.IsEmpty())
+	{
+		const FString SdkDirectory = DotNetInstallationPath.LeftChop(1);
+
+		TArray<FString> PathEntries;
+		FPlatformMisc::GetEnvironmentVariable(TEXT("PATH")).ParseIntoArray(PathEntries, FPlatformMisc::GetPathVarDelimiter());
+		PathEntries.RemoveAll([&](const FString& Entry) { return Entry == SdkDirectory || Entry == DotNetInstallationPath; });
+		PathEntries.Insert(SdkDirectory, 0);
+
+		FPlatformMisc::SetEnvironmentVar(TEXT("PATH"), *FString::Join(PathEntries, FPlatformMisc::GetPathVarDelimiter()));
 	}
 
 	FString UnrealSharpLibraryPath = Paths::GetUnrealSharpPluginsPath();
@@ -186,7 +294,7 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 			"Most likely, the bindings library failed to build due to invalid generated glue."
 		), *FullPath);
 
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		Dialogs::ShowError(FText::FromString(DialogText));
 		return false;
 	}
 

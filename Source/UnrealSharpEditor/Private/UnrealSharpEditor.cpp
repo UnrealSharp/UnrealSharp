@@ -2,6 +2,7 @@
 #include "AssetToolsModule.h"
 #include "CSBuildActionUtilities.h"
 #include "CSBuildUtilties.h"
+#include "CSDialogUtilities.h"
 #include "CSEditorCommands.h"
 #include "CSInstallationUtilities.h"
 #include "CSStyle.h"
@@ -468,7 +469,13 @@ void FUnrealSharpEditorModule::PackageProject()
 		return;
 	}
 
-	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + TEXT(".exe");
+#if PLATFORM_LINUX
+	const TCHAR* LauncherExtension = TEXT(".sh");
+#else
+	const TCHAR* LauncherExtension = TEXT(".exe");
+#endif
+	
+	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + LauncherExtension;
 	if (!FPaths::FileExists(ExecutablePath))
 	{
 		FString DialogText = FString::Printf(TEXT("The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."), FApp::GetProjectName(), *ArchiveDirectory);
@@ -485,6 +492,14 @@ void FUnrealSharpEditorModule::PackageProject()
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
+	const FString TargetPlatform = FPlatformMisc::GetUBTPlatform();
+	Arguments.Add(TEXT("TargetPlatform"), TargetPlatform);
+
+	// LinuxArm64 is arm64-only; elsewhere keep the automation tool's default architecture.
+	if (TargetPlatform == TEXT("LinuxArm64"))
+	{
+		Arguments.Add(TEXT("TargetArchitecture"), TEXT("arm64"));
+	}
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
@@ -505,7 +520,7 @@ void FUnrealSharpEditorModule::OpenSolution()
 		return;
 	}
 	
-	FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Opening C# Project Failed")));
+	UnrealSharp::Dialogs::ShowError(FText::FromString(ExceptionMessage), LOCTEXT("OpenSolutionFailedTitle", "Opening C# Project Failed"));
 };
 
 FString FUnrealSharpEditorModule::SelectArchiveDirectory()
@@ -623,7 +638,7 @@ void FUnrealSharpEditorModule::OpenNewProjectDialog()
 void FUnrealSharpEditorModule::SuggestProjectSetup()
 {
 	FString DialogText = TEXT("No C# projects were found. Would you like to create a new C# project?");
-	EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(DialogText));
+	EAppReturnType::Type Result = UnrealSharp::Dialogs::OpenMessageDialog(EAppMsgType::YesNo, EAppReturnType::No, FText::FromString(DialogText));
 
 	if (Result == EAppReturnType::No)
 	{

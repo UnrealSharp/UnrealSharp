@@ -23,9 +23,7 @@ void UCSManagedAssembly::Initialize(const FStringView InAssemblyPath, bool bInIs
 
 	AssemblyFilePath = FPaths::ConvertRelativePathToFull(InAssemblyPath.GetData());
 
-#if defined(_WIN32)
-	AssemblyFilePath.ReplaceInline(TEXT("/"), TEXT("\\"));
-#endif
+	FPaths::MakePlatformFilename(AssemblyFilePath);
 
 	bIsCollectible = bInIsCollectible;
 

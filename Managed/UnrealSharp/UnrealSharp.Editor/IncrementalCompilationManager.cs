@@ -311,27 +311,12 @@ public static class IncrementalCompilationManager
         return GetOutputPath(project, extension);
     }
 
-    private static string GetDebugSymbolExtension()
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return ".pdb";
-        }
-
-        if (OperatingSystem.IsMacOS())
-        {
-            return ".dSYM";
-        }
-
-        return ".so.debug";
-    }
-
     private static void EmitResultsToDisk(Project project, Compilation updatedCompilation)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         string assemblyPath = GetAssemblyOutputPath(project);
-        string symbolsPath = GetOutputPath(project, GetDebugSymbolExtension());
+        string symbolsPath = GetOutputPath(project, ".pdb");
         string assemblyTempPath = assemblyPath + ".tmp";
         string symbolsTempPath = symbolsPath + ".tmp";
 
