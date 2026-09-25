@@ -21,7 +21,11 @@ void FUnrealSharpCoreModule::StartupModule()
 		if (UnrealSharp::Dialogs::IsHeadless())
 		{
 			// Nobody can fix it and retry, so stop with a non-zero exit code instead of looping forever.
-			UE_LOGFMT(LogUnrealSharp, Fatal, "UnrealSharp could not be initialized, see the errors above.");
+			// A forced RequestExitWithStatus terminates with that code on every platform; a Fatal log could
+			// hang in the crash handler during module startup.
+			UE_LOGFMT(LogUnrealSharp, Error, "UnrealSharp could not be initialized, see the errors above. Exiting.");
+			FPlatformMisc::RequestExitWithStatus(true, 1);
+			return;
 		}
 	}
 #endif
