@@ -14,7 +14,7 @@ FProperty* UCSMapPropertyGenerator::CreateProperty(UField* Outer, const FCSPrope
 	{
 		FText DialogText = FText::FromString(FString::Printf(TEXT("Data type cannot be used as a Key in %s.%s. Unsafe to use until fixed. Needs to be able to handle GetTypeHash."),
 			*Outer->GetName(), *PropertyReflectionData.GetName().ToString()));
-		UnrealSharp::Dialogs::ShowError(DialogText);
+		UnrealSharp::Dialogs::ShowWarning(DialogText);
 	}
 	
 	MapProperty->KeyProp->Owner = MapProperty;

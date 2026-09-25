@@ -44,13 +44,15 @@ EAppReturnType::Type UnrealSharp::Dialogs::OpenMessageDialog(EAppMsgType::Type M
 	return DefaultResult;
 }
 
-void UnrealSharp::Dialogs::ShowError(const FText& Message, const FText& Title)
+namespace
 {
-	UE_LOGFMT(LogUnrealSharpUtilities, Error, "{0}{1}", Title.IsEmpty() ? FString() : Title.ToString() + TEXT(": "), Message.ToString());
-
-	if (!IsHeadless())
+	void ShowOkDialogOrNotification(const FText& Message, const FText& Title)
 	{
-		if (Title.IsEmpty())
+		if (UnrealSharp::Dialogs::IsHeadless())
+		{
+			ShowHeadlessNotification(Message, Title);
+		}
+		else if (Title.IsEmpty())
 		{
 			FMessageDialog::Open(EAppMsgType::Ok, Message);
 		}
@@ -58,17 +60,31 @@ void UnrealSharp::Dialogs::ShowError(const FText& Message, const FText& Title)
 		{
 			FMessageDialog::Open(EAppMsgType::Ok, Message, Title);
 		}
-		return;
 	}
 
-	ShowHeadlessNotification(Message, Title);
+	FString FormatForLog(const FText& Message, const FText& Title)
+	{
+		return Title.IsEmpty() ? Message.ToString() : Title.ToString() + TEXT(": ") + Message.ToString();
+	}
+}
+
+void UnrealSharp::Dialogs::ShowError(const FText& Message, const FText& Title)
+{
+	UE_LOGFMT(LogUnrealSharpUtilities, Error, "{0}", FormatForLog(Message, Title));
+	ShowOkDialogOrNotification(Message, Title);
+}
+
+void UnrealSharp::Dialogs::ShowWarning(const FText& Message, const FText& Title)
+{
+	UE_LOGFMT(LogUnrealSharpUtilities, Warning, "{0}", FormatForLog(Message, Title));
+	ShowOkDialogOrNotification(Message, Title);
 }
 
 FCSCommandError UnrealSharp::Dialogs::MakeDialogOnError()
 {
 	return FCSCommandError::CreateLambda([](const FString& ErrorOutput)
 	{
-		ShowError(FText::FromString(ErrorOutput));
+		ShowOkDialogOrNotification(FText::FromString(ErrorOutput), FText::GetEmpty());
 	});
 }
 
