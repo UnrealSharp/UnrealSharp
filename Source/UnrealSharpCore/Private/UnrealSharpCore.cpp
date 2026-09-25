@@ -5,14 +5,6 @@
 #include "Properties/CSPropertyGeneratorManager.h"
 #include "Modules/ModuleManager.h"
 
-#if defined(__APPLE__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpragma-once-outside-header"
-#endif
-#pragma once
-#if defined(__APPLE__)
-#pragma clang diagnostic pop
-#endif
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCoreModule"
 
