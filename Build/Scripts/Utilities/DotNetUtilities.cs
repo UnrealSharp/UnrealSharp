@@ -58,9 +58,9 @@ public static class DotNetUtilities
 			if (!string.IsNullOrEmpty(DotnetRoot))
 			{
 				string Candidate = Path.Combine(DotnetRoot, DotnetExe);
-				if (File.Exists(Candidate) && !IsUnrealBundledDotNet(Candidate))
+				if (TryResolveSdkHost(Candidate, out string? Resolved))
 				{
-					_cachedExecutable = Candidate;
+					_cachedExecutable = Resolved;
 					return _cachedExecutable;
 				}
 			}
@@ -79,12 +79,12 @@ public static class DotNetUtilities
 
 					string Candidate = Path.Combine(PathEntry.Trim(), DotnetExe);
 
-					if (!File.Exists(Candidate) || IsUnrealBundledDotNet(Candidate))
+					if (!TryResolveSdkHost(Candidate, out string? Resolved))
 					{
 						continue;
 					}
 
-					_cachedExecutable = Candidate;
+					_cachedExecutable = Resolved;
 					return _cachedExecutable;
 				}
 			}
@@ -93,9 +93,9 @@ public static class DotNetUtilities
 
 			foreach (string Fallback in Fallbacks)
 			{
-				if (File.Exists(Fallback) && !IsUnrealBundledDotNet(Fallback))
+				if (TryResolveSdkHost(Fallback, out string? Resolved))
 				{
-					_cachedExecutable = Fallback;
+					_cachedExecutable = Resolved;
 					return _cachedExecutable;
 				}
 			}
@@ -186,6 +186,39 @@ public static class DotNetUtilities
 			DotnetVersionInfo LatestHostFxrVersionInfo = ParseLatestDotnetVersionsInDirectory(HostFxrDirectory);
 			return Path.Combine(HostFxrDirectory, LatestHostFxrVersionInfo.VersionName, HostFxrFilename);
 		}
+	}
+
+	// Resolves symlinks (e.g. /usr/bin/dotnet -> /usr/lib/dotnet/dotnet) and rejects shims
+	// (mise/asdf/snap wrappers) that don't sit next to an "sdk" folder, since the SDK path is
+	// derived from the executable's directory.
+	private static bool TryResolveSdkHost(string candidate, out string? resolved)
+	{
+		resolved = null;
+		if (!File.Exists(candidate) || IsUnrealBundledDotNet(candidate))
+		{
+			return false;
+		}
+
+		string ResolvedPath = candidate;
+		try
+		{
+			FileSystemInfo? Target = new FileInfo(candidate).ResolveLinkTarget(returnFinalTarget: true);
+			if (Target != null)
+			{
+				ResolvedPath = Target.FullName;
+			}
+		}
+		catch (IOException)
+		{
+		}
+
+		if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(ResolvedPath)!, "sdk")) || IsUnrealBundledDotNet(ResolvedPath))
+		{
+			return false;
+		}
+
+		resolved = ResolvedPath;
+		return true;
 	}
 
 	private static bool IsUnrealBundledDotNet(string dotnetPath)
