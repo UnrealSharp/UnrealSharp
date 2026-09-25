@@ -7,6 +7,12 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace UnrealSharp.SourceGenerators;
 
+/// <summary>
+/// Reports <c>bool</c> and <c>char</c> in native interop signatures (USSG001): unmanaged function pointer fields,
+/// <c>[UnmanagedFunctionPointer]</c> delegates, and the fields of structs they pass by value or by reference.
+/// With runtime marshalling enabled, <c>bool</c> is marshalled as a 4-byte Win32 BOOL and <c>char</c> as a 1-byte
+/// ANSI char, which match neither C++ <c>bool</c> nor <c>TCHAR</c>. Use <c>NativeBool</c> and <c>char*</c> instead.
+/// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class NativeInteropSignatureAnalyzer : DiagnosticAnalyzer
 {

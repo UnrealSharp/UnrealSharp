@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "CSInteropTypeTraits.h"
 
+/** A GCHandle as managed code sees it (IntPtr). Passed by value to and from the managed callbacks. */
 struct FGCHandleIntPtr
 {
 	bool operator==(const FGCHandleIntPtr& Other) const = default;

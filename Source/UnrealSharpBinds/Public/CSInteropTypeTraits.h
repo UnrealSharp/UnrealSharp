@@ -5,8 +5,6 @@
 class UObjectBase;
 class FField;
 
-// By-value types must be trivially copyable, and over-aligned types (FMatrix, FTransform, ...) may only cross
-// the boundary as void*, since managed memory is only pointer-aligned. UObject/FField pointers are always fine.
 namespace UnrealSharp::Interop::Private
 {
 	template <typename T, typename = void>
@@ -81,6 +79,21 @@ constexpr bool IsInteropSafeType()
 	}
 }
 
+/**
+ * Whether T may appear in a signature that crosses the native/managed boundary.
+ *
+ * - By value, T must be complete and trivially copyable: C++ passes non-trivially-copyable types (TArray, FString)
+ *   through a hidden pointer, while .NET passes a blittable struct as a plain value. On SysV x86-64 and AArch64
+ *   small structs travel in registers, so a mismatch corrupts arguments; Windows x64 often hides it.
+ * - T must not be over-aligned (alignof > alignof(void*), e.g. FMatrix, FQuat, FTransform) by value, nor as a pointer
+ *   or reference to such a value type: managed memory is only pointer-aligned and the compiler may use aligned SIMD
+ *   accesses. Pass such values as void* and copy them with FMemory::Memcpy.
+ * - Pointers to UObject and FField types are always allowed, since those objects are always natively allocated.
+ * - Pointers to incomplete types are allowed: code that only sees the forward declaration cannot access the pointee.
+ *
+ * Necessary but not sufficient for MSVC, whose register vs. hidden-pointer return rules are stricter (x64: no
+ * user-declared constructors for 8-byte returns; ARM64: only aggregates are HFAs).
+ */
 template <typename T>
 inline constexpr bool TIsInteropSafeType = IsInteropSafeType<T>();
 
@@ -115,12 +128,14 @@ struct TIsInteropSafeFunction<ReturnType (*)(ArgTypes...) noexcept> : TIsInterop
 {
 };
 
+/** Fails the build if FunctionType passes or returns a type that is not TIsInteropSafeType. */
 #define CS_ASSERT_INTEROP_SAFE_FUNCTION(FunctionType) \
 	static_assert(TIsInteropFunctionPointer<FunctionType>::value, \
 		#FunctionType " is not a plain function pointer type."); \
 	static_assert(TIsInteropSafeFunction<FunctionType>::value, \
 		#FunctionType " is not safe to call across the native/managed boundary (see CSInteropTypeTraits.h).")
 
+/** Fails the build if Type may not be passed by value across the native/managed boundary. */
 #define CS_ASSERT_INTEROP_SAFE_TYPE(Type) \
 	static_assert(IsInteropSafeByValue<Type>(), \
 		#Type " is not safe to pass by value across the native/managed boundary (see CSInteropTypeTraits.h).")

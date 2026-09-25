@@ -11,7 +11,10 @@
 struct FCSManagedCallbacks;
 struct FCSManagedPluginCallbacks;
 
-// Mirrors UnrealSharp.Plugins.FCSInitializationResult.
+/**
+ * Result of the managed InitializeUnrealSharp entry point. Mirrors UnrealSharp.Plugins.FCSInitializationResult:
+ * on failure, managed code writes the exception text into Message as a null-terminated UTF-8 string.
+ */
 struct FCSInitializationResult
 {
 	static constexpr int32 MessageCapacity = 4096;
