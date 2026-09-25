@@ -101,7 +101,8 @@ bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssemb
 		AssemblyNames.Add(Assembly->GetName());
 	}
 	
-	return UnrealSharpEditorModule.GetManagedEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, AssemblyNames);
+	const FCSUnmanagedArrayView AssemblyNamesView { AssemblyNames.GetData(), AssemblyNames.Num(), AssemblyNames.Max() };
+	return UnrealSharpEditorModule.GetManagedEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, AssemblyNamesView);
 }
 
 void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<FCSObjectID>& RebuiltTypes)

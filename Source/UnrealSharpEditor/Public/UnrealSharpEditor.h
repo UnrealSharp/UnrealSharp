@@ -20,11 +20,21 @@ class UCSManager;
 class IAssetTools;
 class FCSScriptBuilder;
 
+// Trivially-copyable mirror of the managed UnmanagedArray struct. A TArray passed by value is
+// non-trivial, so the SysV x86-64 ABI (Linux/Mac) passes it by hidden reference while .NET passes
+// the 16-byte managed struct in registers; this POD matches the managed side on every platform.
+struct FCSUnmanagedArrayView
+{
+    const void* Data = nullptr;
+    int32 ArrayNum = 0;
+    int32 ArrayMax = 0;
+};
+
 struct FCSManagedEditorCallbacks
 {
     FCSManagedEditorCallbacks() = default;
     
-    using FRecompileDirtyProjects = bool(__stdcall*)(void*, TArray<FString>);
+    using FRecompileDirtyProjects = bool(__stdcall*)(void*, FCSUnmanagedArrayView);
     using FRecompileChangedFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
     using FRemoveSourceFile = void(__stdcall*)(const TCHAR*, const TCHAR*);
     
