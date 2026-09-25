@@ -5,4 +5,4 @@
 
 | Rule ID | Category                     | Severity | Notes                          |
 |---------|------------------------------|----------|--------------------------------|
-| USSG001 | UnrealSharp.SourceGenerators | Error    | NativeInteropSignatureAnalyzer |
+| US0015  | UnrealSharp                  | Error    | NativeInteropSignatureAnalyzer |
