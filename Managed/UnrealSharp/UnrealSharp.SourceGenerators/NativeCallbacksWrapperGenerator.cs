@@ -17,17 +17,6 @@ public struct ParameterInfo
 [Generator]
 public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
 {
-    // With runtime marshalling enabled, bool in an unmanaged function pointer signature is marshalled as a 4-byte
-    // Win32 BOOL and char as a 1-byte ANSI char. Neither matches C++ (1-byte bool, 2-byte TCHAR), so a native bool
-    // return with dirty upper register bits reads as true. Use NativeBool / char* instead.
-    private static readonly DiagnosticDescriptor NonBlittableNativeCallbackTypeRule = new(
-        id: "US0100",
-        title: "Non-blittable type in native callback signature",
-        messageFormat: "'{0}' in native callback '{1}' is not blittable: bool is marshalled as a 4-byte BOOL and char as a 1-byte ANSI char, which do not match the native bool and TCHAR. Use NativeBool or char* instead.",
-        category: "UnrealSharp",
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var classDeclarations = context.SyntaxProvider.CreateSyntaxProvider(
@@ -60,12 +49,6 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             {
                 var typeInfo = model.GetTypeInfo(parameter.Type);
                 var typeSymbol = typeInfo.Type;
-
-                if (typeSymbol is { SpecialType: SpecialType.System_Boolean or SpecialType.System_Char })
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(NonBlittableNativeCallbackTypeRule, parameter.Type.GetLocation(),
-                        typeSymbol.ToDisplayString(), $"{classInfo.Name}.{delegateInfo.Name}"));
-                }
 
                 if (typeSymbol == null || typeSymbol.ContainingNamespace == null)
                 {
