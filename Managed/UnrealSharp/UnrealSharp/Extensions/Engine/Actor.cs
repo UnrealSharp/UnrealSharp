@@ -1,4 +1,4 @@
-﻿using UnrealSharp.CoreUObject;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.EnhancedInput;
 using UnrealSharp.UnrealSharpCore;
 
@@ -103,24 +103,25 @@ public partial class AActor
     /// <param name="initializerFunc"> The function to initialize the component </param>
     /// <typeparam name="T">Class of the component to add</typeparam>
     /// <returns>The component</returns>
-    public T AddComponentByClass<T>(TSubclassOf<UActorComponent> @class, bool bManualAttachment, FTransform relativeTransform, Action<T> initializerFunc) where T : UActorComponent
+    public T AddComponentByClass<T>(TSubclassOf<T> @class, bool bManualAttachment, FTransform relativeTransform, Action<T> initializerFunc) where T : UActorComponent
     {
-        T component = (AddComponentByClass(@class, bManualAttachment, relativeTransform, deferredFinish: true) as T)!;
+        T component = (AddComponentByClass(@class.Cast<UActorComponent>(), bManualAttachment, relativeTransform, deferredFinish: true) as T)!;
         initializerFunc(component);
         FinishAddComponent(component, bManualAttachment, relativeTransform);
         return component;
     }
-    
+
     /// <summary>
     /// Adds a component to the actor by class.
     /// </summary>
     /// <param name="class">Class of the component to get</param>
     /// <param name="bManualAttachment">Whether to manually attach the component</param>
     /// <param name="relativeTransform">Set the relative transform of the component</param>
+    /// <typeparam name="T">Class of the component to add</typeparam>
     /// <returns>The component if added, otherwise null</returns>
-    public UActorComponent AddComponentByClass(TSubclassOf<UActorComponent> @class, bool bManualAttachment, FTransform relativeTransform) 
-        => AddComponentByClass(@class, bManualAttachment, relativeTransform, deferredFinish: false);
-    
+    public T AddComponentByClass<T>(TSubclassOf<T> @class, bool bManualAttachment, FTransform relativeTransform) where T : UActorComponent
+        => (AddComponentByClass(@class.Cast<UActorComponent>(), bManualAttachment, relativeTransform, deferredFinish: false) as T)!;
+
     /// <summary>
     /// Register a SubObject that will get replicated along with the actor component.
     /// The subobject needs to be manually removed from the list before it gets deleted.
