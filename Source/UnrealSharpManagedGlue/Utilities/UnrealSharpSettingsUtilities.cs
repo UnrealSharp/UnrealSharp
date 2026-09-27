@@ -7,6 +7,8 @@ namespace UnrealSharpManagedGlue.Utilities;
 
 public static class UnrealSharpSettingsUtilities
 {
+    public const string SkipGlueModulesKey = "SkipGlueModules";
+
     private static Dictionary<string, JsonElement>? _config;
     
     public static void InitializeConfigFile(string projectRoot, string unrealSharpRoot)
@@ -30,12 +32,61 @@ public static class UnrealSharpSettingsUtilities
 
     public static JsonElement GetElement(string elementName)
     {
+        if (!TryGetElement(elementName, out JsonElement element))
+        {
+            throw new KeyNotFoundException($"No UnrealSharp setting named '{elementName}' was found.");
+        }
+
+        return element;
+    }
+
+    public static bool TryGetElement(string elementName, out JsonElement element)
+    {
         if (_config == null)
         {
             throw new Exception("Run InitializeConfigFile first.");
         }
-        
-        return _config[elementName];
+
+        return _config.TryGetValue(elementName, out element);
+    }
+
+    public static bool ShouldSkipGlueGeneration(string moduleName)
+    {
+        foreach (string skippedModule in GetSkipGlueModules())
+        {
+            if (string.Equals(skippedModule, moduleName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static IReadOnlyCollection<string> GetSkipGlueModules()
+    {
+        if (!TryGetElement(SkipGlueModulesKey, out JsonElement element) || element.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+
+        List<string> modules = new List<string>();
+
+        foreach (JsonElement moduleElement in element.EnumerateArray())
+        {
+            if (moduleElement.ValueKind != JsonValueKind.String)
+            {
+                continue;
+            }
+
+            string? moduleName = moduleElement.GetString();
+            if (!string.IsNullOrWhiteSpace(moduleName))
+            {
+                modules.Add(moduleName);
+            }
+        }
+
+        return modules;
     }
     
     static string GetConfigFile(string rootDirectory)
