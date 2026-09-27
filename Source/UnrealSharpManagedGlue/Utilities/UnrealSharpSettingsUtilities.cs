@@ -53,37 +53,40 @@ public static class UnrealSharpSettingsUtilities
 
     public static bool ShouldSkipGlueGeneration(string moduleName)
     {
-        return GetSkipGlueModules().Contains(moduleName);
+        return SkipGlueModules.Contains(moduleName);
     }
 
-    public static IReadOnlySet<string> GetSkipGlueModules()
+    public static IReadOnlySet<string> SkipGlueModules
     {
-        if (_skipGlueModules != null)
+        get
         {
-            return _skipGlueModules;
-        }
-
-        HashSet<string> modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        if (TryGetElement(SkipGlueModulesKey, out JsonElement element) && element.ValueKind == JsonValueKind.Array)
-        {
-            foreach (JsonElement moduleElement in element.EnumerateArray())
+            if (_skipGlueModules != null)
             {
-                if (moduleElement.ValueKind != JsonValueKind.String)
-                {
-                    continue;
-                }
+                return _skipGlueModules;
+            }
 
-                string? moduleName = moduleElement.GetString();
-                if (!string.IsNullOrWhiteSpace(moduleName))
+            HashSet<string> modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (TryGetElement(SkipGlueModulesKey, out JsonElement element) && element.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement moduleElement in element.EnumerateArray())
                 {
-                    modules.Add(moduleName);
+                    if (moduleElement.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    string? moduleName = moduleElement.GetString();
+                    if (!string.IsNullOrWhiteSpace(moduleName))
+                    {
+                        modules.Add(moduleName);
+                    }
                 }
             }
-        }
 
-        _skipGlueModules = modules;
-        return modules;
+            _skipGlueModules = modules;
+            return modules;
+        }
     }
     
     static string GetConfigFile(string rootDirectory)
