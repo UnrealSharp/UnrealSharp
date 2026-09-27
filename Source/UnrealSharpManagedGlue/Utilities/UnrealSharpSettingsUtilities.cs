@@ -10,6 +10,7 @@ public static class UnrealSharpSettingsUtilities
     public const string SkipGlueModulesKey = "SkipGlueModules";
 
     private static Dictionary<string, JsonElement>? _config;
+    private static HashSet<string>? _skipGlueModules;
     
     public static void InitializeConfigFile(string projectRoot, string unrealSharpRoot)
     {
@@ -52,40 +53,36 @@ public static class UnrealSharpSettingsUtilities
 
     public static bool ShouldSkipGlueGeneration(string moduleName)
     {
-        foreach (string skippedModule in GetSkipGlueModules())
-        {
-            if (string.Equals(skippedModule, moduleName, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return GetSkipGlueModules().Contains(moduleName);
     }
 
-    public static IReadOnlyCollection<string> GetSkipGlueModules()
+    public static IReadOnlySet<string> GetSkipGlueModules()
     {
-        if (!TryGetElement(SkipGlueModulesKey, out JsonElement element) || element.ValueKind != JsonValueKind.Array)
+        if (_skipGlueModules != null)
         {
-            return Array.Empty<string>();
+            return _skipGlueModules;
         }
 
-        List<string> modules = new List<string>();
+        HashSet<string> modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (JsonElement moduleElement in element.EnumerateArray())
+        if (TryGetElement(SkipGlueModulesKey, out JsonElement element) && element.ValueKind == JsonValueKind.Array)
         {
-            if (moduleElement.ValueKind != JsonValueKind.String)
+            foreach (JsonElement moduleElement in element.EnumerateArray())
             {
-                continue;
-            }
+                if (moduleElement.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
 
-            string? moduleName = moduleElement.GetString();
-            if (!string.IsNullOrWhiteSpace(moduleName))
-            {
-                modules.Add(moduleName);
+                string? moduleName = moduleElement.GetString();
+                if (!string.IsNullOrWhiteSpace(moduleName))
+                {
+                    modules.Add(moduleName);
+                }
             }
         }
 
+        _skipGlueModules = modules;
         return modules;
     }
     
