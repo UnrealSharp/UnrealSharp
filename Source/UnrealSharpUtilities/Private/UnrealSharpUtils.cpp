@@ -80,6 +80,14 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 
 const TCHAR* FCSUnrealSharpUtils::GetPrefix(const UField* Field)
 {
+	if (const UClass* Class = Cast<UClass>(Field))
+	{
+		if (Class->HasAnyClassFlags(CLASS_Interface))
+		{
+			return TEXT("I");
+		}
+	}
+
 	if (const UStruct* Struct = Cast<UStruct>(Field))
 	{
 		return Struct->GetPrefixCPP();
