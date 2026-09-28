@@ -14,26 +14,25 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 
 #if WITH_EDITOR
 /**
- * Checks the .NET SDK and builds the user's C# projects. Interactive editors keep retrying, since each failure shows a
- * dialog and the user can fix the problem before closing it (or cancel a failed build, which exits the editor).
- * Headless editors cannot wait for that, so they exit with code 1 after the first failure.
+ * Checks the .NET SDK and builds the user's C# projects. Tries once: on failure the check or the build has already
+ * shown a dialog, and re-running it without the user changing anything would just show that same dialog again.
+ * Interactive editors keep running with UnrealSharp disabled for the session; headless editors can't leave a broken
+ * environment sitting there, so they exit with code 1.
  */
 static bool PrepareUserCSharpCode()
 {
-	while (true)
+	if (UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() && UnrealSharp::DotNetUtilities::BuildUserSolution())
 	{
-		if (UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() && UnrealSharp::DotNetUtilities::BuildUserSolution())
-		{
-			return true;
-		}
-
-		if (UnrealSharp::Dialogs::IsHeadless())
-		{
-			UE_LOGFMT(LogUnrealSharp, Error, "UnrealSharp could not be initialized, see the errors above. Exiting.");
-			FPlatformMisc::RequestExitWithStatus(true, 1);
-			return false;
-		}
+		return true;
 	}
+
+	if (UnrealSharp::Dialogs::IsHeadless())
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "UnrealSharp could not be initialized, see the errors above. Exiting.");
+		FPlatformMisc::RequestExitWithStatus(true, 1);
+	}
+
+	return false;
 }
 #endif
 
