@@ -202,15 +202,8 @@ public static class TextMarshaller
             FTextData* to = (FTextData*)(nativeBuffer + arrayIndex * sizeof(FTextData));
             to->ObjectPointer.Release();
             
-            if (obj != null)
-            {
-                *to = obj.Data;
-                to->ObjectPointer.AddRef();
-            }
-            else
-            {
-                *to = default;
-            }
+            *to = (obj ?? FText.None).Data;
+            to->ObjectPointer.AddRef();
         }
     }
 
