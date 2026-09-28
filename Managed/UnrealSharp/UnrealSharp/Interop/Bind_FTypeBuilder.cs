@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using UnrealSharp.Binds;
+using System.Diagnostics.CodeAnalysis;
 using UnrealSharp.Core;
 
 namespace UnrealSharp.Interop;
@@ -9,8 +10,9 @@ public static unsafe partial class Bind_FTypeBuilder
 {
     public static delegate* unmanaged<char*, char*, char*, char*, byte, IntPtr, void> RegisterManagedType_Native;
     
-    public static void RegisterManagedType(Type type, string jsonString, byte fieldType)
+    public static void RegisterManagedType([DynamicallyAccessedMembers(UnrealTypeRegistry.Constructors)] Type type, string jsonString, byte fieldType)
     {
+        UnrealTypeRegistry.RegisterType(type);
         IntPtr handlePtr = GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(type, type.Assembly));
         
         fixed (char* nTypeName = type.Name)
