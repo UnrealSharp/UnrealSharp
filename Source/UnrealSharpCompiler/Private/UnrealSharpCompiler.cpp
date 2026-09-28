@@ -156,11 +156,11 @@ void FUnrealSharpCompilerModule::OnNewClass(UCSClass* NewClass)
 	UCSBlueprint* Blueprint = static_cast<UCSBlueprint*>(NewClass->ClassGeneratedBy);
 	if (NewClass->IsChildOf(UActorComponent::StaticClass()))
 	{
-		ManagedComponentsToCompile.Add(Blueprint);
+		ManagedComponentsToCompile.AddUnique(Blueprint);
 	}
 	else
 	{
-		ManagedClassesToCompile.Add(Blueprint);
+		ManagedClassesToCompile.AddUnique(Blueprint);
 	}
 
 	AddManagedReferences(NewClass->GetManagedReferencesCollection());

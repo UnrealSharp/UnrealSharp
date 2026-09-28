@@ -263,6 +263,11 @@ UObject* UCSManagedClassCompiler::CreateDeferredManagedCDO(UCSClass* ManagedClas
 
 void UCSManagedClassCompiler::FinalizeManagedCDO(UCSClass* ManagedClass)
 {
+	if (!ManagedClass->IsCreationDeferred())
+	{
+		return;
+	}
+
 	UCSManagedAssembly* ManagedAssembly = ManagedClass->GetOwningAssembly();
 	UObject* DefaultObject = ManagedClass->GetDefaultObject(false);
 	check(IsValid(DefaultObject));
