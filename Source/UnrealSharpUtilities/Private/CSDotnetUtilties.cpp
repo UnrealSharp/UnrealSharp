@@ -7,6 +7,7 @@
 #include "CSProjectUtilities.h"
 #include "UnrealSharpUtils.h"
 #include "HAL/FileManager.h"
+#include "HAL/PlatformProcess.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 
@@ -81,6 +82,52 @@ namespace
 
 		return FString();
 	}
+
+	FString ReadDotNetInstallLocationFile(const FString& FilePath)
+	{
+		FString Contents;
+		return FFileHelper::LoadFileToString(Contents, *FilePath) ? Contents.TrimStartAndEnd() : FString();
+	}
+
+	// Last resort for GUI-launched editors, whose environment lacks DOTNET_ROOT and PATH entries set up by shell
+	// profiles. Covers the locations dotnet-install.sh and Linux distro packages use: the global install-location
+	// files defined by the .NET host resolution spec, common distro package roots, and the dotnet-install.sh default.
+	FString FindDotNetSdkAtWellKnownLocations(TArray<FString>* OutProbedLocations)
+	{
+#if PLATFORM_CPU_ARM_FAMILY
+		const TCHAR* InstallLocationArchFile = TEXT("/etc/dotnet/install_location_arm64");
+#else
+		const TCHAR* InstallLocationArchFile = TEXT("/etc/dotnet/install_location_x64");
+#endif
+		const FString HomeDotNet = FPaths::Combine(FPlatformProcess::UserHomeDir(), TEXT(".dotnet"));
+
+		// Label (what to show in diagnostics) paired with the actual root to check (the two install_location
+		// entries resolve to file contents, everything else checks the label itself).
+		const TPair<FString, FString> Candidates[] =
+		{
+			{ InstallLocationArchFile, ReadDotNetInstallLocationFile(InstallLocationArchFile) },
+			{ TEXT("/etc/dotnet/install_location"), ReadDotNetInstallLocationFile(TEXT("/etc/dotnet/install_location")) },
+			{ TEXT("/usr/share/dotnet"), TEXT("/usr/share/dotnet") },
+			{ TEXT("/usr/lib/dotnet"), TEXT("/usr/lib/dotnet") },
+			{ TEXT("/usr/lib64/dotnet"), TEXT("/usr/lib64/dotnet") },
+			{ HomeDotNet, HomeDotNet }
+		};
+
+		for (const TPair<FString, FString>& Candidate : Candidates)
+		{
+			if (OutProbedLocations)
+			{
+				OutProbedLocations->Add(Candidate.Key);
+			}
+
+			if (!Candidate.Value.IsEmpty() && IsDotNetSdkRoot(Candidate.Value))
+			{
+				return WithTrailingSlash(Candidate.Value);
+			}
+		}
+
+		return FString();
+	}
 #endif
 }
 
@@ -112,7 +159,7 @@ const TCHAR* UnrealSharp::DotNetUtilities::GetCoreClrLibraryName()
 #endif
 }
 
-FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
+FString UnrealSharp::DotNetUtilities::GetDotNetDirectory(TArray<FString>* OutProbedLocations)
 {
 #if WITH_EDITOR
 	if (CVarSimulateNoDotNetSDK.GetValueOnAnyThread() == 1)
@@ -122,6 +169,10 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 #endif
 
 	const FString DotNetRootVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("DOTNET_ROOT"));
+	if (OutProbedLocations)
+	{
+		OutProbedLocations->Add(DotNetRootVariable.IsEmpty() ? TEXT("DOTNET_ROOT (not set)") : FString::Printf(TEXT("DOTNET_ROOT=%s"), *DotNetRootVariable));
+	}
 	if (!DotNetRootVariable.IsEmpty() && IsDotNetSdkRoot(DotNetRootVariable))
 	{
 		return WithTrailingSlash(DotNetRootVariable);
@@ -129,6 +180,10 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 
 #if defined(__APPLE__)
 	constexpr const TCHAR* DefaultDotNetPath = TEXT("/usr/local/share/dotnet/");
+	if (OutProbedLocations)
+	{
+		OutProbedLocations->Add(DefaultDotNetPath);
+	}
 	if (IsDotNetSdkRoot(DefaultDotNetPath))
 	{
 		return DefaultDotNetPath;
@@ -136,6 +191,10 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 #endif
 
 	const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
+	if (OutProbedLocations)
+	{
+		OutProbedLocations->Add(FString::Printf(TEXT("PATH=%s"), *PathVariable));
+	}
 
 	TArray<FString> Paths;
 	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
@@ -177,6 +236,13 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 		DotNetPathFromEnv = WithTrailingSlash(Path);
 		break;
 	}
+
+#if !defined(_WIN32)
+	if (DotNetPathFromEnv.IsEmpty())
+	{
+		DotNetPathFromEnv = FindDotNetSdkAtWellKnownLocations(OutProbedLocations);
+	}
+#endif
 
 	return DotNetPathFromEnv;
 }
@@ -262,13 +328,40 @@ bool UnrealSharp::DotNetUtilities::IsSelfContainedRuntimeConfig(const FString& R
 }
 
 #if WITH_EDITOR
+namespace
+{
+	// Built from the same probes GetDotNetDirectory() ran, so the list can't drift out of sync with them.
+	FString BuildDotNetNotFoundMessage(const TArray<FString>& ProbedLocations)
+	{
+		FString Message = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system.\n\nLooked in:\n"), TEXT(DOTNET_MAJOR_VERSION));
+
+		for (const FString& Location : ProbedLocations)
+		{
+			Message += FString::Printf(TEXT("  - %s\n"), *Location);
+		}
+
+		Message += FString::Printf(TEXT("\nTo fix this:\n  - Install the .NET %d SDK: https://dotnet.microsoft.com/download\n  - Or "), DOTNET_MAJOR_VERSION_INT);
+
+#if defined(_WIN32)
+		Message += TEXT("set the DOTNET_ROOT environment variable to the SDK root");
+#elif defined(__APPLE__)
+		Message += TEXT("set DOTNET_ROOT to the SDK root (e.g. ~/.dotnet). GUI apps need it set with `launchctl setenv DOTNET_ROOT <path>`, a shell profile isn't enough");
+#else
+		Message += TEXT("set DOTNET_ROOT to the SDK root (e.g. ~/.dotnet). GUI apps need it in ~/.config/environment.d/*.conf, a shell profile isn't enough");
+#endif
+
+		Message += TEXT("\n  - Then restart the editor.");
+		return Message;
+	}
+}
+
 bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 {
-	FString DotNetInstallationPath = GetDotNetDirectory();
+	TArray<FString> ProbedLocations;
+	FString DotNetInstallationPath = GetDotNetDirectory(&ProbedLocations);
 	if (DotNetInstallationPath.IsEmpty() && !InstallationUtilities::IsUnrealSharpInstalled())
 	{
-		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
-		Dialogs::ShowError(FText::FromString(DialogText));
+		Dialogs::ShowError(FText::FromString(BuildDotNetNotFoundMessage(ProbedLocations)));
 		return false;
 	}
 
