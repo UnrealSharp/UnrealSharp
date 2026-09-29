@@ -82,8 +82,37 @@ public:
 	UNREALSHARPCORE_API bool IsManagedType(const UField* Field) const { return IsManagedPackage(Field->GetOutermost()); }
 	UNREALSHARPCORE_API bool IsLoadingAnyAssembly() const;
 	
-	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
-	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
+	UObject* GetCurrentWorldContext() const { return CurrentWorldContextStack.Num() > 0 ? CurrentWorldContextStack.Last().Get() : nullptr; }
+
+	struct FCurrentWorldContext
+	{
+	private:
+		bool IsValid;
+	public:
+		FCurrentWorldContext(const FCurrentWorldContext&) = delete;
+		FCurrentWorldContext& operator= (const FCurrentWorldContext&) = delete;
+
+		FCurrentWorldContext(UObject* WorldContext)
+		{
+			if (WorldContext)
+			{
+				UCSManager::Get().PushCurrentWorldContext(WorldContext);
+				IsValid = true;
+			}
+			else
+			{
+				IsValid = false;
+			}
+		}
+
+		~FCurrentWorldContext()
+		{
+			if (IsValid)
+			{
+				UCSManager::Get().PopCurrentWorldContext();
+			}
+		}
+	};
 	
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>>& GetManagedObjectHandles() { return ManagedObjectHandles; }
 	TMap<FCSObjectID, TMap<FCSObjectID, TSharedPtr<FGCHandle>>>& GetManagedInterfaceWrappers() { return ManagedInterfaceWrapperHandles; }
@@ -107,7 +136,10 @@ private:
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>> ManagedObjectHandles;
 	TMap<FCSObjectID, TMap<FCSObjectID, TSharedPtr<FGCHandle>>> ManagedInterfaceWrapperHandles;
 
-	TWeakObjectPtr<UObject> CurrentWorldContext;
+	TArray<TWeakObjectPtr<UObject>> CurrentWorldContextStack;
+
+	void PushCurrentWorldContext(UObject* WorldContext) { CurrentWorldContextStack.Push(WorldContext); }
+	void PopCurrentWorldContext() { CurrentWorldContextStack.Pop(); }
 	
 	FCSManagerInitializedEvent OnInitialized;
 
