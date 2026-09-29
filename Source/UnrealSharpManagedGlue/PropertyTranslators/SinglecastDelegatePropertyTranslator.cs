@@ -37,7 +37,8 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     {
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;
         string fullDelegateName = GetFullDelegateName(delegateProperty.Function);
-        builder.AppendLine($"{assignmentOrReturn} SingleDelegateMarshaller<{fullDelegateName}>.FromNative({sourceBuffer} + {offset}, 0);");
+        // A single delegate reads its target from the buffer alone; the native property is only needed by multicast delegates.
+        builder.AppendLine($"{assignmentOrReturn} SingleDelegateMarshaller<{fullDelegateName}>.FromNative({sourceBuffer} + {offset}, 0, IntPtr.Zero);");
     }
 
     public override string GetNullValue(UhtProperty property)
