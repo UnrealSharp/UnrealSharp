@@ -59,7 +59,19 @@ public static class NameMapper
         {
             propertyName = $"K2_{propertyName}";
         }
-        return TryResolveConflictingName(property, propertyName);
+
+        propertyName = TryResolveConflictingName(property, propertyName);
+
+        // C++ lets a member hide an interface function of the same name, and the fallback above is that same
+        // C++ name. C# puts an exported interface function on the class too, so the property has to give way.
+        if (property.Outer is UhtClass outerClass
+            && FindInterfaceFunction(outerClass, propertyName) is { } interfaceFunction
+            && interfaceFunction.CanExportFunction())
+        {
+            propertyName = $"K2_{propertyName}";
+        }
+
+        return propertyName;
     }
     
     public static string GetStructName(this UhtType type)
@@ -223,33 +235,35 @@ public static class NameMapper
         
         if (!isConflicting && outer is UhtClass outerClass)
         {
-            List<UhtClass> classInterfaces = outerClass.GetInterfaces();
-            foreach (UhtClass classInterface in classInterfaces)
-            {
-                if (classInterface.AlternateObject is not UhtClass interfaceClass)
-                {
-                    continue;
-                }
-                
-                UhtFunction? function = interfaceClass.FindFunctionByName(scriptName, (uhtFunction, s) => uhtFunction.GetFunctionName() == s);
+            UhtFunction? function = FindInterfaceFunction(outerClass, scriptName);
 
-                if (function == null)
-                {
-                    continue;
-                }
-                
-                isConflicting = true;
-                    
-                if (type is UhtFunction typeAsFunction && !function.HasSameSignature(typeAsFunction))
-                {
-                    isConflicting = false;
-                }
-                    
-                break;
+            if (function != null)
+            {
+                isConflicting = type is not UhtFunction typeAsFunction || function.HasSameSignature(typeAsFunction);
             }
         }
-        
+
         return isConflicting ? type.EngineName : scriptName;
+    }
+
+    static UhtFunction? FindInterfaceFunction(UhtClass classObj, string scriptName)
+    {
+        foreach (UhtClass classInterface in classObj.GetInterfaces())
+        {
+            if (classInterface.AlternateObject is not UhtClass interfaceClass)
+            {
+                continue;
+            }
+
+            UhtFunction? function = interfaceClass.FindFunctionByName(scriptName, (uhtFunction, s) => uhtFunction.GetFunctionName() == s);
+
+            if (function != null)
+            {
+                return function;
+            }
+        }
+
+        return null;
     }
 
     public static string PrefixWithOuterName(this UhtType type, string name)
