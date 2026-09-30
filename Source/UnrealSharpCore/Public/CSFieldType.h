@@ -2,9 +2,11 @@
 
 enum class ECSFieldType : uint8
 {
+	Unknown,
 	Class,
 	Struct,
 	Enum,
 	Interface,
-	Delegate
+	Delegate,
+	MAX
 };

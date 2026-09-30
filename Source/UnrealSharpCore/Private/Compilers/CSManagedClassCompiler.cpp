@@ -62,7 +62,7 @@ void UCSManagedClassCompiler::CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassR
 	if (!IsValid(Blueprint))
 	{
 		FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(ClassReflectionData->FieldName);
-		UPackage* Package = ClassReflectionData->GetDefinitionFieldPackage();
+		UPackage* Package = ClassReflectionData->FieldName.ResolvePackage();
 	
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted);
 		Blueprint->GeneratedClass = Field;
@@ -137,19 +137,19 @@ void UCSManagedClassCompiler::PopulateComponentOverrides(TArray<FBPComponentClas
 	
 	for (const FCSComponentOverrideReflectionData& OverrideData : ClassReflectionData->ComponentOverrides)
 	{
-		UClass* ComponentClass = OverrideData.ComponentType.ResolveUField<UClass>();
+		UClass* ComponentClass = OverrideData.ComponentType.ResolveField<UClass>();
 		
 		if (!IsValid(ComponentClass))
 		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find component class: %s"), *OverrideData.ComponentType.FieldName.GetName());
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find component class: %s"), *OverrideData.ComponentType.GetSourceName());
 			continue;
 		}
 		
-		UClass* ParentClass = OverrideData.OwningClass.ResolveUField<UClass>();
+		UClass* ParentClass = OverrideData.OwningClass.ResolveField<UClass>();
 		
 		if (!IsValid(ParentClass) || !FCSClassUtilities::IsNativeClass(ParentClass))
 		{
-			UE_LOGFMT(LogUnrealSharp, Warning, "Can't find native owning class {0} for component override", *OverrideData.OwningClass.FieldName.GetName());
+			UE_LOGFMT(LogUnrealSharp, Warning, "Can't find native owning class {0} for component override", *OverrideData.OwningClass.GetSourceName());
 			continue;
 		}
 		
@@ -183,9 +183,9 @@ void UCSManagedClassCompiler::PopulateComponentOverrides(TArray<FBPComponentClas
 
 UClass* UCSManagedClassCompiler::TryRedirectSuperClass(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UClass* CurrentSuperClass) const
 {
-	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != ClassReflectionData->ParentClass.FieldName.GetName())
+	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != ClassReflectionData->ParentClass.GetEngineName())
 	{
-		UClass* SuperClass = ClassReflectionData->ParentClass.ResolveUField<UClass>();
+		UClass* SuperClass = ClassReflectionData->ParentClass.ResolveField<UClass>();
 		if (const TWeakObjectPtr<UClass>* RedirectedClass = RedirectClasses.Find(SuperClass))
 		{
 			SuperClass = RedirectedClass->Get();
@@ -272,15 +272,15 @@ void UCSManagedClassCompiler::FinalizeManagedCDO(UCSClass* ManagedClass)
 	SetupDefaultTickSettings(DefaultObject, ManagedClass);
 }
 
-void UCSManagedClassCompiler::ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceReflectionData>& Interfaces)
+void UCSManagedClassCompiler::ImplementInterfaces(UClass* ManagedClass, const TArray<FCSFieldName>& Interfaces)
 {
-	for (const FCSTypeReferenceReflectionData& InterfaceData : Interfaces)
+	for (const FCSFieldName& InterfaceData : Interfaces)
 	{
-		UClass* InterfaceClass = InterfaceData.ResolveUField<UClass>();
+		UClass* InterfaceClass = InterfaceData.ResolveField<UClass>();
 
 		if (!IsValid(InterfaceClass))
 		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceData.FieldName.GetName());
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceData.GetSourceName());
 			continue;
 		}
 

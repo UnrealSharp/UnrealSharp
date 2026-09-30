@@ -24,7 +24,7 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromNativeF
 	TSharedPtr<FCSManagedTypeDefinition> NewDefinition = MakeShared<FCSManagedTypeDefinition>();
 	NewDefinition->DefinitionField = TStrongObjectPtr(InField);
 	NewDefinition->OwningAssembly = InOwningAssembly;
-	NewDefinition->TypeGCHandle = InOwningAssembly->FindTypeHandle(FCSFieldName(InField));
+	NewDefinition->TypeGCHandle = InOwningAssembly->FindTypeHandle(FCSFieldName::FromNativeBase(InField));
 	
 	return NewDefinition;
 }
@@ -51,7 +51,7 @@ TSharedPtr<FGCHandle> FCSManagedTypeDefinition::GetTypeGCHandle()
 {
 	if (!TypeGCHandle.IsValid() || TypeGCHandle->IsNull())
 	{
-		FCSFieldName FieldName = ReflectionData.IsValid() ? ReflectionData->FieldName : FCSFieldName(DefinitionField.Get());
+		FCSFieldName FieldName = ReflectionData.IsValid() ? ReflectionData->FieldName : FCSFieldName::FromNativeBase(DefinitionField.Get());
 		TypeGCHandle = OwningAssembly->FindTypeHandle(FieldName);
 	}
 	
@@ -68,14 +68,14 @@ void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags
 {
 	DirtyFlags = InDirtyFlags;
 	
-	for (int32 i = ReflectionData->SourceGeneratorDependencies.Num() - 1; i >= 0; --i)
+	for (int32 i = ReflectionData->Dependencies.Num() - 1; i >= 0; --i)
 	{
-		const FCSFieldName& SourceGeneratorDependency = ReflectionData->SourceGeneratorDependencies[i];
-		TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = OwningAssembly->FindManagedTypeDefinition(SourceGeneratorDependency);
+		const FCSFieldName& Dependency = ReflectionData->Dependencies[i];
+		TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = OwningAssembly->FindManagedTypeDefinition(Dependency);
 		
 		if (!ManagedTypeDefinition.IsValid())
 		{
-			UE_LOGFMT(LogUnrealSharp, Verbose, "Failed to find dependent type {0} for dirty propagation of {1}", *SourceGeneratorDependency.GetFullName().ToString(), *ReflectionData->FieldName.GetFullName().ToString());
+			UE_LOGFMT(LogUnrealSharp, Verbose, "Failed to find dependent type {0} for dirty propagation of {1}", *Dependency.GetFullName(), *ReflectionData->FieldName.GetFullName());
 			continue;
 		}
 		

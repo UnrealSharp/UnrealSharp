@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "CSBindsRegistry.h"
 #include "CSManagedAssembly.h"
 #include "CSObjectID.h"
 #include "CSManager.generated.h"
@@ -45,11 +44,9 @@ public:
 	UNREALSHARPCORE_API UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = false);
 	UNREALSHARPCORE_API UCSManagedAssembly* LoadUserAssemblyByName(FName AssemblyName, bool bIsCollectible = false);
 	UNREALSHARPCORE_API UCSManagedAssembly* LoadPluginAssemblyByName(FName AssemblyName, bool bIsCollectible = false);
-
-	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UClass* Class);
-	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UScriptStruct* Struct);
-	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UEnum* Enum);
 	
+	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UField* Field);
+
 	UNREALSHARPCORE_API UCSManagedAssembly* FindAssembly(FName AssemblyName) const { return Assemblies.FindRef(AssemblyName); }
 	UNREALSHARPCORE_API UCSManagedAssembly* FindOrLoadAssembly(FName AssemblyName, bool bIsCollectible = false)
 	{
@@ -102,7 +99,7 @@ private:
 	TObjectPtr<UPackage> GlobalManagedPackage;
 	
 	UPROPERTY(Transient)
-	TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>> NativeTypeToAssembly;
+	TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>> PackageToManagedAssembly;
 
 	UPROPERTY(Transient)
 	TMap<FName, TObjectPtr<UCSManagedAssembly>> Assemblies;

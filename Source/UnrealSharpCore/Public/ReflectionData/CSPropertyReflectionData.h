@@ -13,7 +13,7 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
-	FName GetName() const { return FieldName.GetFName(); }
+	FName GetName() const { return FieldName.GetEngineFName(); }
 	bool HasGetterOrSetter() const { return GetterMethod.IsValid() || SetterMethod.IsValid(); }
 
 	template<typename T>
@@ -34,10 +34,10 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	}
 
 	TSharedPtr<FCSUnrealType> InnerType;
-	EPropertyFlags PropertyFlags;
-	FName ReplicatedUsing;
-	ELifetimeCondition LifetimeCondition;
+	EPropertyFlags PropertyFlags = CPF_None;
+	FName ReplicatedUsing = NAME_None;
+	ELifetimeCondition LifetimeCondition = ELifetimeCondition::COND_None;
 	
-	TSharedPtr<FCSFunctionReflectionData> GetterMethod;
-	TSharedPtr<FCSFunctionReflectionData> SetterMethod;
+	TSharedPtr<FCSFunctionReflectionData> GetterMethod = nullptr;
+	TSharedPtr<FCSFunctionReflectionData> SetterMethod = nullptr;
 };

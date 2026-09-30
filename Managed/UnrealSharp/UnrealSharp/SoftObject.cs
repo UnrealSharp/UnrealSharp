@@ -71,10 +71,10 @@ public struct TSoftObjectPtr<T> : IEquatable<TSoftObjectPtr<T>> where T : UObjec
     }
 
     /// <summary>
-    /// Loads the object asynchronously.
+    /// Loads the object synchronously.
     /// </summary>
-    /// <returns></returns>
-    public T LoadSynchronous()
+    /// <returns>The loaded object, or null if loading fails.</returns>
+    public T? LoadSynchronous()
     {
         IntPtr handle = Bind_FSoftObjectPtr.CallLoadSynchronous(ref SoftObjectPtr.Data);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);

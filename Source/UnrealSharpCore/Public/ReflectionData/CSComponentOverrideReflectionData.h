@@ -9,7 +9,7 @@ struct FCSComponentOverrideReflectionData : FCSReflectionDataBase
 	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 	
-	FCSTypeReferenceReflectionData OwningClass;
-	FCSTypeReferenceReflectionData ComponentType;
+	FCSFieldName OwningClass;
+	FCSFieldName ComponentType;
 	FName PropertyName;
 };

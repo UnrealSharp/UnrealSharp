@@ -13,19 +13,19 @@ public class GeneratorStringBuilder
     {
         return _stringBuilder.ToString();
     }
-    
+
     private void EnsureIndent()
     {
         if (!_needIndent)
         {
             return;
         }
-        
+
         if (_indent > 0)
         {
             _stringBuilder.Append(' ', _indent * 4);
         }
-        
+
         _needIndent = false;
     }
 
@@ -50,7 +50,7 @@ public class GeneratorStringBuilder
     {
         _indent--;
     }
-    
+
     public void Append(string text)
     {
         EnsureIndent();
@@ -63,7 +63,7 @@ public class GeneratorStringBuilder
         {
             _stringBuilder.AppendLine();
         }
-        
+
         _needIndent = true;
     }
 

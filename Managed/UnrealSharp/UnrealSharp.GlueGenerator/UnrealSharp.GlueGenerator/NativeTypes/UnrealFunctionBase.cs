@@ -43,35 +43,36 @@ public enum EFunctionFlags : ulong
     NetValidate = 0x80000000,
 };
 
-
 [Inspector]
 public abstract record UnrealFunctionBase : UnrealStruct
 {
     public const string UFunctionAttributeName = "UFunctionAttribute";
     public const string UFunctionAttributeFullName = "UnrealSharp.Attributes." + UFunctionAttributeName;
-    
-    protected const EFunctionFlags NetFunctionFlags = EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
-    
-    public override string EngineName => SourceName;
-    
+
+    public const EFunctionFlags NetFunctionFlags =
+        EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
+
     public UnrealProperty ReturnType;
     public EFunctionFlags FunctionFlags;
-    
+
     protected bool IsNetworkFunction => (FunctionFlags & NetFunctionFlags) != EFunctionFlags.None;
 
-    protected bool NeedsImplementationFunction => IsNetworkFunction || FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent);
+    protected bool NeedsImplementationFunction =>
+        IsNetworkFunction || FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent);
+
     protected bool IsEvent => FunctionFlags.HasFlag(EFunctionFlags.Event);
     protected bool HasParamsOrReturnValue => HasParams || HasReturnValue;
     protected bool HasParams => Properties.Count > 0;
     protected bool HasReturnValue => ReturnType is not VoidProperty;
-    
-    public string SizeVariableName => $"{SourceName}_Size";
-    public string FunctionNativePtr => $"{SourceName}Ptr";
 
-    public UnrealFunctionBase(IMethodSymbol typeSymbol, UnrealType outer) : this(typeSymbol, typeSymbol.ReturnType, typeSymbol.Parameters, outer!)
+    public string SizeVariableName => $"{FieldName.SourceName}_Size";
+    public string FunctionNativePtr => $"{FieldName.SourceName}Ptr";
+
+    public UnrealFunctionBase(IMethodSymbol typeSymbol, UnrealType outer) : this(typeSymbol, typeSymbol.ReturnType,
+        typeSymbol.Parameters, outer!)
     {
         IMethodSymbol methodSymbol = typeSymbol;
-        
+
         FunctionFlags |= methodSymbol.DeclaredAccessibility switch
         {
             Accessibility.Public => EFunctionFlags.Public,
@@ -80,14 +81,15 @@ public abstract record UnrealFunctionBase : UnrealStruct
             Accessibility.NotApplicable => EFunctionFlags.Private,
             _ => EFunctionFlags.Public
         };
-        
+
         if (methodSymbol.IsStatic)
         {
             FunctionFlags |= EFunctionFlags.Static;
         }
     }
-    
-    public UnrealFunctionBase(ISymbol typeSymbol, ITypeSymbol returnType, ImmutableArray<IParameterSymbol> parameterList, UnrealType outer) : base(typeSymbol, outer)
+
+    public UnrealFunctionBase(ISymbol typeSymbol, ITypeSymbol returnType,
+        ImmutableArray<IParameterSymbol> parameterList, UnrealType outer) : base(typeSymbol, outer)
     {
         bool hasOutParams = false;
         if (returnType.Name == VoidProperty.VoidTypeName)
@@ -97,9 +99,9 @@ public abstract record UnrealFunctionBase : UnrealStruct
         else
         {
             ReturnType = PropertyFactory.CreateProperty(returnType, returnType, this);
-            ReturnType.SourceName = "ReturnValue";
+            ReturnType.FieldName = FieldName.Member(SourceGenUtilities.ReturnValueName);
             ReturnType.MakeReturnParameter();
-            
+
             hasOutParams = true;
         }
 
@@ -107,16 +109,16 @@ public abstract record UnrealFunctionBase : UnrealStruct
         {
             return;
         }
-        
+
         List<UnrealProperty> parameters = new List<UnrealProperty>(parameterList.Length);
-        
+
         for (int i = 0; i < parameterList.Length; i++)
         {
             IParameterSymbol parameterSymbol = parameterList[i];
-                
+
             UnrealProperty property = PropertyFactory.CreateProperty(parameterSymbol.Type, parameterSymbol, this);
             property.ReferenceKind = parameterSymbol.RefKind;
-            
+
             switch (parameterSymbol.RefKind)
             {
                 case RefKind.Out:
@@ -131,35 +133,37 @@ public abstract record UnrealFunctionBase : UnrealStruct
                     property.MakeParameter();
                     break;
             }
-            
+
             if (parameterSymbol.HasExplicitDefaultValue && parameterSymbol.ExplicitDefaultValue != null)
             {
                 string defaultValue;
                 if (parameterSymbol.Type.TypeKind == TypeKind.Enum)
                 {
-                    defaultValue = SourceGenUtilities.GetEnumNameFromValue(parameterSymbol.Type, (byte) parameterSymbol.ExplicitDefaultValue);
+                    defaultValue = SourceGenUtilities.GetEnumNameFromValue(parameterSymbol.Type,
+                        (byte)parameterSymbol.ExplicitDefaultValue);
                 }
                 else
                 {
                     defaultValue = parameterSymbol.ExplicitDefaultValue.ToString();
                 }
-                
+
                 AddMetaData($"CPP_Default_{parameterSymbol.Name}", defaultValue);
                 FunctionFlags |= EFunctionFlags.HasDefaults;
             }
 
             parameters.Add(property);
         }
-        
+
         if (hasOutParams)
         {
             FunctionFlags |= EFunctionFlags.HasOutParms;
         }
-            
+
         Properties = new EquatableList<UnrealProperty>(parameters);
     }
-    
-    public UnrealFunctionBase(EFunctionFlags flags, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) 
+
+    public UnrealFunctionBase(EFunctionFlags flags, string sourceName, string typeNameSpace,
+        Accessibility accessibility, string assemblyName, UnrealType? outer = null)
         : base(sourceName, typeNameSpace, accessibility, assemblyName, outer)
     {
         FunctionFlags = flags;
@@ -167,10 +171,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
     }
 
     [Inspect(UFunctionAttributeFullName, UFunctionAttributeName)]
-    public static UnrealType UFunctionAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType UFunctionAttribute(UnrealType? outer, SyntaxNode? syntaxNode,
+        GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        UnrealClassBase unrealClass = (UnrealClassBase) outer!;
-        IMethodSymbol methodSymbol = (IMethodSymbol) symbol;
+        UnrealClassBase unrealClass = (UnrealClassBase)outer!;
+        IMethodSymbol methodSymbol = (IMethodSymbol)symbol;
 
         UnrealFunctionBase unrealFunction;
         if (methodSymbol.IsAsync)
@@ -187,18 +192,18 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         return unrealFunction;
     }
-    
+
     [InspectArgument(["FunctionFlags", "flags"], UFunctionAttributeName)]
     public static void FlagsSpecifier(UnrealType topScope, TypedConstant constant)
     {
-        UnrealFunctionBase unrealFunction = (UnrealFunctionBase) topScope;
-        unrealFunction.FunctionFlags |= (EFunctionFlags) constant.Value!;
-        
+        UnrealFunctionBase unrealFunction = (UnrealFunctionBase)topScope;
+        unrealFunction.FunctionFlags |= (EFunctionFlags)constant.Value!;
+
         if (unrealFunction.FunctionFlags.HasFlag(EFunctionFlags.BlueprintPure))
         {
             unrealFunction.FunctionFlags |= EFunctionFlags.BlueprintCallable;
         }
-        
+
         if (unrealFunction.FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
         {
             unrealFunction.FunctionFlags |= EFunctionFlags.Event;
@@ -209,20 +214,20 @@ public abstract record UnrealFunctionBase : UnrealStruct
             unrealFunction.FunctionFlags |= EFunctionFlags.Net | EFunctionFlags.Event | EFunctionFlags.Final;
         }
     }
-    
+
     [InspectArgument("CallInEditor", UFunctionAttributeName)]
     public static void CallInEditorSpecifier(UnrealType topScope, TypedConstant constant)
     {
-        UnrealFunctionBase unrealFunction = (UnrealFunctionBase) topScope;
-        bool value = (bool) constant.Value!;
+        UnrealFunctionBase unrealFunction = (UnrealFunctionBase)topScope;
+        bool value = (bool)constant.Value!;
         unrealFunction.AddMetaData("CallInEditor", value ? "true" : "false");
     }
-    
+
     [InspectArgument("Category", UFunctionAttributeName)]
     public static void CategorySpecifier(UnrealType topScope, TypedConstant constant)
     {
-        UnrealFunctionBase unrealFunction = (UnrealFunctionBase) topScope;
-        unrealFunction.AddMetaData("Category", (string) constant.Value!);
+        UnrealFunctionBase unrealFunction = (UnrealFunctionBase)topScope;
+        unrealFunction.AddMetaData("Category", (string)constant.Value!);
     }
 
     public override void ExportBackingVariables(GeneratorStringBuilder builder)
@@ -231,17 +236,17 @@ public abstract record UnrealFunctionBase : UnrealStruct
         {
             builder.AppendNewBackingField($"static IntPtr {FunctionNativePtr};");
         }
-        
+
         if (HasParamsOrReturnValue)
         {
             builder.AppendNewBackingField($"static int {SizeVariableName};");
         }
-            
+
         if (HasReturnValue)
         {
             ReturnType.ExportBackingVariables(builder);
         }
-        
+
         base.ExportBackingVariables(builder);
     }
 
@@ -249,67 +254,73 @@ public abstract record UnrealFunctionBase : UnrealStruct
     {
         if ((HasParamsOrReturnValue || NeedsImplementationFunction) && !FunctionFlags.HasFlag(EFunctionFlags.Delegate))
         {
-            builder.AppendLine($"{FunctionNativePtr} = CallGetNativeFunctionFromClassAndName({nativeType}, \"{SourceName}\");");
+            builder.AppendLine(
+                $"{FunctionNativePtr} = CallGetNativeFunctionFromClassAndName({nativeType}, \"{FieldName.SourceName}\");");
         }
-        
+
         if (HasParamsOrReturnValue)
         {
             builder.AppendLine($"{SizeVariableName} = CallGetNativeFunctionParamsSize({FunctionNativePtr});");
         }
-        
+
         if (HasReturnValue)
         {
             ReturnType.ExportBackingVariablesToStaticConstructor(builder, FunctionNativePtr);
         }
-        
+
         base.ExportBackingVariablesToStaticConstructor(builder, FunctionNativePtr);
     }
 
     public void ExportInvokeMethod(GeneratorStringBuilder builder)
     {
         builder.AppendEditorBrowsableAttribute();
-        builder.AppendLine($"void Invoke_{SourceName}(IntPtr buffer, IntPtr returnBuffer)");
-        
+        builder.AppendLine($"void Invoke_{FieldName.SourceName}(IntPtr buffer, IntPtr returnBuffer)");
+
         if (!HasParamsOrReturnValue)
         {
-            builder.Append(" => " + (NeedsImplementationFunction ? $"{SourceName}_Implementation();" : $"{SourceName}();"));
+            builder.Append(" => " + (NeedsImplementationFunction
+                ? $"{FieldName.SourceName}_Implementation();"
+                : $"{FieldName.SourceName}();"));
             return;
         }
-        
+
         builder.OpenBrace();
-        
+
         foreach (UnrealProperty parameter in Properties)
         {
-            parameter.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{parameter.ManagedType} {parameter.SourceName} = ");
+            parameter.ExportFromNative(builder, SourceGenUtilities.Buffer,
+                $"{parameter.ManagedTypeWithNullability} {parameter.FieldName.SourceName} = ");
         }
-        
+
         ExportInvokeMethodCallSignature(builder);
-        
+
         if (HasReturnValue)
         {
             ReturnType.ExportToNative(builder, "returnBuffer", "returnValue");
         }
-        
+
         foreach (UnrealProperty parameter in Properties.Where(p => p.PropertyFlags.HasFlag(EPropertyFlags.OutParm)))
         {
-            parameter.ExportToNative(builder, SourceGenUtilities.Buffer, parameter.SourceName);
+            parameter.ExportToNative(builder, SourceGenUtilities.Buffer, parameter.FieldName.SourceName);
         }
-        
+
         builder.CloseBrace();
     }
 
     protected virtual void ExportInvokeMethodCallSignature(GeneratorStringBuilder builder)
     {
-        string returnAssignment = HasReturnValue ? $"{ReturnType.ManagedType} returnValue = " : string.Empty;
-        string functionToCall = NeedsImplementationFunction ? $"{SourceName}_Implementation" : SourceName;
+        string returnAssignment = HasReturnValue ? $"{ReturnType.ManagedTypeWithNullability} returnValue = " : string.Empty;
+        string functionToCall = NeedsImplementationFunction
+            ? $"{FieldName.SourceName}_Implementation"
+            : FieldName.SourceName;
         builder.AppendLine($"{returnAssignment}{functionToCall}({GetParameterSignature()});");
     }
 
     protected string GetParameterSignature()
     {
-        return string.Join(", ", Properties.Select(p => p.ReferenceKind.RefKindToString() + p.SourceName));
+        return string.Join(", ", Properties.Select(p => p.ReferenceKind.RefKindToString() + p.FieldName.SourceName));
     }
-    
+
     public void ExportCallToNative(GeneratorStringBuilder builder, Action<string, string> nativeCall)
     {
         if (!HasParamsOrReturnValue)
@@ -317,37 +328,38 @@ public abstract record UnrealFunctionBase : UnrealStruct
             nativeCall(SourceGenUtilities.IntPtrZero, SourceGenUtilities.IntPtrZero);
             return;
         }
-        
+
         builder.BeginUnsafeBlock();
-        
+
         builder.AllocateParameterBuffer(SizeVariableName);
 
         foreach (UnrealProperty parameter in Properties)
         {
             builder.AppendLine();
-            parameter.ExportToNative(builder, SourceGenUtilities.ParamsBuffer, parameter.SourceName);
+            parameter.ExportToNative(builder, SourceGenUtilities.ParamsBuffer, parameter.FieldName.SourceName);
         }
 
         string returnBuffer = HasReturnValue
             ? $"{SourceGenUtilities.ParamsBuffer} + " + ReturnType.OffsetVariable
             : SourceGenUtilities.IntPtrZero;
-            
+
         nativeCall(SourceGenUtilities.ParamsBuffer, returnBuffer);
-            
+
         if (HasReturnValue)
         {
-            string assignment = $"{ReturnType.ManagedType} returnValue = ";
+            string assignment = $"{ReturnType.ManagedTypeWithNullability} returnValue = ";
             ReturnType.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, assignment);
             builder.AppendLine("return returnValue;");
         }
-            
+
         builder.EndUnsafeBlock();
     }
 
-    protected void AppendCallInvokeNativeFunction(GeneratorStringBuilder builder, string instanceFunction, string paramsBuffer, string returnBuffer)
+    protected void AppendCallInvokeNativeFunction(GeneratorStringBuilder builder, string instanceFunction,
+        string paramsBuffer, string returnBuffer)
     {
         builder.AppendLine("Bind_UObject.");
-        
+
         if (IsNetworkFunction)
         {
             builder.Append("CallInvokeNativeNetFunction");
@@ -360,7 +372,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         {
             builder.Append("CallInvokeNativeFunction");
         }
-        
+
         builder.Append($"(NativeObject, {instanceFunction}, {paramsBuffer}, {returnBuffer});");
     }
 
@@ -368,7 +380,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
     {
         base.PopulateJsonObject(jsonWriter);
         jsonWriter.TrySetJsonEnum("FunctionFlags", FunctionFlags);
-        
+
         if (HasReturnValue)
         {
             ReturnType.PopulateJsonWithUnrealType(jsonWriter, "ReturnValue");

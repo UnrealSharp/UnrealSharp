@@ -59,7 +59,7 @@ internal sealed class FInstancedStructManager : IDisposable
     }
 }
 
-[UStruct, GeneratedType("InstancedStruct", "UnrealSharp.CoreUObject.InstancedStruct")]
+[UStruct]
 public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -73,7 +73,7 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
     
     static FInstancedStruct()
     {
-        NativeClassPtr = Bind_UCoreUObject.CallGetType(typeof(FInstancedStruct).GetAssemblyName(), "UnrealSharp.CoreUObject", "InstancedStruct");
+        NativeClassPtr = NativeReflectionHelper.GetNativeField<FInstancedStruct>();
         NativeDataSize = Bind_UScriptStruct.CallGetNativeStructSize(NativeClassPtr);
     }
 

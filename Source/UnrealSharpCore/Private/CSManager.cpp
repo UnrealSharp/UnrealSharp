@@ -17,48 +17,6 @@
 #pragma clang diagnostic ignored "-Wdangling-assignment"
 #endif
 
-UCSManagedAssembly* FindOwningAssemblyGeneric(UField* Object, TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>>& NativeClassToAssemblyMap, const TMap<FName, TObjectPtr<UCSManagedAssembly>>& Assemblies)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssemblyGeneric);
-	
-	if (FCSClassUtilities::IsBlueprintObject(Object))
-	{
-		return nullptr;
-	}
-
-	if (const ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(Object))
-	{
-		return ManagedType->GetOwningAssembly();
-	}
-
-	const FCSObjectID ObjectID = Object->GetUniqueID();
-	if (const TObjectPtr<UCSManagedAssembly>* Assembly = NativeClassToAssemblyMap.FindByHash(ObjectID.Get(), ObjectID))
-	{
-		return Assembly->Get();
-	}
-
-	const FCSFieldName FieldName(Object);
-	UCSManagedAssembly* FoundAssembly = nullptr;
-	
-	for (const TTuple<FName, TObjectPtr<UCSManagedAssembly>>& NameAssemblyKVP : Assemblies)
-	{
-		UCSManagedAssembly* Assembly = NameAssemblyKVP.Value;
-		TSharedPtr<FGCHandle> TypeHandle = Assembly->FindTypeHandle(FieldName);
-		
-		if (!TypeHandle.IsValid() || TypeHandle->IsNull())
-		{
-			continue;
-		}
-		
-		NativeClassToAssemblyMap.AddByHash(ObjectID.Get(), ObjectID, Assembly);
-		
-		FoundAssembly = Assembly;
-		break;
-	}
-
-	return FoundAssembly;
-}
-
 UCSManager* UCSManager::Instance = nullptr;
 
 void UCSManager::Initialize()
@@ -245,26 +203,47 @@ UCSManagedAssembly* UCSManager::LoadPluginAssemblyByName(const FName AssemblyNam
 	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
-UCSManagedAssembly* UCSManager::FindOwningAssembly(UClass* Class)
+UCSManagedAssembly* UCSManager::FindOwningAssembly(UField* Field)
 {
-	UClass* FirstNonBlueprintClass = FCSClassUtilities::GetFirstNonBlueprintClass(Class);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
 	
-	if (ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(FirstNonBlueprintClass))
+	UField* FirstNonBlueprintField = FCSClassUtilities::GetFirstNonBlueprintField(Field);
+	if (!IsValid(FirstNonBlueprintField))
+	{
+		return nullptr;
+	}
+	
+	if (ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(FirstNonBlueprintField))
 	{
 		return ManagedType->GetOwningAssembly();
 	}
+
+	const FCSObjectID PackageID = Field->GetPackage();
+	if (const TObjectPtr<UCSManagedAssembly>* Assembly = PackageToManagedAssembly.FindByHash(PackageID.Get(), PackageID))
+	{
+		return Assembly->Get();
+	}
 	
-	return FindOwningAssemblyGeneric(FirstNonBlueprintClass, NativeTypeToAssembly, Assemblies);
-}
+	const FCSFieldName FieldName = FCSFieldName::FromNativeBase(Field);
+	UCSManagedAssembly* FoundAssembly = nullptr;
+	
+	for (const TTuple<FName, TObjectPtr<UCSManagedAssembly>>& NameAssemblyKVP : Assemblies)
+	{
+		UCSManagedAssembly* Assembly = NameAssemblyKVP.Value;
+		TSharedPtr<FGCHandle> TypeHandle = Assembly->FindTypeHandle(FieldName);
+		
+		if (!TypeHandle.IsValid() || TypeHandle->IsNull())
+		{
+			continue;
+		}
+		
+		PackageToManagedAssembly.AddByHash(PackageID.Get(), PackageID, Assembly);
+		
+		FoundAssembly = Assembly;
+		break;
+	}
 
-UCSManagedAssembly* UCSManager::FindOwningAssembly(UScriptStruct* Struct)
-{
-	return FindOwningAssemblyGeneric(Struct, NativeTypeToAssembly, Assemblies);
-}
-
-UCSManagedAssembly* UCSManager::FindOwningAssembly(UEnum* Enum)
-{
-	return FindOwningAssemblyGeneric(Enum, NativeTypeToAssembly, Assemblies);
+	return FoundAssembly;
 }
 
 FGCHandle UCSManager::FindManagedObject(const UObject* Object)
@@ -280,7 +259,9 @@ FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 	if (TSharedPtr<FGCHandle>* FoundHandle = ManagedObjectHandles.FindByHash(ObjectID.Get(), ObjectID))
 	{
 		TSharedPtr<FGCHandle> HandlePtr = *FoundHandle;
+#if WITH_EDITOR
 		if (HandlePtr.IsValid() && !HandlePtr->IsNull())
+#endif
 		{
 			return *HandlePtr;
 		}

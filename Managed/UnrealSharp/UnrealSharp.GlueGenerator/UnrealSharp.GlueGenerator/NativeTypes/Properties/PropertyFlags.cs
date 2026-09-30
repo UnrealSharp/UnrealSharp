@@ -59,13 +59,22 @@ public enum EPropertyFlags : ulong
 
     /* Combination flags */
 
-    NativeAccessSpecifiers = NativeAccessSpecifierPublic | NativeAccessSpecifierProtected | NativeAccessSpecifierPrivate,
+    NativeAccessSpecifiers =
+        NativeAccessSpecifierPublic | NativeAccessSpecifierProtected | NativeAccessSpecifierPrivate,
 
     ParmFlags = Parm | OutParm | ReturnParm | ReferenceParm | ConstParm,
-    PropagateToArrayInner = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper,
-    PropagateToMapValue = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
-    PropagateToMapKey = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
-    PropagateToSetElement = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
+
+    PropagateToArrayInner = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference |
+                            Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper,
+
+    PropagateToMapValue = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config |
+                          EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
+
+    PropagateToMapKey = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config |
+                        EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
+
+    PropagateToSetElement = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference |
+                            Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
 
     /** the flags that should never be set on interface properties */
     InterfaceClearMask = ExportObject | InstancedReference | ContainsInstancedReference,
@@ -79,11 +88,11 @@ public enum EPropertyFlags : ulong
     EditDefaultsOnly = Edit | DisableEditOnInstance,
     EditInstanceOnly = Edit | DisableEditOnTemplate,
     EditAnywhere = Edit,
-    
+
     VisibleAnywhere = BlueprintVisible | BlueprintReadOnly,
     VisibleDefaultsOnly = BlueprintVisible | BlueprintReadOnly | DisableEditOnInstance,
     VisibleInstanceOnly = BlueprintVisible | BlueprintReadOnly | DisableEditOnTemplate,
-    
+
     BlueprintReadWrite = BlueprintVisible | Edit,
 
     AllFlags = 0xFFFFFFFFFFFFFFFF

@@ -39,7 +39,7 @@ public static class ScriptInterfaceExtensions
             return null;
         }
 
-        IntPtr nativeClass = typeof(T).TryGetNativeInterface();
+        IntPtr nativeClass = NativeReflectionHelper.GetNativeField<T>();
         IntPtr wrapperHandle = Bind_UCSManager.CallFindOrCreateManagedInterfaceWrapper(uobject!.NativeObject, nativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtrFast<T>(wrapperHandle);
     }
@@ -94,7 +94,7 @@ public static class ScriptInterfaceExtensions
 
 public static class ScriptInterfaceMarshaller<T> where T : class
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T? obj)
     {
         unsafe
         {

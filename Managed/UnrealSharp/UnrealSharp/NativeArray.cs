@@ -67,9 +67,9 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     }
     
     /// <summary>
-    /// Copy the elements of the span to an array
+    /// Copies the elements of the native array to the span.
     /// </summary>
-    /// <param name="array"> The array to copy the elements to. </param>
+    /// <param name="span"> The destination span. </param>
     public void CopyTo(Span<T> span)
     {
         Span<T> source = new Span<T>(NativeArrayBuffer.ToPointer(), Length);
@@ -93,9 +93,9 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
 
 
     /// <summary>
-    /// Copy from a span to the array
+    /// Copies the elements of the span to the native array.
     /// </summary>
-    /// <param name="array"> The array to copy the elements from. </param>
+    /// <param name="span"> The source span. </param>
     public void CopyFrom(ReadOnlySpan<T> span)
     {
         Bind_FArrayProperty.CallResizeArray(NativeUnrealProperty, NativeBuffer, span.Length);

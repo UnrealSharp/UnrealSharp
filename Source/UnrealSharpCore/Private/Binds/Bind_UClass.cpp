@@ -1,4 +1,5 @@
-﻿#include "CSManagedAssembly.h"
+﻿#include "CSBindsRegistry.h"
+#include "CSManagedAssembly.h"
 #include "CSManager.h"
 #include "UnrealSharpCore.h"
 
@@ -46,20 +47,16 @@ DECLARE_UNREALSHARP_BINDER(Bind_UClass)
 		return FirstNativeClass->FindFunctionByName(FunctionName);
 	}
 
-	void* GetDefaultFromName(const char* AssemblyName, const char* Namespace, const char* ClassName)
+	void* GetDefault(UClass* Class)
 	{
-		UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
-		FCSFieldName FieldName(ClassName, Namespace);
-		
-		UClass* ResolvedClass = Assembly->ResolveUField<UClass>(FieldName);
-		
-		if (!IsValid(ResolvedClass))
+#if WITH_EDITOR
+		if (UCSSkeletonClass* Skeleton = Cast<UCSSkeletonClass>(Class))
 		{
-			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get default object for class {0} in assembly {1}.", *FieldName.GetName(), *AssemblyName);
-			return nullptr;
+			Class = Skeleton->GetGeneratedClass();
 		}
-		
-		return UCSManager::Get().FindManagedObject(ResolvedClass->GetDefaultObject());
+#endif
+
+		return UCSManager::Get().FindManagedObject(Class->GetDefaultObject());
 	}
 
 	void* GetDefaultFromInstance(UObject* Object)
@@ -112,7 +109,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UClass)
 	BIND_UNREALSHARP_FUNCTION(GetNativeFunctionFromClassAndName)
 	BIND_UNREALSHARP_FUNCTION(GetNativeFunctionFromInstanceAndName)
 	BIND_UNREALSHARP_FUNCTION(GetFirstNativeImplementationFromInstanceAndName)
-	BIND_UNREALSHARP_FUNCTION(GetDefaultFromName)
+	BIND_UNREALSHARP_FUNCTION(GetDefault)
 	BIND_UNREALSHARP_FUNCTION(GetDefaultFromInstance)
 	BIND_UNREALSHARP_FUNCTION(IsChildOf)
 }

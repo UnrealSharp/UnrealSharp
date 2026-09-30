@@ -1,4 +1,5 @@
-﻿#include "CSManager.h"
+﻿#include "CSBindsRegistry.h"
+#include "CSManager.h"
 #include "Types/CSEnum.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UEnum)
@@ -16,7 +17,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UEnum)
 			return FGCHandleIntPtr();
 		}
 
-		const FCSFieldName FieldName(ScriptEnum);
+		const FCSFieldName FieldName = FCSFieldName::FromNativeBase(ScriptEnum);
 		const TSharedPtr<FCSManagedTypeDefinition> Info = Assembly->FindManagedTypeDefinition(FieldName);
 		if (!Info.IsValid())
 		{

@@ -181,6 +181,11 @@ public class FunctionExporter
                 Modifiers = ScriptGeneratorUtilities.PublicKeyword;
             }
             
+            if (FunctionName == nameof(ToString) && !Function.HasParameters)
+            {
+                Modifiers += "new ";
+            }
+
             InvokeFirstArgument = "NativeObject";
         }
 
@@ -270,19 +275,11 @@ public class FunctionExporter
                     paramsStringCallGenerics += $"{refQualifier}{parameterName}";
                 }
 
-                paramsStringCallNative += $"{refQualifier}{parameterName}";
-                paramString += $"{refQualifier}{parameterManagedType} {parameterName}";
-
-                if (!isGenericClassParam)
-                {
-                    paramStringApiWithDefaultsWithGenerics += $"{refQualifier}{parameterManagedType} {parameterName}";
-                }
-
-                if ((hasDefaultParameters || cppDefaultValue.Length > 0) && OverloadMode == OverloadMode.AllowOverloads)
+                bool exportDefault = (hasDefaultParameters || cppDefaultValue.Length > 0) && OverloadMode == OverloadMode.AllowOverloads;
+                string csharpDefaultValue = "";
+                if (exportDefault)
                 {
                     hasDefaultParameters = true;
-                    string csharpDefaultValue = "";
-                    
                     if (cppDefaultValue.Length == 0 || cppDefaultValue == "None")
                     {
                         csharpDefaultValue = translator.GetNullValue(parameter);
@@ -291,7 +288,23 @@ public class FunctionExporter
                     {
                         csharpDefaultValue = translator.ConvertCppDefaultValue(cppDefaultValue, Function, parameter);
                     }
-                    
+
+                    if (csharpDefaultValue == "null" && !parameterManagedType.EndsWith("?", StringComparison.Ordinal))
+                    {
+                        parameterManagedType += "?";
+                    }
+                }
+
+                paramsStringCallNative += $"{refQualifier}{parameterName}";
+                paramString += $"{refQualifier}{parameterManagedType} {parameterName}";
+
+                if (!isGenericClassParam)
+                {
+                    paramStringApiWithDefaultsWithGenerics += $"{refQualifier}{parameterManagedType} {parameterName}";
+                }
+
+                if (exportDefault)
+                {
                     if (!string.IsNullOrEmpty(csharpDefaultValue))
                     {
                         string defaultValue = $" = {csharpDefaultValue}";
@@ -490,12 +503,13 @@ public class FunctionExporter
             : "void";
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(function);
-        attributeBuilder.AddGeneratedTypeAttribute(function);
+        attributeBuilder.AddGeneratedFunctionName(function);
         attributeBuilder.Finish();
         builder.AppendLine(attributeBuilder.ToString());
 
         if (function.IsBlueprintCallable())
         {
+            ExportDeprecation(builder, function);
             builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
         
             builder.OpenBrace();
@@ -527,6 +541,7 @@ public class FunctionExporter
             builder.CloseBrace();
         }
         
+        ExportDeprecation(builder, function);
         builder.AppendLine($"void Invoke_{function.EngineName}(IntPtr buffer, IntPtr returnBuffer)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
@@ -591,8 +606,6 @@ public class FunctionExporter
         exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection);
 
         AttributeBuilder attributeBuilder = new AttributeBuilder();
-        // Use specialized delegate attribute method with modified C# delegate name (including Outer prefix)
-        attributeBuilder.AddGeneratedDelegateTypeAttribute(function, delegateName);
         
         if (function.HasAllFlags(EFunctionFlags.MulticastDelegate))
         {
@@ -665,7 +678,7 @@ public class FunctionExporter
         foreach (FunctionOverload overload in Overloads)
         {
             builder.AppendLine();
-            ExportDeprecation(builder);
+            ExportDeprecation(builder, Function);
 
             string returnType = "void";
             string returnStatement = "";
@@ -735,7 +748,7 @@ public class FunctionExporter
     {
         builder.AppendLine();
         builder.AppendTooltip(Function);
-        ExportDeprecation(builder);
+        ExportDeprecation(builder, Function);
 
         string returnManagedType = "void";
         if (ReturnValueTranslator != null)
@@ -842,7 +855,7 @@ public class FunctionExporter
         foreach (FunctionOverload overload in Overloads)
         {
             builder.AppendLine();
-            ExportDeprecation(builder);
+            ExportDeprecation(builder, Function);
 
             string returnType = "void";
             string returnStatement = "";
@@ -899,7 +912,6 @@ public class FunctionExporter
     void ExportFunction(GeneratorStringBuilder builder)
     {
         builder.AppendLine();
-        ExportDeprecation(builder);
         ExportSpecializationGetter(builder);
         
         ExportSignature(builder, Modifiers);
@@ -1060,6 +1072,7 @@ public class FunctionExporter
     void ExportSignature(GeneratorStringBuilder builder, string protection)
     {
         builder.AppendTooltip(Function);
+        ExportDeprecation(builder, Function);
 
         AttributeBuilder attributeBuilder = new AttributeBuilder(Function);
         
@@ -1068,7 +1081,7 @@ public class FunctionExporter
             attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
         }
         
-        attributeBuilder.AddGeneratedTypeAttribute(Function);
+        attributeBuilder.AddGeneratedFunctionName(Function);
 
         if (HasGenericTypeSupport)
         {
@@ -1130,11 +1143,11 @@ public class FunctionExporter
     }
     
 
-    void ExportDeprecation(GeneratorStringBuilder builder)
+    public static void ExportDeprecation(GeneratorStringBuilder builder, UhtFunction function)
     {
-        if (Function.HasMetadata("DeprecatedFunction"))
+        if (function.HasMetadata("DeprecatedFunction"))
         {
-            string deprecationMessage = Function.GetMetadata("DeprecationMessage");
+            string deprecationMessage = function.GetMetadata("DeprecationMessage");
             if (deprecationMessage.Length == 0)
             {
                 deprecationMessage = "This function is deprecated.";
@@ -1144,7 +1157,7 @@ public class FunctionExporter
                 // Remove nested quotes
                 deprecationMessage = deprecationMessage.Replace("\"", "");
             }
-            builder.AppendLine($"[Obsolete(\"{Function.SourceName} is deprecated: {deprecationMessage}\")]");
+            builder.AppendLine($"[Obsolete(\"{function.SourceName} is deprecated: {deprecationMessage}\")]");
         }
     }
 

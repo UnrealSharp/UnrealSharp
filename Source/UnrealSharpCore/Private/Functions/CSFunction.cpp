@@ -50,7 +50,7 @@ bool UCSFunctionBase::UpdateMethodHandle()
 	TSharedPtr<FCSManagedTypeDefinition> ClassInfo = ManagedClass->GetManagedTypeDefinition();
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeGCHandle();
 	
-	MethodHandle = Assembly->FindMethodHandle(TypeHandle, FString::Printf(TEXT("Invoke_%s"), *GetName()));
+	MethodHandle = Assembly->GetManagedMethod(TypeHandle, FString::Printf(TEXT("Invoke_%s"), *GetName()));
 	return MethodHandle.IsValid();
 }
 
@@ -93,7 +93,7 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 #endif
 
 	FString ExceptionMessage;
-	int ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
+	int32 ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
 		UCSManager::Get().FindManagedObject(ObjectToInvokeOn).GetPointer(),
 		ManagedFunction->MethodHandle->GetPointer(),
 		Stack.Locals,

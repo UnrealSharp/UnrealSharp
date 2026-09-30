@@ -9,8 +9,8 @@ struct FCSClassReflectionData : FCSClassBaseReflectionData
 	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
-	FCSTypeReferenceReflectionData ParentClass;
+	FCSFieldName ParentClass;
 	TArray<FName> Overrides;
-	TArray<FCSTypeReferenceReflectionData> Interfaces;
+	TArray<FCSFieldName> Interfaces;
 	TArray<FCSComponentOverrideReflectionData> ComponentOverrides;
 };

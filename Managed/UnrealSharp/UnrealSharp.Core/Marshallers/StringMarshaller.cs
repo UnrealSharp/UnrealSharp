@@ -4,7 +4,7 @@ namespace UnrealSharp.Core.Marshallers;
 
 public static class StringMarshaller
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, string stringToMarshal)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, string? stringToMarshal)
     {
         unsafe
         {

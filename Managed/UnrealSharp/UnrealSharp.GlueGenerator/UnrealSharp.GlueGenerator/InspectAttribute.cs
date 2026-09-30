@@ -3,6 +3,7 @@
 namespace UnrealSharp.GlueGenerator;
 
 public class Inspector : Attribute;
+
 public class InspectAttribute : Attribute
 {
     public InspectAttribute(string fullyQualifiedAttributeName = "", string name = "", string scope = "")
@@ -26,7 +27,7 @@ public class InspectArgumentAttribute : Attribute
         SpecifierNames = specifierNames;
         AttributeNames = attributeNames;
     }
-    
+
     public InspectArgumentAttribute(string specifierNames, params string[] attributeNames)
     {
         SpecifierNames = new[] { specifierNames };

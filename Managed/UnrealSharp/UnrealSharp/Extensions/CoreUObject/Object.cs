@@ -187,8 +187,9 @@ public partial class UObject
     /// <returns> The default object of the specified type. </returns>
     public static T GetDefault<T>() where T : UObject
     {
-        IntPtr nativeClass = typeof(T).TryGetNativeClassDefaults();
-        return GCHandleUtilities.GetObjectFromHandlePtr<T>(nativeClass)!;
+        IntPtr nativeClass = NativeReflectionHelper.GetNativeField<T>();
+        IntPtr nativeDefaultObject = Bind_UClass.CallGetDefault(nativeClass);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(nativeDefaultObject)!;
     }
 
     /// <summary>
@@ -219,7 +220,7 @@ public partial class UObject
             throw new ArgumentException("Path cannot be null or empty.", nameof(path));
         }
 
-        IntPtr basePtr = typeof(T).TryGetNativeClass();
+        IntPtr basePtr = NativeReflectionHelper.GetNativeField<T>();
         if (basePtr == IntPtr.Zero)
         {
             throw new InvalidOperationException($"Failed to get native class for type {typeof(T).Name}.");
@@ -258,7 +259,7 @@ public partial class UObject
             throw new ArgumentException("Path cannot be null or empty.", nameof(path));
         }
 
-        IntPtr basePtr = typeof(T).TryGetNativeClass();
+        IntPtr basePtr = NativeReflectionHelper.GetNativeField<T>();
         if (basePtr == IntPtr.Zero)
         {
             throw new InvalidOperationException($"Failed to get native class for type {typeof(T).Name}.");
@@ -614,7 +615,7 @@ public partial class UObject
     /// <summary>
     /// Creates a widget of the specified type using a parent widget as context.
     /// </summary>
-    /// <param name="parentWidget"> The parent widget used for world. </param>
+    /// <param name="owningWidget"> The widget used as the world context. </param>
     /// <param name="widgetClass"> The class of the widget to create. </param>
     /// <typeparam name="T"> The type of the widget to create. </typeparam>
     /// <returns>The created widget instance.</returns>
@@ -684,36 +685,5 @@ public static class UObjectExtensions
     public static bool IsValid(this UObject? obj)
     {
         return obj != null && !obj.IsDestroyed;
-    }
-}
-
-internal static class ReflectionHelper
-{
-    // Get the name without the U/A/F/E prefix.
-    internal static string GetEngineName(this Type type)
-    {
-        GeneratedTypeAttribute? generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
-
-        if (generatedTypeAttribute is null)
-        {
-            throw new Exception("Generated Type doesn't exist");
-        }
-
-        return generatedTypeAttribute.EngineName;
-    }
-
-    internal static IntPtr TryGetNativeClass(this Type type)
-    {
-        return Bind_UCoreUObject.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
-    }
-    
-    internal static IntPtr TryGetNativeInterface(this Type type)
-    {
-        return Bind_UCoreUObject.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
-    }
-    
-    internal static IntPtr TryGetNativeClassDefaults(this Type type)
-    {
-        return Bind_UClass.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
 }

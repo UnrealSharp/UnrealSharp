@@ -1,6 +1,9 @@
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using UnrealSharp.Core;
 using UnrealSharp.Editor.Interop;
+using UnrealSharp.Plugins;
 using UnrealSharp.SourceGenerator.Utilities;
 
 namespace UnrealSharp.Editor;
@@ -10,7 +13,7 @@ namespace UnrealSharp.Editor;
 public enum ECSTypeStructuralFlags : byte
 {
     None = 0,
-    StructuralChanges = 1 << 0, 
+    StructuralChanges = 1 << 0,
     ConstructorChanges = 1 << 1,
 };
 
@@ -26,7 +29,7 @@ public static class SyntaxUtilities
         List<BaseTypeDeclarationSyntax>? oldTypeDeclarations = existingTree != null
             ? existingTree.GetRoot().DescendantNodes().OfType<BaseTypeDeclarationSyntax>().ToList()
             : null;
-        
+
         for (int i = 0; i < newTypeDeclarations.Count; i++)
         {
             BaseTypeDeclarationSyntax newTypeDecl = newTypeDeclarations[i];
@@ -34,12 +37,13 @@ public static class SyntaxUtilities
             {
                 continue;
             }
-            
+
             ECSTypeStructuralFlags dirtyFlags = ECSTypeStructuralFlags.StructuralChanges;
 
             if (oldTypeDeclarations != null)
             {
-                BaseTypeDeclarationSyntax? oldTypeDecl = oldTypeDeclarations.FirstOrDefault(t => t.Identifier.Text == newTypeDecl.Identifier.Text);
+                BaseTypeDeclarationSyntax? oldTypeDecl =
+                    oldTypeDeclarations.FirstOrDefault(t => t.Identifier.Text == newTypeDecl.Identifier.Text);
 
                 if (oldTypeDecl != null)
                 {
@@ -47,7 +51,7 @@ public static class SyntaxUtilities
                     {
                         continue;
                     }
-                    
+
                     if (HasConstructorChanged(newTypeDecl, oldTypeDecl))
                     {
                         dirtyFlags |= ECSTypeStructuralFlags.ConstructorChanges;
@@ -59,37 +63,63 @@ public static class SyntaxUtilities
         }
     }
 
-    public static void DirtyUnrealType(BaseTypeDeclarationSyntax syntax, Project owningProject, ECSTypeStructuralFlags flags)
+    public static void DirtyUnrealType(BaseTypeDeclarationSyntax syntax, Project owningProject,
+        ECSTypeStructuralFlags flags)
     {
-        string typeNameSpace = syntax.GetFullNamespace();
-        string typeName = syntax.Identifier.Text.Substring(1);
+        string typeNamespace = syntax.GetFullNamespace();
+        string typeName = syntax.Identifier.Text;
         string assemblyName = owningProject.AssemblyName;
-        
-        Bind_FUnrealSharpEditorModule.CallDirtyUnrealType(assemblyName, typeNameSpace, typeName, flags);
+
+        string fullTypeName = string.IsNullOrEmpty(typeNamespace) ? typeName : $"{typeNamespace}.{typeName}";
+
+        Type? runtimeType = FindLoadedType(assemblyName, fullTypeName);
+        if (runtimeType == null)
+        {
+            Bind_FUnrealSharpEditorModule.CallNotifyNewType();
+        }
+        else
+        {
+            Bind_FUnrealSharpEditorModule.CallDirtyUnrealType(NativeReflectionHelper.GetNativeField(runtimeType),
+                flags);
+        }
     }
     
-    private static bool HasConstructorChanged(BaseTypeDeclarationSyntax newBaseType, BaseTypeDeclarationSyntax oldBaseType)
+    private static Type? FindLoadedType(string assemblyName, string fullTypeName)
+    {
+        Plugin? plugin = PluginLoader.FindPlugin(assemblyName);
+
+        if (plugin == null)
+        {
+            throw new ArgumentException($"Plugin {assemblyName} could not be found.");
+        }
+        
+        Assembly assembly = (Assembly) plugin.Assembly!.Target!;
+        return assembly.GetType(fullTypeName, throwOnError: false);
+    }
+
+    private static bool HasConstructorChanged(BaseTypeDeclarationSyntax newBaseType,
+        BaseTypeDeclarationSyntax oldBaseType)
     {
         if (newBaseType is not TypeDeclarationSyntax newType || oldBaseType is not TypeDeclarationSyntax oldType)
         {
             return false;
         }
-        
+
         ConstructorDeclarationSyntax? newConstructor = GetConstructor(newType);
         ConstructorDeclarationSyntax? oldConstructor = GetConstructor(oldType);
-        
+
         if (newConstructor == null && oldConstructor == null)
         {
             // No constructors existed before or now
             return false;
         }
-        
+
         if (newConstructor == null || oldConstructor == null)
         {
             // New constructor was added or removed
             return true;
         }
-        
+
         return !newConstructor.IsEquivalentTo(oldConstructor, topLevel: false);
     }
 

@@ -21,7 +21,9 @@ public partial record struct FGameplayTag
     public FGameplayTag(string tagName, string tagComment = "")
     {
         Assembly assembly = Assembly.GetCallingAssembly();
-        this = UCSGameplayTagsManager.AddTag_Editor(assembly.GetName().Name, tagName, tagComment);
+        string assemblyName = assembly.GetName().Name
+            ?? throw new InvalidOperationException("The calling assembly has no name.");
+        this = UCSGameplayTagsManager.AddTag_Editor(assemblyName, tagName, tagComment);
     }
 #else
     public FGameplayTag(string tagName, string tagComment = "")

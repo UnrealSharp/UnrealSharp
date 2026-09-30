@@ -27,11 +27,11 @@ FProperty* UCSDelegatePropertyGenerator::CreateProperty(UField* Outer, const FCS
 	const FCSPropertyReflectionData* InnerType = TemplateType->GetTemplateArgument(0);
 	TSharedPtr<FCSFieldType> FieldType = InnerType->GetInnerTypeData<FCSFieldType>();
 	
-	DelegateProperty->SignatureFunction = FieldType->InnerType.ResolveUField<UFunction>();
+	DelegateProperty->SignatureFunction = FieldType->InnerType.ResolveField<UFunction>();
 
 	if (!IsValid(DelegateProperty->SignatureFunction))
 	{
-		UE_LOGFMT(LogUnrealSharp, Error, "Failed to get delegate signature function for delegate property '{0}'", *PropertyReflectionData.FieldName.GetFullName().ToString());
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to get delegate signature function for delegate property '{0}'", *PropertyReflectionData.FieldName.GetFullName());
 		return nullptr;
 	}
 	

@@ -80,6 +80,7 @@ public static class ModuleFactory
 			new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString()),
 			new("TargetType", GeneratorStatics.TargetType.ToString()),
 			new("OutputDirectory", PathUtilities.BuildOutputPath(GeneratorStatics.Factory.Session.ProjectDirectory!)),
+			new("AddReferences", "true")
 		};
 
 		UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("BuildUserGlue", commandArgs);

@@ -1,4 +1,5 @@
-﻿#include "CSManager.h"
+﻿#include "CSBindsRegistry.h"
+#include "CSManager.h"
 #include "Types/CSScriptStruct.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UScriptStruct)
@@ -86,7 +87,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UScriptStruct)
 	    return Data.LargeStorage;
 	}
 
-	FGCHandleIntPtr GetManagedStructType(UScriptStruct *ScriptStruct)
+	FGCHandleIntPtr GetManagedStructType(UScriptStruct* ScriptStruct)
 	{
 	    if (const UCSScriptStruct* CSStruct = Cast<UCSScriptStruct>(ScriptStruct); CSStruct != nullptr)
 	    {
@@ -99,7 +100,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UScriptStruct)
 	        return FGCHandleIntPtr();
 	    }
 
-	    const FCSFieldName FieldName(ScriptStruct);
+	    const FCSFieldName FieldName = FCSFieldName::FromNativeBase(ScriptStruct);
 	    const TSharedPtr<FCSManagedTypeDefinition> Info = Assembly->FindManagedTypeDefinition(FieldName);
 	    if (!Info.IsValid())
 	    {

@@ -104,6 +104,8 @@ public readonly record struct TOptional<T> : IComparable<TOptional<T>> where T :
         return EqualityComparer<T>.Default.Equals(_value, other.Value);
     }
 
+    public override int GetHashCode() => HasValue ? EqualityComparer<T>.Default.GetHashCode(_value) : 0;
+
     public int CompareTo(TOptional<T> other)
     {
         if (HasValue)

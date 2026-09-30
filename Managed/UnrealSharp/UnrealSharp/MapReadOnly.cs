@@ -1,4 +1,5 @@
-﻿using UnrealSharp.Attributes;
+﻿using System.Diagnostics.CodeAnalysis;
+using UnrealSharp.Attributes;
 using UnrealSharp.Core.Marshallers;
 
 namespace UnrealSharp;
@@ -15,7 +16,7 @@ public class TMapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictio
     }
 
     /// <inheritdoc />
-    public TValue this[TKey key] => Get(key);
+    public TValue this[TKey key] => TryGetInternal(key, out var value) ? value : throw new KeyNotFoundException();
 
     public KeyEnumerator Keys => new(this);
     IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => new KeyEnumerator(this);
@@ -23,15 +24,8 @@ public class TMapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictio
     IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => new ValueCollection(this);
 
     /// <inheritdoc />
-    public bool TryGetValue(TKey key, out TValue? value)
+    public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        var index = IndexOf(key);
-        if (index >= 0)
-        {
-            value = GetAt(index).Value;
-            return true;
-        }
-        value = default;
-        return false;
+        return TryGetInternal(key, out value);
     }
 }

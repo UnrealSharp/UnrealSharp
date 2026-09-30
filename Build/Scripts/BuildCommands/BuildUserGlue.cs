@@ -1,13 +1,15 @@
-﻿using System;
+using AutomationTool;
+using EpicGames.Core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using AutomationTool;
-using EpicGames.Core;
+using System.Xml;
 using UnrealBuildTool;
 using UnrealSharp.Automation.Utilities;
+using UnrealSharp.Shared;
 
 namespace UnrealSharp.Automation.BuildCommands;
 
@@ -15,6 +17,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("TargetConfiguration=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
 [Help("TargetType=<Type>", "The target type (Editor, Game, etc.) to build glue for.")]
 [Help("OutputDirectory=<OutputDirectory>", "The directory to output the built glue assemblies to.")]
+[Help("AddReferences=<true|false>", "Whether to add references to the user project.")]
 [Help("ExtraArguments=<Arg>+<Arg>", "Additional arguments forwarded to dotnet build/publish.")]
 public class BuildUserGlue : BuildCommand
 {
@@ -28,12 +31,13 @@ public class BuildUserGlue : BuildCommand
         TargetType TargetType = ParseRequiredEnumParamEnum<TargetType>("TargetType");
         UnrealTargetConfiguration TargetConfiguration = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("TargetConfiguration");
         string OutputDirectory = ParseRequiredStringParam("OutputDirectory");
+        bool AddReferences = ParseParamBool("AddReferences", false);
         string[] ExtraArguments = ParseParamValues("ExtraArguments");
 
-        Build(this, TargetType, TargetConfiguration, OutputDirectory, ExtraArguments);
+        Build(this, TargetType, TargetConfiguration, OutputDirectory, AddReferences, ExtraArguments);
     }
 
-    public static void Build(BuildCommand command, TargetType targetType, UnrealTargetConfiguration buildConfig, string outputDirectory, IList<string>? extraArguments = null)
+    public static void Build(BuildCommand command, TargetType targetType, UnrealTargetConfiguration buildConfig, string outputDirectory, bool addReferences, IList<string>? extraArguments = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(outputDirectory);
 
@@ -49,6 +53,11 @@ public class BuildUserGlue : BuildCommand
         GenerateSolution(command, SolutionDirectory, GlueProjectPaths);
         BuildSolution(command, SolutionDirectory, outputDirectory, buildConfig, GlueProjectPaths, extraArguments);
         CreateSolutionStamp(SolutionDirectory, GlueProjectPaths);
+
+        if (addReferences)
+        {
+            AddUserProjectReferences(command);
+        }
     }
 
     private static void GenerateSolution(BuildCommand command, string solutionDirectory, List<string> glueProjectPaths)
@@ -115,8 +124,7 @@ public class BuildUserGlue : BuildCommand
         
         LoggerUtilities.LogUnrealSharpInfo("Creating Solution Stamp...");
     }
-        
-        
+
     private static void BuildSolution(BuildCommand buildCommand, string solutionOutputDirectory, string publishDirectory, UnrealTargetConfiguration buildConfig, List<string> glueProjectPaths, IList<string>? extraArguments)
     {
         LoggerUtilities.LogUnrealSharpInfo($"Building UnrealSharp glue projects in {solutionOutputDirectory} with build configuration {buildConfig}...");
@@ -155,6 +163,47 @@ public class BuildUserGlue : BuildCommand
         }
 
         CommandUtilities.RunCommand(nameof(BuildEmitLoadOrder), buildCommand, ActionArgs);
+    }
+
+    private static void AddUserProjectReferences(BuildCommand command)
+    {
+        string GlueFileName = AssemblyUtilities.MakeLoadOrderFileName(LoadOrderUtilities.GlueLoadOrderName);
+        string GlueSource = PathUtilities.BuildOutputPath(command.GetProjectRootFolder());
+        string GlueManifest = Path.Combine(GlueSource, GlueFileName);
+
+        if (!File.Exists(GlueManifest))
+        {
+            LoggerUtilities.LogUnrealSharpWarning($"Runtime glue manifest not found at {GlueManifest}.");
+            return;
+        }
+
+        IEnumerable<string> Dependencies = AssemblyUtilities.ReadLoadOrder(GlueManifest)
+            .Select(name => Path.Combine(GlueSource, name + ".dll"))
+            .Where(File.Exists);
+
+        IEnumerable<FileInfo> ManagedProjects = command.GetManagedProjectFiles()
+            .Where(file => !file.Name.Contains("RuntimeGlue", StringComparison.OrdinalIgnoreCase));
+
+        foreach (FileInfo Project in ManagedProjects)
+        {
+            DirectoryInfo? ProjectDirectory = Project.Directory;
+            if (ProjectDirectory is null)
+            {
+                LoggerUtilities.LogUnrealSharpWarning($"Skipping adding references for {Project.FullName}: parent directory is null.");
+                continue;
+            }
+
+            LoggerUtilities.LogUnrealSharpInfo($"Adding project references for {Project.Name}.");
+
+            XmlDocument CsprojDocument = new XmlDocument();
+            CsprojDocument.Load(Project.FullName);
+            CsprojDocument.EnsureProjectRoot();
+
+            XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(CsprojDocument);
+            CsProjectUtilities.AddProjectReferences(CsprojDocument, ItemGroup, ProjectDirectory.FullName, Dependencies);
+
+            CsprojDocument.Save(Project.FullName);
+        }
     }
 
     private static List<string> GetGlueProjectPaths(BuildCommand command, TargetType targetType)

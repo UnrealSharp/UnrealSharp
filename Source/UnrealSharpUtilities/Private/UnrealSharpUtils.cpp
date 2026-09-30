@@ -78,6 +78,29 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 	Struct->ScriptAndPropertyObjectReferences.Empty();
 }
 
+const TCHAR* FCSUnrealSharpUtils::GetPrefix(const UField* Field)
+{
+	if (const UClass* Class = Cast<UClass>(Field))
+	{
+		if (Class->HasAnyClassFlags(CLASS_Interface))
+		{
+			return TEXT("I");
+		}
+	}
+
+	if (const UStruct* Struct = Cast<UStruct>(Field))
+	{
+		return Struct->GetPrefixCPP();
+	}
+	
+	if (Cast<UEnum>(Field))
+	{
+		return TEXT("E");
+	}
+	
+	return TEXT("");
+}
+
 FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
 {
 	if (Name.IsEmpty())

@@ -20,7 +20,7 @@ public enum PropertyType : byte
     Float,
 
     Enum,
-    
+
     Struct,
     Class,
 
@@ -41,7 +41,7 @@ public enum PropertyType : byte
     Map,
     Set,
     Optional,
-        
+
     String,
     Name,
     Text,

@@ -35,9 +35,9 @@ public record ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// <param name=\"bManualAttachment\">If true, the component will not be attached to the actor's root component.</param>");
         stringBuilder.AppendLine("     /// <param name=\"relativeTransform\">The relative transform of the component to the actor.</param>");
         stringBuilder.AppendLine("     /// <returns>The constructed component.</returns>");
-        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.AActor owner, TSubclassOf<UActorComponent> componentClass, bool bManualAttachment, FTransform relativeTransform)");
+        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.AActor owner, TSubclassOf<{fullTypeName}> componentClass, bool bManualAttachment, FTransform relativeTransform)");
         stringBuilder.AppendLine("     {");
-        stringBuilder.AppendLine($"         return ({fullTypeName}) owner.AddComponentByClass(componentClass, bManualAttachment, relativeTransform);");
+        stringBuilder.AppendLine($"         return owner.AddComponentByClass<{fullTypeName}>(componentClass, bManualAttachment, relativeTransform);");
         stringBuilder.AppendLine("     }");
         
         stringBuilder.AppendLine();
@@ -48,7 +48,7 @@ public record ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// <returns>The constructed component.</returns>");
         stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.AActor owner)");
         stringBuilder.AppendLine("     {");
-        stringBuilder.AppendLine($"         return ({fullTypeName}) owner.AddComponentByClass(typeof({fullTypeName}), false, new FTransform());");
+        stringBuilder.AppendLine($"         return owner.AddComponentByClass<{fullTypeName}>(typeof({fullTypeName}), false, new FTransform());");
         stringBuilder.AppendLine("     }");
     }
     
@@ -62,12 +62,7 @@ public record ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// <returns>The component if found, otherwise null.</returns>");
         stringBuilder.AppendLine($"     public static new {fullTypeName}? Get(UnrealSharp.Engine.AActor owner)");
         stringBuilder.AppendLine("     {");
-        stringBuilder.AppendLine($"        UActorComponent? foundComponent = owner.GetComponentByClass<{fullTypeName}>(typeof({fullTypeName}));");
-        stringBuilder.AppendLine("        if (foundComponent != null)");
-        stringBuilder.AppendLine("        {");
-        stringBuilder.AppendLine($"            return ({fullTypeName}) foundComponent;");
-        stringBuilder.AppendLine("        }");
-        stringBuilder.AppendLine("        return null;");
+        stringBuilder.AppendLine($"        return owner.GetComponentByClass<{fullTypeName}>(typeof({fullTypeName}));");
         stringBuilder.AppendLine("     }");
     }
 }

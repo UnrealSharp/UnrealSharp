@@ -153,11 +153,11 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	if (bDetectedNewManagedType)
 	{
 		FCSHotReloadUtilities::RefreshPlacementMode();
-		FCSHotReloadUtilities::RefreshBlueprintActionDatabase(ReloadedTypes);
 	}
 	
 	if (ReloadedTypes.Num() > 0)
 	{
+		FCSHotReloadUtilities::RefreshBlueprintActionDatabase(ReloadedTypes);
 		FCSHotReloadUtilities::RefreshStructs(ReloadedTypes);
 		
 		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
@@ -227,28 +227,6 @@ void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 		FName ProjectName = *FPaths::GetBaseFilename(ProjectPath);
 		AddDirectoryToWatch(Path, ProjectName);
 	}
-}
-
-void UCSHotReloadSubsystem::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags)
-{
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(AssemblyName);
-
-	if (!IsValid(Assembly))
-	{
-		return;
-	}
-
-	FCSFieldName FieldName(TypeName, Namespace);
-	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindManagedTypeDefinition(FieldName);
-
-	if (!ManagedTypeDefinition.IsValid())
-	{
-		bDetectedNewManagedType = true;
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Skipping dirty check: {0}.{1} isn't registered in assembly {2}. It may be a new managed type.", Namespace, TypeName, AssemblyName);
-		return;
-	}
-	
-	ManagedTypeDefinition->SetDirtyFlags(Flags);
 }
 
 void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,33 +13,28 @@ public static class SourceGenUtilities
     public const string ParamsBuffer = "paramsAlloc";
     public const string ParamsBufferAllocation = "alloc";
     public const string IntPtrZero = "IntPtr.Zero";
-    
+
     public const string Buffer = "buffer";
-    
+
     public const string NativeTypePtr = "NativeTypePtr";
     public const string NativeObject = "NativeObject";
-    
+
     public const string ReturnAssignment = "return ";
     public const string ValueParam = "value";
-    
+
     public const string ReturnValueName = "ReturnValue";
-    
+
     public const string ClassKeyword = "class";
     public const string StructKeyword = "struct";
     public const string InterfaceKeyword = "interface";
     public const string EnumKeyword = "enum";
     public const string DelegateKeyword = "delegate";
-    
-    public static bool HasAttribute(this ISymbol symbol, string attributeFullName)
+
+    public static bool HasAttribute(this ISymbol symbol, string attributeName)
     {
         foreach (AttributeData attribute in symbol.GetAttributes())
         {
-            if (attribute.AttributeClass is null)
-            {
-                continue;
-            }
-            
-            if (attribute.AttributeClass.Name == attributeFullName)
+            if (MatchesAttributeName(attribute, attributeName))
             {
                 return true;
             }
@@ -48,38 +42,67 @@ public static class SourceGenUtilities
 
         return false;
     }
-    
+
+    private static bool MatchesAttributeName(AttributeData attribute, string attributeName)
+    {
+        INamedTypeSymbol? attributeClass = attribute.AttributeClass;
+
+        if (attributeClass is null)
+        {
+            return false;
+        }
+
+        if (attributeName.IndexOf('.') < 0)
+        {
+            return string.Equals(attributeClass.Name, attributeName, StringComparison.Ordinal);
+        }
+
+        return string.Equals(
+            attributeClass.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat.WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle
+                    .Omitted)),
+            attributeName,
+            StringComparison.Ordinal);
+    }
+
     public static bool HasUFunctionAttribute(this ISymbol symbol)
     {
         return HasAttribute(symbol, "UFunctionAttribute");
     }
-    
-    public static string TryGetEngineName(this ISymbol symbol)
+
+    public static string GetFunctionEngineName(this IMethodSymbol methodSymbol)
     {
-        foreach (AttributeData attribute in symbol.GetAttributes())
+        foreach (AttributeData attribute in methodSymbol.GetAttributes())
         {
-            if (attribute.AttributeClass!.Name != "GeneratedTypeAttribute")
+            if (attribute.AttributeClass?.Name != "GeneratedFunctionAttribute")
             {
                 continue;
             }
 
-            return (string) attribute.ConstructorArguments[0].Value!;
+            if (attribute.ConstructorArguments.Length > 0 && attribute.ConstructorArguments[0].Value is string name)
+            {
+                return name;
+            }
+
+            break;
         }
-        
+
         return string.Empty;
     }
-    
-    public static List<AttributeData> GetAttributesByName(this ISymbol symbol, string attributeFullName)
+
+    public static List<AttributeData> GetAttributesByName(this ISymbol symbol, string attributeName,
+        bool ignoreCase = false)
     {
         ImmutableArray<AttributeData> symbolAttributes = symbol.GetAttributes();
-        int attributeCount = symbolAttributes.Length;
-        
-        List<AttributeData> attributes = new List<AttributeData>(attributeCount);
-        
-        for (int i = 0; i < attributeCount; i++)
+        List<AttributeData> attributes = new List<AttributeData>(symbolAttributes.Length);
+
+        StringComparison comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+        for (int i = 0; i < symbolAttributes.Length; i++)
         {
             AttributeData attribute = symbolAttributes[i];
-            if (attribute.AttributeClass!.Name == attributeFullName)
+
+            if (string.Equals(attribute.AttributeClass?.Name, attributeName, comparison))
             {
                 attributes.Add(attribute);
             }
@@ -87,16 +110,16 @@ public static class SourceGenUtilities
 
         return attributes;
     }
-    
+
     public static T? TryGetAttributeConstructorArgument<T>(this AttributeData attribute, int argumentIndex)
     {
         if (attribute.ConstructorArguments.Length <= argumentIndex)
         {
             return default;
         }
-        
+
         TypedConstant argument = attribute.ConstructorArguments[argumentIndex];
-            
+
         if (argument.Value is not T value)
         {
             return default;
@@ -104,7 +127,7 @@ public static class SourceGenUtilities
 
         return value;
     }
-    
+
     public static object? TryGetAttributeNamedArgument(this AttributeData attribute, string argumentName)
     {
         foreach (KeyValuePair<string, TypedConstant> namedArgument in attribute.NamedArguments)
@@ -117,7 +140,7 @@ public static class SourceGenUtilities
 
         return null;
     }
-    
+
     public static List<MetaDataInfo>? GetUMetaAttributes(this ISymbol symbol)
     {
         ImmutableArray<AttributeData> symbolAttributes = symbol.GetAttributes();
@@ -125,83 +148,47 @@ public static class SourceGenUtilities
 
         foreach (AttributeData attribute in symbolAttributes)
         {
-            if (attribute.AttributeClass == null)
+            INamedTypeSymbol? attributeClass = attribute.AttributeClass;
+
+            if (attributeClass == null)
             {
                 continue;
             }
-            
-            INamedTypeSymbol? attributeClass = attribute.AttributeClass;
-            
+
             if (attributeClass.Name == "UMetaDataAttribute")
             {
-                string key = string.Empty;
-                string value = string.Empty;
+                string key = attribute.TryGetAttributeConstructorArgument<string>(0) ?? string.Empty;
+                string value = attribute.TryGetAttributeConstructorArgument<string>(1) ?? string.Empty;
 
-                if (attribute.ConstructorArguments.Length > 0)
+                if (key.Length == 0)
                 {
-                    TypedConstant argument = attribute.ConstructorArguments[0];
-                    if (argument.Value is string argumentValue)
-                    {
-                        key = argumentValue;
-                    }
+                    continue;
                 }
 
-                if (attribute.ConstructorArguments.Length > 1)
-                {
-                    TypedConstant argument = attribute.ConstructorArguments[1];
-                    if (argument.Value is string argumentValue)
-                    {
-                        value = argumentValue;
-                    }
-                }
-
-                if (attributes == null)
-                {
-                    attributes = new List<MetaDataInfo>();
-                }
-
+                attributes ??= new List<MetaDataInfo>();
                 attributes.Add(new MetaDataInfo(key, value));
                 continue;
             }
-            
+
             if (attributeClass.HasAttribute("CustomMetaDataAttribute"))
             {
                 string attributeName = attributeClass.Name;
 
-                int attributeSuffixIndex = attributeName.IndexOf("Attribute", StringComparison.OrdinalIgnoreCase);
+                string key = attributeName.EndsWith("Attribute", StringComparison.Ordinal) &&
+                             attributeName.Length > "Attribute".Length
+                    ? attributeName.Substring(0, attributeName.Length - "Attribute".Length)
+                    : attributeName;
 
-                string key;
-                if (attributeSuffixIndex >= 0)
-                {
-                    key = attributeName.Substring(0, attributeSuffixIndex);
-                }
-                else
-                {
-                    key = attributeName;
-                }
+                string value = attribute.TryGetAttributeConstructorArgument<string>(0) ?? string.Empty;
 
-                string value = string.Empty;
-                if (attribute.ConstructorArguments.Length > 0)
-                {
-                    TypedConstant argument = attribute.ConstructorArguments[0];
-                    if (argument.Value is string argumentValue)
-                    {
-                        value = argumentValue;
-                    }
-                }
-
-                if (attributes == null)
-                {
-                    attributes = new List<MetaDataInfo>();
-                }
-
+                attributes ??= new List<MetaDataInfo>();
                 attributes.Add(new MetaDataInfo(key, value));
             }
         }
 
         return attributes;
     }
-    
+
     public static string RefKindToString(this RefKind refKind)
     {
         return refKind switch
@@ -210,10 +197,10 @@ public static class SourceGenUtilities
             RefKind.Ref => "ref ",
             RefKind.Out => "out ",
             RefKind.In => "in ",
-            _ => throw new ArgumentOutOfRangeException(nameof(refKind), refKind, null)
+            _ => string.Empty
         };
     }
-    
+
     public static string AccessibilityToString(this Accessibility accessibility)
     {
         return accessibility switch
@@ -227,45 +214,71 @@ public static class SourceGenUtilities
             _ => string.Empty
         };
     }
-    
+
     public static string GetNamespace(this ISymbol symbol)
     {
-        if (symbol.ContainingNamespace.IsGlobalNamespace)
+        if (symbol.ContainingNamespace == null || symbol.ContainingNamespace.IsGlobalNamespace)
         {
             return string.Empty;
         }
 
         return symbol.ContainingNamespace.ToDisplayString();
     }
-    
-    public static string GetEnumNameFromValue(ITypeSymbol enumType, byte value)
+
+    public static string GetEnumNameFromValue(ITypeSymbol enumType, object? value)
     {
-        foreach (ISymbol? member in enumType.GetMembers())
+        if (value == null)
         {
-            if (member is not IFieldSymbol field || field.ConstantValue is null || (byte) field.ConstantValue != value)
+            return string.Empty;
+        }
+
+        ulong target;
+
+        try
+        {
+            target = Convert.ToUInt64(value);
+        }
+        catch (Exception)
+        {
+            return value.ToString() ?? string.Empty;
+        }
+
+        foreach (ISymbol member in enumType.GetMembers())
+        {
+            if (member is not IFieldSymbol field || field.ConstantValue is null)
             {
                 continue;
             }
 
-            return field.Name;
+            try
+            {
+                if (Convert.ToUInt64(field.ConstantValue) == target)
+                {
+                    return field.Name;
+                }
+            }
+            catch (Exception)
+            {
+            }
         }
 
-        return value.ToString();
+        return value.ToString() ?? string.Empty;
     }
 
-    public static void ExportListToStaticConstructor<T>(this EquatableList<T> list, GeneratorStringBuilder builder, string nativeType) where T : UnrealType, IEquatable<T>
+    public static void ExportListToStaticConstructor<T>(this EquatableList<T> list, GeneratorStringBuilder builder,
+        string nativeType) where T : UnrealType, IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
-        
+
         foreach (T item in list)
         {
             item.ExportBackingVariablesToStaticConstructor(builder, nativeType);
         }
     }
-    
+
     public static Accessibility GetDeclaredAccessibility(this SyntaxNode node)
     {
         SyntaxTokenList modifiers = node switch
@@ -282,91 +295,97 @@ public static class SourceGenUtilities
         {
             return Accessibility.NotApplicable;
         }
-        
+
         foreach (SyntaxToken modifier in modifiers)
         {
             switch (modifier.Kind())
             {
                 case SyntaxKind.PublicKeyword:
                     return Accessibility.Public;
+
                 case SyntaxKind.PrivateKeyword:
-                    return Accessibility.Private;
+                    return modifiers.Any(SyntaxKind.ProtectedKeyword)
+                        ? Accessibility.ProtectedAndInternal
+                        : Accessibility.Private;
+
                 case SyntaxKind.ProtectedKeyword:
                     if (modifiers.Any(SyntaxKind.InternalKeyword))
                     {
-                        return Accessibility.ProtectedAndInternal;
+                        return Accessibility.ProtectedOrInternal;
                     }
-                    return Accessibility.Protected;
-                case SyntaxKind.InternalKeyword:
-                    if (modifiers.Any(SyntaxKind.ProtectedKeyword))
+
+                    if (modifiers.Any(SyntaxKind.PrivateKeyword))
                     {
                         return Accessibility.ProtectedAndInternal;
                     }
-                    return Accessibility.Internal;
+
+                    return Accessibility.Protected;
+
+                case SyntaxKind.InternalKeyword:
+                    return modifiers.Any(SyntaxKind.ProtectedKeyword)
+                        ? Accessibility.ProtectedOrInternal
+                        : Accessibility.Internal;
             }
         }
-        
+
         return Accessibility.NotApplicable;
     }
-    
+
     public static ISymbol? GetMemberSymbolByName(this INamedTypeSymbol typeSymbol, string memberName)
     {
-        ISymbol? foundMember = null;
-        
         ITypeSymbol? currentType = typeSymbol;
-        
+
         while (currentType != null)
         {
             foreach (ISymbol member in currentType.GetMembers())
             {
-                if (member.Name != memberName)
+                if (member.Name == memberName)
                 {
-                    continue;
+                    return member;
                 }
-                
-                foundMember = member;
-                break;
             }
 
-            if (foundMember != null)
-            {
-                break;
-            }
-            
             currentType = currentType.BaseType;
         }
 
-        return foundMember;
+        return null;
     }
-    
+
     public static bool IsChildOf(this INamedTypeSymbol typeSymbol, INamedTypeSymbol potentialBaseType)
     {
         INamedTypeSymbol? currentBaseType = typeSymbol;
-        
+
         while (currentBaseType != null)
         {
             if (SymbolEqualityComparer.Default.Equals(currentBaseType, potentialBaseType))
             {
                 return true;
             }
-            
+
             currentBaseType = currentBaseType.BaseType;
         }
 
         return false;
     }
-    
+
     public static bool IsChildOf(this INamedTypeSymbol typeSymbol, string potentialBaseTypeName)
     {
+        bool qualified = potentialBaseTypeName.IndexOf('.') >= 0;
+
+        SymbolDisplayFormat format = SymbolDisplayFormat.FullyQualifiedFormat
+            .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted);
+
         INamedTypeSymbol? currentBaseType = typeSymbol;
-        
+
         while (currentBaseType != null)
         {
-            if (currentBaseType.Name == potentialBaseTypeName)
+            string candidate = qualified ? currentBaseType.ToDisplayString(format) : currentBaseType.Name;
+
+            if (string.Equals(candidate, potentialBaseTypeName, StringComparison.Ordinal))
             {
                 return true;
             }
-            
+
             currentBaseType = currentBaseType.BaseType;
         }
 
