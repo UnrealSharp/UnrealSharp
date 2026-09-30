@@ -34,6 +34,10 @@
       <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
     
+    <Reference Include="Microsoft.VisualStudio.SolutionPersistence">
+      <HintPath>..\Libs\Microsoft.VisualStudio.SolutionPersistence.dll</HintPath>
+    </Reference>
+    
     <Reference Include="UnrealBuildTool">
       <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll</HintPath>
       <Private>false</Private>
@@ -51,4 +55,5 @@
 
     <Compile Include="..\..\Managed\Shared\*.cs" Link="..\..\Managed\Shared\*.cs" />
   </ItemGroup>
+
 </Project>
