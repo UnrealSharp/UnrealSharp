@@ -27,15 +27,15 @@ class UCSGameInstanceSubsystem : public UGameInstanceSubsystem, public FTickable
 
 public:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "UnrealSharp|Subsystem")
 	bool bIsTickable;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp|Subsystem")
 	void SetIsTickable(bool bInIsTickable);
 
 protected:
 
-	UFUNCTION(BlueprintCallable, meta = (ScriptName = "GetGameInstance"), DisplayName = "Get Game Instance")
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp|Subsystem", meta = (ScriptName = "GetGameInstance"), DisplayName = "Get Game Instance")
 	UGameInstance* K2_GetGameInstance() const;
 
 	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"))

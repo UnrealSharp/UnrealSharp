@@ -43,6 +43,6 @@ public:
 public:
 
 	// Is this UObject replicated?
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "UnrealSharp|Replication")
 	TEnumAsByte<ECSReplicationState> ReplicationState = ECSReplicationState::Replicates;
 };

@@ -31,10 +31,10 @@ class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem, public FTickableGa
 
 public:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "UnrealSharp|Subsystem")
 	bool bIsTickable;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp|Subsystem")
 	void SetIsTickable(bool bInIsTickable)
 	{
 		bIsTickable = bInIsTickable;
