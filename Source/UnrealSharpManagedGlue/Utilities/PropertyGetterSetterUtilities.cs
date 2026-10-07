@@ -41,7 +41,13 @@ public static class PropertyGetterSetterUtilities
         {
             return false;
         }
-        
+
+        UhtFunction? counterpart = FindCounterpart(owningClass, propertyName, isGetter);
+        if (counterpart != null && !CanShareProperty(isGetter ? function : counterpart, isGetter ? counterpart : function))
+        {
+            return false;
+        }
+
         if (!getterSetterPairs.TryGetValue(propertyName, out GetterSetterPair? pair))
         {
             pair = new GetterSetterPair(propertyName, primaryProperty);
@@ -52,8 +58,6 @@ public static class PropertyGetterSetterUtilities
         {
             return true;
         }
-        
-        UhtFunction? counterpart = FindCounterpart(owningClass, propertyName, isGetter);
 
         if (isGetter)
         {
@@ -125,7 +129,22 @@ public static class PropertyGetterSetterUtilities
         bool isValid = isCurrentGetter ? CheckIfSetter(scriptName, candidate) : CheckIfGetter(scriptName, candidate);
         return isValid ? candidate : null;
     }
-    
+
+    // Differing types are otherwise left to managed conversions (FText -> string etc.), but two object
+    // pointers only convert when the getter's class derives from the setter's. An inherited
+    // UFoo* GetWidget() must not become the getter of a UBar* property made by SetWidget(UBar*).
+    // Class references are left alone: TSubclassOf<UObject> converts through its own marshaller overload.
+    static bool CanShareProperty(UhtFunction getter, UhtFunction setter)
+    {
+        if (GetPrimaryProperty(getter) is not UhtObjectProperty getterProperty || getterProperty is UhtClassProperty
+            || GetPrimaryProperty(setter) is not UhtObjectProperty setterProperty || setterProperty is UhtClassProperty)
+        {
+            return true;
+        }
+
+        return getterProperty.Class.IsChildOf(setterProperty.Class);
+    }
+
     static GetterSetterFunctionExporter CreateAccessorExporter(UhtFunction function, UhtProperty property, GetterSetterMode mode)
         => GetterSetterFunctionExporter.Create(function, property, mode, EFunctionProtectionMode.UseUFunctionProtection);
     
