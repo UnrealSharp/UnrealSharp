@@ -288,6 +288,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         foreach (UnrealProperty parameter in Properties)
         {
+            if (parameter.ReferenceKind == RefKind.Out)
+            {
+                builder.AppendLine($"{parameter.ManagedTypeWithNullability} {parameter.FieldName.SourceName};");
+                continue;
+            }
             parameter.ExportFromNative(builder, SourceGenUtilities.Buffer,
                 $"{parameter.ManagedTypeWithNullability} {parameter.FieldName.SourceName} = ");
         }
@@ -335,6 +340,10 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         foreach (UnrealProperty parameter in Properties)
         {
+            if (parameter.ReferenceKind == RefKind.Out)
+            {
+                continue;
+            }
             builder.AppendLine();
             parameter.ExportToNative(builder, SourceGenUtilities.ParamsBuffer, parameter.FieldName.SourceName);
         }
@@ -344,6 +353,12 @@ public abstract record UnrealFunctionBase : UnrealStruct
             : SourceGenUtilities.IntPtrZero;
 
         nativeCall(SourceGenUtilities.ParamsBuffer, returnBuffer);
+
+        foreach (UnrealProperty parameter in Properties.Where(p => p.ReferenceKind == RefKind.Out))
+        {
+            builder.AppendLine();
+            parameter.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, $"{parameter.FieldName.SourceName} = ");
+        }
 
         if (HasReturnValue)
         {
