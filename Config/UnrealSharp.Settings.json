@@ -1,3 +1,4 @@
 {
-  "ScriptDirectoryName": "Script"
+  "ScriptDirectoryName": "Script",
+  "SkipGlueModules": []
 }
