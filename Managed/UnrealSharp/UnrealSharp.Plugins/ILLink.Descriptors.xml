@@ -1,0 +1,7 @@
+<linker>
+  <assembly fullname="UnrealSharp.Plugins">
+    <type fullname="UnrealSharp.Plugins.Main" preserve="nothing">
+      <method name="InitializeUnrealSharp" />
+    </type>
+  </assembly>
+</linker>

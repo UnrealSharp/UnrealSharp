@@ -175,7 +175,7 @@ public static class AssemblyUtilities
         JsonArray Array = new JsonArray();
         for (int I = 0; I < OrderedAssemblies.Count; I++)
         {
-            Array.Add(OrderedAssemblies[I]);
+            Array.Add((JsonNode?)JsonValue.Create(OrderedAssemblies[I]));
         }
         Root["LoadOrder"] = Array;
 

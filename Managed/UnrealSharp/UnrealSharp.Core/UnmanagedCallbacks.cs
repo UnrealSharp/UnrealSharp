@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 using UnrealSharp.Core.Marshallers;
 
 namespace UnrealSharp.Core;
@@ -16,7 +17,7 @@ public static class UnmanagedCallbacks
                 throw new ArgumentNullException(nameof(nativeObject));
             }
             
-            Type? type = GCHandleUtilities.GetObjectFromHandlePtr<Type>(typeHandlePtr);
+            Type? type = UnrealTypeRegistry.GetTypeFromHandle(typeHandlePtr);
             
             if (type == null)
             {
@@ -35,6 +36,7 @@ public static class UnmanagedCallbacks
     }
 
     [UnmanagedCallersOnly]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "The generators preserve the static Wrap method on each registered Unreal interface.")]
     public static IntPtr CreateNewManagedObjectWrapper(IntPtr managedObjectHandle, IntPtr typeHandlePtr)
     {
         try
@@ -44,7 +46,7 @@ public static class UnmanagedCallbacks
                 throw new ArgumentNullException(nameof(managedObjectHandle));
             }
             
-            Type? type = GCHandleUtilities.GetObjectFromHandlePtr<Type>(typeHandlePtr);
+            Type? type = UnrealTypeRegistry.GetTypeFromHandle(typeHandlePtr);
             
             if (type is null)
             {
@@ -80,11 +82,12 @@ public static class UnmanagedCallbacks
     }
     
     [UnmanagedCallersOnly]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Both generators preserve the Invoke_* methods used by native UFunctions, including methods declared on base types.")]
     public static unsafe IntPtr GetManagedMethod(IntPtr typeHandlePtr, char* methodName)
     {
         try
         {
-            Type? type = GCHandleUtilities.GetObjectFromHandlePtr<Type>(typeHandlePtr);
+            Type? type = UnrealTypeRegistry.GetTypeFromHandle(typeHandlePtr);
             
             if (type == null)
             {
@@ -120,11 +123,12 @@ public static class UnmanagedCallbacks
     }
     
     [UnmanagedCallersOnly]
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "The generators preserve ToNative on registered Unreal structs.")]
     public static void InitializeStruct(IntPtr structHandle, IntPtr buffer)
     {
         try
         {
-            Type? structType = GCHandleUtilities.GetObjectFromHandlePtr<Type>(structHandle);
+            Type? structType = UnrealTypeRegistry.GetTypeFromHandle(structHandle);
             
             if (structType == null)
             {
@@ -166,7 +170,7 @@ public static class UnmanagedCallbacks
                 throw new InvalidOperationException("The provided assembly handle does not point to a valid assembly.");
             }
 
-            Type? foundType = loadedAssembly.GetType(fullTypeNameString);
+            Type? foundType = UnrealTypeRegistry.FindType(loadedAssembly, fullTypeNameString);
 
             if (foundType == null)
             {
