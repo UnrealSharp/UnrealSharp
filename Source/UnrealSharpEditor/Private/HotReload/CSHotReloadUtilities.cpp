@@ -10,6 +10,7 @@
 #include "Engine/SimpleConstructionScript.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Kismet2/StructureEditorUtils.h"
+#include "Misc/Paths.h"
 #include "Types/CSScriptStruct.h"
 #include "Utilities/CSAssemblyUtilities.h"
 #include "Utilities/CSClassUtilities.h"
@@ -38,7 +39,7 @@ void FCSHotReloadUtilities::CollectDirtiedFiles(const TArray<FFileChangeData>& C
 	for (const FFileChangeData& Change : ChangedFiles)
 	{
 		FString NormalizedPath = Change.Filename;
-		NormalizedPath.ReplaceInline(TEXT("/"), TEXT("\\"));
+		FPaths::NormalizeFilename(NormalizedPath);
 		
 		if (HasFileBeenDirtied(OutDirtied, NormalizedPath, Change.Action))
 		{
