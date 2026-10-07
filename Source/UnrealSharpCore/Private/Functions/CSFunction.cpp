@@ -77,11 +77,6 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 		WorldContext = World ? World : Stack.Object;
 	}
 
-	if (WorldContext)
-	{
-		UCSManager::Get().SetCurrentWorldContext(WorldContext);
-	}
-
 	UCSFunctionBase* ManagedFunction = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
 
 #if WITH_EDITOR
@@ -93,12 +88,16 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 #endif
 
 	FString ExceptionMessage;
-	int32 ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
-		UCSManager::Get().FindManagedObject(ObjectToInvokeOn).GetPointer(),
-		ManagedFunction->MethodHandle->GetPointer(),
-		Stack.Locals,
-		RESULT_PARAM,
-		&ExceptionMessage);
+	int32 ReturnCode;
+	{
+		UCSManager::FCurrentWorldContext CurrentWorldContext(WorldContext);
+		ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
+			UCSManager::Get().FindManagedObject(ObjectToInvokeOn).GetPointer(),
+			ManagedFunction->MethodHandle->GetPointer(),
+			Stack.Locals,
+			RESULT_PARAM,
+			&ExceptionMessage);
+	}
 	
 	if (ReturnCode == 0)
 	{
