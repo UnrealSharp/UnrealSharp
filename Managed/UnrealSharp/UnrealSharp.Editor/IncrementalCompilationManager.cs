@@ -129,6 +129,14 @@ public static class IncrementalCompilationManager
     {
         List<Project> projects = ProjectUtilities.GetProjectsFromNames(modifiedAssemblyNames, SolutionManager.CurrentProjects);
 
+        if (projects.Count != modifiedAssemblyNames.Count)
+        {
+            IEnumerable<string> missingAssemblyNames = modifiedAssemblyNames.Except(
+                projects.Select(project => project.Name), StringComparer.Ordinal);
+            throw new InvalidOperationException("Modified assemblies could not be resolved to Roslyn projects: "
+                                                + string.Join(", ", missingAssemblyNames));
+        }
+
         for (int i = projects.Count - 1; i >= 0; i--)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();

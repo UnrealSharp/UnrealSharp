@@ -5,7 +5,6 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 #include "CSInteropTypeTraits.h"
-#include "CSUnmanagedArrayView.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -26,7 +25,8 @@ struct FCSManagedEditorCallbacks
 {
     FCSManagedEditorCallbacks() = default;
     
-    using FRecompileDirtyProjects = bool(__stdcall*)(void*, FCSUnmanagedArrayView);
+    // Borrow the array for the synchronous callback; do not pass a non-trivial TArray by value across the managed boundary.
+    using FRecompileDirtyProjects = bool(__stdcall*)(void*, const TArray<FString>*);
     using FRecompileChangedFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
     using FRemoveSourceFile = void(__stdcall*)(const TCHAR*, const TCHAR*);
     

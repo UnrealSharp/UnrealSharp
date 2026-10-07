@@ -18,9 +18,9 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly FDelegateHandle _onWorldCleanupHandle;
-    
+
     private readonly FWorldDelegates.FWorldCleanupEvent _onWorldCleanupDelegate;
-    
+
     public FWorldStaticVar()
     {
         _onWorldCleanupDelegate = OnWorldCleanup;
