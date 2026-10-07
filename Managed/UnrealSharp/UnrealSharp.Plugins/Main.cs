@@ -57,18 +57,32 @@ internal static class Main
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void TryRegisterMSBuild()
     {
-        var instance = Microsoft.Build.Locator.MSBuildLocator
-            .QueryVisualStudioInstances()
-            .OrderByDescending(i => i.Version)
-            .FirstOrDefault();
+        string? originalMSBuildExePath = Environment.GetEnvironmentVariable("MSBUILD_EXE_PATH");
+        string? originalMSBuildExtensionsPath = Environment.GetEnvironmentVariable("MSBuildExtensionsPath");
+        string? originalMSBuildSDKsPath = Environment.GetEnvironmentVariable("MSBuildSDKsPath");
 
-        if (instance != null)
+        try
         {
-            Microsoft.Build.Locator.MSBuildLocator.RegisterInstance(instance);
+            var instance = Microsoft.Build.Locator.MSBuildLocator
+                .QueryVisualStudioInstances()
+                .OrderByDescending(i => i.Version)
+                .FirstOrDefault();
+
+            if (instance != null)
+            {
+                Microsoft.Build.Locator.MSBuildLocator.RegisterInstance(instance);
+            }
+            else
+            {
+                Microsoft.Build.Locator.MSBuildLocator.RegisterDefaults();
+            }
         }
-        else
+        finally
         {
-            Microsoft.Build.Locator.MSBuildLocator.RegisterDefaults();
+            // Keep MSBuild registered without leaking its SDK paths to Unreal build processes.
+            Environment.SetEnvironmentVariable("MSBUILD_EXE_PATH", originalMSBuildExePath);
+            Environment.SetEnvironmentVariable("MSBuildExtensionsPath", originalMSBuildExtensionsPath);
+            Environment.SetEnvironmentVariable("MSBuildSDKsPath", originalMSBuildSDKsPath);
         }
     }
 #endif
