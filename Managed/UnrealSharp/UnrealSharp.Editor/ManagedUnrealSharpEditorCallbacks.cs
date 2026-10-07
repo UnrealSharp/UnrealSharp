@@ -9,7 +9,7 @@ namespace UnrealSharp.Editor;
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct FManagedUnrealSharpEditorCallbacks()
 {
-    public delegate* unmanaged<IntPtr, UnmanagedArray, NativeBool> RecompileDirtyProjects = &ManagedUnrealSharpEditorCallbacks.RecompileDirtyProjects;
+    public delegate* unmanaged<IntPtr, IntPtr, int, NativeBool> RecompileDirtyProjects = &ManagedUnrealSharpEditorCallbacks.RecompileDirtyProjects;
     
     public delegate* unmanaged<char*, char*, IntPtr, void> RecompileChangedFile = &ManagedUnrealSharpEditorCallbacks.RecompileChangedFile;
     public delegate* unmanaged<char*, char*, void> RemoveSourceFile = &ManagedUnrealSharpEditorCallbacks.RemoveSourceFile;
@@ -25,16 +25,21 @@ public unsafe struct FManagedUnrealSharpEditorCallbacks()
 public static class ManagedUnrealSharpEditorCallbacks
 {
     [UnmanagedCallersOnly]
-    public static NativeBool RecompileDirtyProjects(IntPtr exceptionBuffer, UnmanagedArray pendingModifiedAssembliesBuffer)
+    public static NativeBool RecompileDirtyProjects(IntPtr exceptionBuffer, IntPtr assemblyNamesData, int assemblyCount)
     {
         try
         {
-            List<string> modifiedAssemblyNames = new(pendingModifiedAssembliesBuffer.ArrayNum);
-            
-            pendingModifiedAssembliesBuffer.ForEachWithMarshaller(StringMarshaller.FromNative, assemblyName =>
+            if (assemblyNamesData == IntPtr.Zero || assemblyCount <= 0)
             {
-                modifiedAssemblyNames.Add(assemblyName);
-            });
+                throw new InvalidOperationException("No modified assemblies were supplied for C# hot reload.");
+            }
+
+            List<string> modifiedAssemblyNames = new(assemblyCount);
+            
+            for (int i = 0; i < assemblyCount; i++)
+            {
+                modifiedAssemblyNames.Add(StringMarshaller.FromNative(assemblyNamesData, i));
+            }
             
             IncrementalCompilationManager.RecompileDirtyProjects(modifiedAssemblyNames);
         }
