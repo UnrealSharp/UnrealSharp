@@ -4,6 +4,11 @@
 #include "UnrealSharpCore.h"
 #include "Utilities/CSClassUtilities.h"
 
+#if WITH_EDITOR
+#include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
+#endif
+
 void UCSClass::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
 	UObject* Object = ObjectInitializer.GetObj();
@@ -47,6 +52,44 @@ void UCSClass::ManagedObjectConstructor(const FObjectInitializer& ObjectInitiali
 }
 
 #if WITH_EDITOR
+UObject* UCSClass::FindArchetype(const UClass* ArchetypeClass, const FName ArchetypeName) const
+{
+	UObject* Archetype = Super::FindArchetype(ArchetypeClass, ArchetypeName);
+	static const FName DefaultSceneRootName(TEXT("DefaultSceneRoot_GEN_VARIABLE"));
+	if (ArchetypeName != DefaultSceneRootName || !SimpleConstructionScript)
+	{
+		return Archetype;
+	}
+
+	const USCS_Node* DefaultSceneRoot = SimpleConstructionScript->GetDefaultSceneRootNode();
+	if (!DefaultSceneRoot || Archetype != DefaultSceneRoot->ComponentTemplate || !Archetype || Archetype->GetOuter() != this)
+	{
+		return Archetype;
+	}
+
+	// ValidateSceneRootNodes retains an editor placeholder after a real root replaces it.
+	// Do not serialize that placeholder as a child's archetype: it is absent in cooked managed classes.
+	TArray<USCS_Node*> Nodes = SimpleConstructionScript->GetRootNodes();
+	TSet<const USCS_Node*> Visited;
+	for (int32 NodeIndex = 0; NodeIndex < Nodes.Num(); ++NodeIndex)
+	{
+		const USCS_Node* Node = Nodes[NodeIndex];
+		if (!Node || Visited.Contains(Node))
+		{
+			continue;
+		}
+		Visited.Add(Node);
+		if (Node->ComponentTemplate == Archetype)
+		{
+			return Archetype;
+		}
+		Nodes.Append(Node->GetChildNodes());
+	}
+
+	const UClass* ParentClass = GetSuperClass();
+	return ParentClass ? ParentClass->FindArchetype(ArchetypeClass, ArchetypeName) : nullptr;
+}
+
 void UCSClass::PostDuplicate(bool bDuplicateForPIE)
 {
 	Super::PostDuplicate(bDuplicateForPIE);

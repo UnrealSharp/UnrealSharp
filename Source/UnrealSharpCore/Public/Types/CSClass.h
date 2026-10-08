@@ -13,6 +13,8 @@ public:
 	UNREALSHARPCORE_API static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
 	
 #if WITH_EDITOR
+	virtual UObject* FindArchetype(const UClass* ArchetypeClass, const FName ArchetypeName) const override;
+
 	// UObject interface
 	virtual void PostDuplicate(bool bDuplicateForPIE) override;
 	virtual void PurgeClass(bool bRecompilingOnLoad) override;
