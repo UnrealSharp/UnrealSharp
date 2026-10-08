@@ -1,4 +1,5 @@
-﻿using UnrealSharp.CoreUObject;
+﻿using UnrealSharp.Core;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.EnhancedInput;
@@ -15,7 +16,7 @@ public partial class UEnhancedInputComponent
         {
             fixed (uint* handlePtr = &handle)
             {
-                return Bind_UEnhancedInputComponent.CallBindAction(NativeObject, action.NativeObject, triggerEvent, unrealObject.NativeObject, callback.Method.Name, (IntPtr) handlePtr);
+                return Bind_UEnhancedInputComponent.CallBindAction(NativeObject, action.NativeObject, triggerEvent, unrealObject.NativeObject, callback.Method.Name, (IntPtr) handlePtr).ToManagedBool();
             }
         }
     }
@@ -26,6 +27,6 @@ public partial class UEnhancedInputComponent
 
     public bool RemoveBinding(uint handle)
     {
-        return Bind_UEnhancedInputComponent.CallRemoveBindingByHandle(NativeObject, handle);
+        return Bind_UEnhancedInputComponent.CallRemoveBindingByHandle(NativeObject, handle).ToManagedBool();
     }
 }

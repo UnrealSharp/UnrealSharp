@@ -31,6 +31,12 @@ public static class LaunchSettingsUtilities
             DevelopmentExecutablePath = Path.Combine(MacDir, "UnrealEditor");
             DebugExecutablePath = Path.Combine(MacDir, "UnrealEditor-Mac-DebugGame");
         }
+        else if (OperatingSystem.IsLinux())
+        {
+            string LinuxDir = Path.Combine(Unreal.EngineDirectory.FullName, "Binaries", "Linux");
+            DevelopmentExecutablePath = Path.Combine(LinuxDir, "UnrealEditor");
+            DebugExecutablePath = Path.Combine(LinuxDir, "UnrealEditor-Linux-DebugGame");
+        }
 
         string ProjectParam = buildCommand.GetUProjectFile().FullName;
         string CommandLineArgs = $"\"{ProjectParam}\"";

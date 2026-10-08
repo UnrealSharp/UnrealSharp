@@ -45,7 +45,8 @@ namespace UnrealSharp::DotNetUtilities
 	UNREALSHARPUTILITIES_API const TCHAR* GetHostFxrLibraryName();
 	UNREALSHARPUTILITIES_API const TCHAR* GetCoreClrLibraryName();
 
-	UNREALSHARPUTILITIES_API FString GetDotNetDirectory();
+	// OutProbedLocations, when given, is filled in with the locations checked, in order, for use in diagnostics.
+	UNREALSHARPUTILITIES_API FString GetDotNetDirectory(TArray<FString>* OutProbedLocations = nullptr);
 	UNREALSHARPUTILITIES_API FString GetDotNetExecutablePath();
 	UNREALSHARPUTILITIES_API FString GetLatestHostFxrPath(const FString& DotNetRoot);
 
