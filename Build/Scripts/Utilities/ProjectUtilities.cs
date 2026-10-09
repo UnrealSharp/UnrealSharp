@@ -16,7 +16,12 @@ public static class ProjectUtilities
         FileReference Project = buildCommand.GetUProjectFile();
         return Path.GetFileNameWithoutExtension(Project.FullName);
     }
-    
+
+    public static string GetProjectNameAsManaged(this BuildCommand buildCommand)
+    {
+        return "Managed" + GetProjectName(buildCommand);
+    }
+
     public static string GetScriptFolder(this BuildCommand buildCommand, string rootFolder)
     {
         return Path.Combine(rootFolder, buildCommand.GetScriptDirectoryName());
