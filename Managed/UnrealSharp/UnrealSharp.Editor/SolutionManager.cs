@@ -39,6 +39,7 @@ public sealed class GenState
 
     public Compilation? InitialCompilation;
     public Dictionary<string, SyntaxTree>? TreesByPath;
+    public Dictionary<string, SyntaxTree>? RemovedTreesByPath;
 
     public int MetadataRefCount;
 }
@@ -176,20 +177,19 @@ public static class SolutionManager
 
             state.InitialCompilation = state.InitialCompilation.RemoveSyntaxTrees(generatedFilesToRemove);
             state.TreesByPath = new Dictionary<string, SyntaxTree>(project.Documents.Count(), StringComparer.OrdinalIgnoreCase);
-            
+            state.RemovedTreesByPath = new Dictionary<string, SyntaxTree>(StringComparer.OrdinalIgnoreCase);
+
             state.ParseOptions = (CSharpParseOptions)project.ParseOptions!;
             state.AnalyzerOptions = project.AnalyzerOptions.AnalyzerConfigOptionsProvider;
 
-            foreach (Document document in project.Documents)
+            foreach (SyntaxTree tree in state.InitialCompilation.SyntaxTrees)
             {
-                SyntaxTree? tree = await document.GetSyntaxTreeAsync();
-
-                if (tree is null)
+                if (string.IsNullOrEmpty(tree.FilePath))
                 {
-                    throw new Exception($"Failed to get syntax tree for document '{document.Name}' in project '{project.Name}'.");
+                    continue;
                 }
-                
-                state.TreesByPath[document.FilePath!] = tree;
+
+                state.TreesByPath[Path.GetFullPath(tree.FilePath)] = tree;
             }
 
             LogUnrealSharpEditor.Log($"Project '{project.Name}' loaded for incremental generation.");
