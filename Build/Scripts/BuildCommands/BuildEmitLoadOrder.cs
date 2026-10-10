@@ -41,7 +41,10 @@ public class BuildEmitLoadOrder : BuildCommand
         BuildCommands.BuildSolution.RunBuild(SolutionPath, TargetConfiguration, publish: true, BuildArguments);
         
         EmitLoadOrder(Projects, LoadOrderName, OutputPath, Options);
-        AddLaunchSettings(this);
+        if (LoadOrderName == LoadOrderUtilities.UserLoadOrderName)
+        {
+            AddLaunchSettings(this, Projects);
+        }
     }
     
     public static void EmitLoadOrder(IEnumerable<string> projectFiles, string loadOrderName, string outputPath, LoadOrderOptions options)
@@ -71,14 +74,13 @@ public class BuildEmitLoadOrder : BuildCommand
         return Arguments;
     }
 
-    private static void AddLaunchSettings(BuildCommand buildCommand)
+    private static void AddLaunchSettings(BuildCommand buildCommand, IEnumerable<string> projectPaths)
     {
         ArgumentNullException.ThrowIfNull(buildCommand);
 
-        List<FileInfo> AllProjectFiles = buildCommand.GetManagedProjectFiles();
-
-        foreach (FileInfo ProjectFile in AllProjectFiles)
+        foreach (string ProjectPath in projectPaths)
         {
+            FileInfo ProjectFile = new FileInfo(ProjectPath);
             DirectoryInfo? ProjectDirectory = ProjectFile.Directory;
             if (ProjectDirectory is null)
             {

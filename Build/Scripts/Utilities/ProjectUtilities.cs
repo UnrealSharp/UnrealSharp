@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -47,67 +47,25 @@ public static class ProjectUtilities
 
     public static List<FileReference> GetUnrealProjectAndPluginFiles(this BuildCommand buildCommand)
     {
-        FileReference Project = buildCommand.GetUProjectFile();
-        ProjectDescriptor Descriptor = ProjectDescriptor.FromFile(Project);
-        UnrealTargetPlatform Platform = UnrealTargetPlatform.Parse(buildCommand.ParseParamValue("TargetPlatform", BuildHostPlatform.Current.Platform.ToString()));
-        UnrealTargetConfiguration Configuration = Enum.Parse<UnrealTargetConfiguration>(buildCommand.ParseParamValue("TargetConfiguration", buildCommand.ParseParamValue("UEBuildConfig", "Development")), true);
-        TargetType Target = Enum.Parse<TargetType>(buildCommand.ParseParamValue("TargetType", buildCommand.ParseParamValue("UETargetType", "Editor")), true);
-
-        Dictionary<string, PluginInfo> AvailablePlugins = Plugins.ToFilteredDictionary(
-                Plugins.ReadAvailablePlugins(Unreal.EngineDirectory, Project.Directory, Descriptor.AdditionalPluginDirectories))
-            .ToDictionary(pair => pair.Key, pair => pair.Value.ChoiceVersion!, StringComparer.OrdinalIgnoreCase);
-        HashSet<string> EnabledPlugins = new(StringComparer.OrdinalIgnoreCase);
-        Queue<PluginInfo> PendingPlugins = new(AvailablePlugins.Values.Where(plugin =>
-            Plugins.IsPluginEnabledForTarget(plugin, Descriptor, Platform, Configuration, Target)));
-
-        while (PendingPlugins.TryDequeue(out PluginInfo? Plugin))
-        {
-            if (!EnabledPlugins.Add(Plugin.Name) || Plugin.Descriptor.Plugins == null)
-            {
-                continue;
-            }
-
-            foreach (PluginReferenceDescriptor Reference in Plugin.Descriptor.Plugins)
-            {
-                if (!Reference.IsEnabledForPlatform(Platform) || !Reference.IsEnabledForTargetConfiguration(Configuration) || !Reference.IsEnabledForTarget(Target))
-                {
-                    continue;
-                }
-
-                PluginReferenceDescriptor? ProjectReference = Descriptor.Plugins?.FirstOrDefault(reference =>
-                    string.Equals(reference.Name, Reference.Name, StringComparison.OrdinalIgnoreCase));
-                if (ProjectReference != null && (!ProjectReference.IsEnabledForPlatform(Platform)
-                    || !ProjectReference.IsEnabledForTargetConfiguration(Configuration) || !ProjectReference.IsEnabledForTarget(Target)))
-                {
-                    continue;
-                }
-
-                if (!AvailablePlugins.TryGetValue(Reference.Name, out PluginInfo? Dependency))
-                {
-                    if (!Reference.bOptional)
-                    {
-                        throw new AutomationException($"Required plugin '{Reference.Name}' referenced by '{Plugin.Name}' was not found.");
-                    }
-                    continue;
-                }
-
-                if (Dependency.Descriptor.SupportsTargetPlatform(Platform))
-                {
-                    PendingPlugins.Enqueue(Dependency);
-                }
-            }
-        }
-
-        List<FileReference> ProjectAndPluginFiles = AvailablePlugins.Values
-            .Where(plugin => EnabledPlugins.Contains(plugin.Name))
-            .Select(plugin => plugin.File).ToList();
-        ProjectAndPluginFiles.Add(Project);
-        return ProjectAndPluginFiles;
+        return GetUnrealProjectAndPluginFiles(buildCommand, ManagedBuildTarget.FromCommand(buildCommand));
     }
-    
+
+    internal static List<FileReference> GetUnrealProjectAndPluginFiles(this BuildCommand buildCommand, ManagedBuildTarget target)
+    {
+        FileReference Project = buildCommand.GetUProjectFile();
+        List<FileReference> Files = GetEnabledPluginFiles(Project, target).ToList();
+        Files.Add(Project);
+        return Files;
+    }
+
     public static List<FileInfo> GetUnrealSharpProjectFiles(this BuildCommand buildCommand, string folder)
     {
-        List<FileReference> ProjectAndPluginFiles = GetUnrealProjectAndPluginFiles(buildCommand);
+        return GetUnrealSharpProjectFiles(buildCommand, folder, ManagedBuildTarget.FromCommand(buildCommand));
+    }
+
+    internal static List<FileInfo> GetUnrealSharpProjectFiles(this BuildCommand buildCommand, string folder, ManagedBuildTarget target)
+    {
+        List<FileReference> ProjectAndPluginFiles = GetUnrealProjectAndPluginFiles(buildCommand, target);
         List<FileInfo> UnrealSharpProjectFiles = new List<FileInfo>();
         
         foreach (FileReference ProjectFile in ProjectAndPluginFiles)
@@ -143,6 +101,11 @@ public static class ProjectUtilities
     public static List<FileInfo> GetManagedProjectFiles(this BuildCommand buildCommand)
     {
         return GetUnrealSharpProjectFiles(buildCommand, buildCommand.GetScriptDirectoryName());
+    }
+
+    internal static List<FileInfo> GetManagedProjectFiles(this BuildCommand buildCommand, ManagedBuildTarget target)
+    {
+        return GetUnrealSharpProjectFiles(buildCommand, buildCommand.GetScriptDirectoryName(), target);
     }
     
     private static IEnumerable<FileInfo> GetManagedProjectsInDirectory(DirectoryInfo folder)
@@ -207,5 +170,82 @@ public static class ProjectUtilities
         }
 
         return false;
+    }
+    private static IEnumerable<FileReference> GetEnabledPluginFiles(FileReference project, ManagedBuildTarget target)
+    {
+        ProjectDescriptor Descriptor = ProjectDescriptor.FromFile(project);
+        Dictionary<string, PluginInfo> AvailablePlugins = ReadAvailablePlugins(project, Descriptor);
+        HashSet<string> EnabledPlugins = new(StringComparer.OrdinalIgnoreCase);
+        Queue<PluginInfo> PendingPlugins = new(AvailablePlugins.Values.Where(plugin =>
+            Plugins.IsPluginEnabledForTarget(plugin, Descriptor, target.Platform, target.Configuration, target.Type)));
+
+        while (PendingPlugins.TryDequeue(out PluginInfo? Plugin))
+        {
+            if (!EnabledPlugins.Add(Plugin.Name) || Plugin.Descriptor.Plugins == null)
+            {
+                continue;
+            }
+
+            foreach (PluginReferenceDescriptor Reference in Plugin.Descriptor.Plugins)
+            {
+                if (!IsDependencyEnabled(Reference, Descriptor, target))
+                {
+                    continue;
+                }
+
+                if (!AvailablePlugins.TryGetValue(Reference.Name, out PluginInfo? Dependency))
+                {
+                    if (!Reference.bOptional)
+                    {
+                        throw new AutomationException($"Required plugin '{Reference.Name}' referenced by '{Plugin.Name}' was not found.");
+                    }
+                    continue;
+                }
+
+                if (Dependency.Descriptor.SupportsTargetPlatform(target.Platform))
+                {
+                    PendingPlugins.Enqueue(Dependency);
+                }
+            }
+        }
+
+        return AvailablePlugins.Values.Where(plugin => EnabledPlugins.Contains(plugin.Name)).Select(plugin => plugin.File);
+    }
+
+    private static Dictionary<string, PluginInfo> ReadAvailablePlugins(FileReference project, ProjectDescriptor descriptor)
+    {
+        return Plugins.ToFilteredDictionary(
+                Plugins.ReadAvailablePlugins(Unreal.EngineDirectory, project.Directory, descriptor.AdditionalPluginDirectories))
+            .ToDictionary(pair => pair.Key, pair => pair.Value.ChoiceVersion!, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsDependencyEnabled(PluginReferenceDescriptor reference, ProjectDescriptor descriptor, ManagedBuildTarget target)
+    {
+        PluginReferenceDescriptor? ProjectReference = descriptor.Plugins?.FirstOrDefault(projectReference =>
+            string.Equals(projectReference.Name, reference.Name, StringComparison.OrdinalIgnoreCase));
+        return target.IsReferenceEnabled(reference)
+            && (ProjectReference == null || target.IsReferenceEnabled(ProjectReference));
+    }
+}
+
+internal sealed record ManagedBuildTarget(
+    UnrealTargetPlatform Platform,
+    TargetType Type,
+    UnrealTargetConfiguration Configuration)
+{
+    public static ManagedBuildTarget FromCommand(BuildCommand command)
+    {
+        string Platform = command.ParseParamValue("TargetPlatform", BuildHostPlatform.Current.Platform.ToString());
+        string Type = command.ParseParamValue("TargetType", command.ParseParamValue("UETargetType", "Editor"));
+        string Configuration = command.ParseParamValue("TargetConfiguration", command.ParseParamValue("UEBuildConfig", "Development"));
+        return new ManagedBuildTarget(UnrealTargetPlatform.Parse(Platform),
+            Enum.Parse<TargetType>(Type, true), Enum.Parse<UnrealTargetConfiguration>(Configuration, true));
+    }
+
+    public bool IsReferenceEnabled(PluginReferenceDescriptor reference)
+    {
+        return reference.IsEnabledForPlatform(Platform)
+            && reference.IsEnabledForTargetConfiguration(Configuration)
+            && reference.IsEnabledForTarget(Type);
     }
 }
