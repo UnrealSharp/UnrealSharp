@@ -30,7 +30,8 @@ public static class PropertyTranslatorManager
         IEnumerable<string> files = pluginFiles
             .Select(x => x.DirectoryName!)
             .Select(x => Path.Combine(x, "Config"))
-            .Concat(new List<string> { configDirectory })
+            .Concat(new List<string> { Path.Combine(GeneratorStatics.PluginDirectory, "Config"), configDirectory })
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(x => new DirectoryInfo(x))
             .Where(x => x.Exists)
             .SelectMany(x => x.GetFiles("*.UnrealSharpTypes.json", SearchOption.AllDirectories))
