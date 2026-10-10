@@ -23,7 +23,11 @@ public static class PropertyTranslatorManager
         string pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
         DirectoryInfo pluginDirInfo = new DirectoryInfo(pluginDirectory);
         
-        IEnumerable<string> files = pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
+        IEnumerable<FileInfo> pluginFiles = pluginDirInfo.Exists
+            ? pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
+            : Array.Empty<FileInfo>();
+
+        IEnumerable<string> files = pluginFiles
             .Select(x => x.DirectoryName!)
             .Select(x => Path.Combine(x, "Config"))
             .Concat(new List<string> { configDirectory })
