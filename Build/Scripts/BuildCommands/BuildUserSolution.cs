@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using AutomationTool;
 using UnrealBuildTool;
 using UnrealSharp.Automation.Utilities;
@@ -15,11 +16,27 @@ public class BuildUserSolution : BuildCommand
 {
     public override void ExecuteBuild()
     {
+        ManagedBuildTarget Target = ManagedBuildTarget.FromCommand(this);
+        List<FileInfo> Projects = this.GetManagedProjectFiles(Target)
+            .Where(file => Target.Type == TargetType.Editor || !ProjectUtilities.IsEditorOnlyProject(file.FullName))
+            .ToList();
+        if (Projects.Count == 0)
+        {
+            LoggerUtilities.LogUnrealSharpInfo("No managed user projects found. Skipping user build.");
+            return;
+        }
+
+        string SolutionDirectory = GenerateUserSolution.PrepareSolution(this, Target, Projects,
+            GenerateUserSolution.GetBuildDirectory(this, Target), "UnrealSharpUser");
         List<KeyValuePair<string, string>> CommandParams = new List<KeyValuePair<string, string>>
         {
-            new("TargetConfiguration", ParseParamValue("TargetConfiguration", nameof(UnrealTargetConfiguration.Development))),
+            new("TargetConfiguration", Target.Configuration.ToString()),
+            new("TargetType", Target.Type.ToString()),
+            new("TargetPlatform", Target.Platform.ToString()),
+            new("ExtraArguments", $"-p:UETargetType={Target.Type}"),
+            new("ExtraArguments", $"-p:UEBuildConfig={Target.Configuration}"),
             new("LoadOrderName", LoadOrderUtilities.UserLoadOrderName),
-            new("SolutionDirectory", this.GetProjectScriptFolder()),
+            new("SolutionDirectory", SolutionDirectory),
             new("OutputPath", ParseRequiredStringParam("OutputPath")),
             new("IsCollectible", "true"),
             new("Priority", LoadOrderUtilities.UserLoadOrderPriority.ToString())
@@ -45,11 +62,14 @@ public class BuildUserSolution : BuildCommand
             CommandParams.Add(new KeyValuePair<string, string>("ExtraArguments", ExtraArgument));
         }
 
-        foreach (FileInfo Project in this.GetManagedProjectFiles())
+        foreach (FileInfo Project in Projects)
         {
             CommandParams.Add(new KeyValuePair<string, string>("Projects", Project.FullName));
         }
 
-        CommandUtilities.RunCommand(nameof(BuildEmitLoadOrder), this, CommandParams);
+        if (!CommandUtilities.RunCommand(nameof(BuildEmitLoadOrder), this, CommandParams))
+        {
+            throw new AutomationException("Failed to build managed user projects.");
+        }
     }
 }

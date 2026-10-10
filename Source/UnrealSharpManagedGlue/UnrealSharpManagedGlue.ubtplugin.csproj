@@ -5,23 +5,12 @@
     <Import Project="..\..\UnrealSharp.Automation.props" Condition="Exists('..\..\UnrealSharp.Automation.props')" />
 
     <ItemGroup>
-        <Reference Include="UnrealSharp.Automation">
-            <HintPath>$(TargetDir)UnrealSharp.Automation.dll</HintPath>
+        <!-- UBT tracks project references recursively when validating script modules. -->
+        <ProjectReference Include="..\..\Build\Scripts\UnrealSharp.Automation.csproj"
+                          AdditionalProperties="EngineDir=$(EngineDir)">
             <Private>True</Private>
-        </Reference>
+        </ProjectReference>
     </ItemGroup>
-
-    <Target Name="BuildAutomation" BeforeTargets="BeforeBuild">
-        <Message Importance="High" Text="Building UnrealSharp.Automation..." />
-        <Message Importance="High" Text="TargetDir: '$(TargetDir)'" />
-        <Message Importance="High" Text="EngineDir: '$(EngineDir)'" />
-
-        <MSBuild Projects="..\..\Build\Scripts\UnrealSharp.Automation.csproj"
-                 Targets="Restore;Build"
-                 Properties="OutDir=$(TargetDir);EngineDir=$(EngineDir)" />
-        
-        <Message Importance="High" Text="Finished building UnrealSharp.Automation." />
-    </Target>
     
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>

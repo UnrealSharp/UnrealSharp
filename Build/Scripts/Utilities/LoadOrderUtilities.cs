@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using AutomationTool;
 using System.Linq;
 using UnrealSharp.Shared;
 using AssemblyUtilities = UnrealSharp.Shared.AssemblyUtilities;
@@ -37,6 +38,11 @@ public static class LoadOrderUtilities
     
     public static void TryEmitLoadOrder(IEnumerable<string> projectFilesOrNames, string outputPath, string loadOrderName, LoadOrderOptions options)
     {
+        TryEmitLoadOrder(projectFilesOrNames, outputPath, loadOrderName, options, requireAllAssemblies: false);
+    }
+
+    internal static void TryEmitLoadOrder(IEnumerable<string> projectFilesOrNames, string outputPath, string loadOrderName, LoadOrderOptions options, bool requireAllAssemblies)
+    {
         if (!Directory.Exists(outputPath))
         {
             Directory.CreateDirectory(outputPath);
@@ -47,6 +53,11 @@ public static class LoadOrderUtilities
         LoggerUtilities.LogUnrealSharpInfo($"Emitting assembly load order '{loadOrderName}' for assemblies: {string.Join(", ", ProjectList.Select(file => Path.GetFileNameWithoutExtension(file)))}");
 
         List<string> AssemblyPaths = ResolveAssemblyPaths(ProjectList, outputPath);
+
+        if (requireAllAssemblies && AssemblyPaths.Count != ProjectList.Count)
+        {
+            throw new AutomationException($"Cannot emit '{loadOrderName}' load order: required managed assemblies are missing.");
+        }
 
         if (AssemblyPaths.Count == 0)
         {

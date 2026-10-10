@@ -31,6 +31,11 @@ public static class BuildUtilities
             return;
         }
         
-        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateUserSolution");
+        List<KeyValuePair<string, string>> ActionArgs =
+        [
+            new("TargetType", GeneratorStatics.TargetType.ToString()),
+            new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString())
+        ];
+        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateUserSolution", ActionArgs);
     }
 }

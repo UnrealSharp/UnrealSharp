@@ -195,7 +195,7 @@ public:
 	 *
 	 * @return The first tag in the container
 	 */
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp|Gameplay Tags")
 	static FGameplayTag First(const FGameplayTagContainer& Container);
 	
 	/**
@@ -203,7 +203,7 @@ public:
 	 *
 	 * @return The last tag in the container
 	 */
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp|Gameplay Tags")
 	static FGameplayTag Last(const FGameplayTagContainer& Container);
 
 	/**
@@ -211,7 +211,7 @@ public:
 	 *
 	 * @return A string representation of the container
 	 */
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp|Gameplay Tags")
 	static FString ToString(const FGameplayTagContainer& Container);
 	
 };
