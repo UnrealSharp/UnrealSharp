@@ -55,7 +55,7 @@ public class PackageProject : BuildCommand
 
         BuildBindingsSolution(Arguments, options.BuildConfiguration);
         BuildUserBindings(PublishFolder, options, Arguments);
-        BuildUserSolution(PublishFolder, Arguments, options.BuildConfiguration, options.UserParams);
+        BuildUserSolution(PublishFolder, Arguments, options);
         
         EmitInstalledFlagFile(PublishFolder);
 
@@ -180,23 +180,34 @@ public class PackageProject : BuildCommand
         BuildCommands.BuildSolution.RunBuild(BindingsPath, buildConfig, publish: true, arguments);
     }
 
-    private void BuildUserSolution(string publishFolder, IList<string> buildArguments, UnrealTargetConfiguration buildConfig, string[]? userParams)
+    private void BuildUserSolution(string publishFolder, IList<string> buildArguments, PackagingOptions options)
     {
-        string ScriptFolder = this.GetProjectScriptFolder();
+        ManagedBuildTarget Target = new(options.TargetPlatform, options.TargetType, options.BuildConfiguration);
+        List<FileInfo> ProjectFiles = this.GetManagedProjectFiles(Target)
+            .Where(file => !ProjectUtilities.IsEditorOnlyProject(file.FullName))
+            .ToList();
+        if (ProjectFiles.Count == 0)
+        {
+            LoggerUtilities.LogUnrealSharpInfo("No managed user projects found. Skipping user publish.");
+            return;
+        }
+
+        string SolutionDirectory = GenerateUserSolution.PrepareSolution(this, Target, ProjectFiles,
+            GenerateUserSolution.GetBuildDirectory(this, Target), "UnrealSharpUser", forceGenerate: true);
 
         IList<string> BuildUserSolutionArguments = buildArguments;
-        if (userParams is { Length: > 0 })
+        if (options.UserParams is { Length: > 0 })
         {
             BuildUserSolutionArguments = new List<string>(buildArguments);
-            foreach (string UserParam in userParams)
+            foreach (string UserParam in options.UserParams)
             {
                 BuildUserSolutionArguments.Add(UserParam);
             }
         }
 
-        BuildCommands.BuildSolution.RunBuild(ScriptFolder, buildConfig, publish: true, BuildUserSolutionArguments);
+        BuildCommands.BuildSolution.RunBuild(SolutionDirectory, options.BuildConfiguration, publish: true, BuildUserSolutionArguments);
         
-        EmitUserLoadOrder(publishFolder);
+        EmitUserLoadOrder(publishFolder, ProjectFiles);
     }
 
     private void BuildUserBindings(string publishFolder, PackagingOptions options, IList<string> buildArguments)
@@ -211,25 +222,16 @@ public class PackageProject : BuildCommand
         BuildUserGlue.Build(this, options.TargetType, options.BuildConfiguration, publishFolder, false, buildArguments);
     }
 
-    private void EmitUserLoadOrder(string publishFolder)
+    private static void EmitUserLoadOrder(string publishFolder, List<FileInfo> projectFiles)
     {
-        List<FileInfo> RuntimeProjectFiles = this.GetManagedProjectFiles()
-            .Where(file => !ProjectUtilities.IsEditorOnlyProject(file.FullName))
-            .ToList();
-
-        if (RuntimeProjectFiles.Count == 0)
-        {
-            LoggerUtilities.LogUnrealSharpInfo("No runtime projects found. Skipping user load order emission.");
-            return;
-        }
-
         LoadOrderOptions Options = new LoadOrderOptions
         {
             Collectible = false,
             Priority = LoadOrderUtilities.UserLoadOrderPriority
         };
 
-        LoadOrderUtilities.TryEmitLoadOrder(RuntimeProjectFiles.Select(file => file.FullName), publishFolder, LoadOrderUtilities.UserLoadOrderName, Options);
+        LoadOrderUtilities.TryEmitLoadOrder(projectFiles.Select(file => file.FullName), publishFolder,
+            LoadOrderUtilities.UserLoadOrderName, Options, requireAllAssemblies: true);
     }
 
     private void CopyInstalledGlue(string publishFolder)

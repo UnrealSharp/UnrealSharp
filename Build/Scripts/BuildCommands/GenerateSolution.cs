@@ -115,8 +115,15 @@ public class GenerateSolution : BuildCommand
                     AddProjectProcess.StartInfo.ArgumentList.Add(RelativePath);
                 }
 
-                AddProjectProcess.StartInfo.ArgumentList.Add("-s");
-                AddProjectProcess.StartInfo.ArgumentList.Add(projects.Key);
+                if (string.IsNullOrEmpty(projects.Key))
+                {
+                    AddProjectProcess.StartInfo.ArgumentList.Add("--in-root");
+                }
+                else
+                {
+                    AddProjectProcess.StartInfo.ArgumentList.Add("-s");
+                    AddProjectProcess.StartInfo.ArgumentList.Add(projects.Key);
+                }
                 AddProjectProcess.StartInfo.WorkingDirectory = solutionDirectory;
 
                 AddProjectProcess.StartProcess();
@@ -175,13 +182,20 @@ public class GenerateSolution : BuildCommand
     
     private static string GetSolutionFolderForProject(string solutionDirectory, string projectDirectory, string relativePath)
     {
-        string SolutionParentDirectory = Path.GetDirectoryName(solutionDirectory)!;
-
         string FullPath = Path.GetFullPath(relativePath, solutionDirectory);
         string ProjectRelativePath = Path.GetRelativePath(projectDirectory, FullPath);
-        string ProjectDirName = Path.GetDirectoryName(ProjectRelativePath)!;
+        string ProjectDirName = Path.GetDirectoryName(ProjectRelativePath) ?? string.Empty;
 
-        string ContainingDirName = Path.GetDirectoryName(ProjectDirName)!;
-        return ContainingDirName == SolutionParentDirectory ? ContainingDirName : Path.GetDirectoryName(ContainingDirName)!;
+        string ContainingDirName = Path.GetDirectoryName(ProjectDirName) ?? string.Empty;
+        string SolutionFolder = Path.GetDirectoryName(ContainingDirName) ?? string.Empty;
+
+        // Solution folders are virtual names, not filesystem traversal paths. Engine
+        // plugins outside the project contribute '..' segments that dotnet rejects.
+        string PathRoot = Path.GetPathRoot(SolutionFolder) ?? string.Empty;
+        string[] FolderNames = SolutionFolder.Substring(PathRoot.Length)
+            .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(folder => folder != "." && folder != "..")
+            .ToArray();
+        return string.Join(Path.DirectorySeparatorChar.ToString(), FolderNames);
     }
 }
