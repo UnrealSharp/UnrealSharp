@@ -41,6 +41,10 @@ public static class UnrealSharpSettingsUtilities
     static string GetConfigFile(string rootDirectory)
     {
         string configDirectory = Path.Combine(rootDirectory, "Config");
+        if (!Directory.Exists(configDirectory))
+        {
+            return string.Empty;
+        }
         
         EnumerationOptions enumerationOptions = new EnumerationOptions
         {
