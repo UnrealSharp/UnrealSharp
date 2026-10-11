@@ -7,7 +7,10 @@ namespace UnrealSharpManagedGlue.Utilities;
 
 public static class UnrealSharpSettingsUtilities
 {
+    public const string SkipGlueModulesKey = "SkipGlueModules";
+
     private static Dictionary<string, JsonElement>? _config;
+    private static HashSet<string>? _skipGlueModules;
     
     public static void InitializeConfigFile(string projectRoot, string unrealSharpRoot)
     {
@@ -30,12 +33,60 @@ public static class UnrealSharpSettingsUtilities
 
     public static JsonElement GetElement(string elementName)
     {
+        if (!TryGetElement(elementName, out JsonElement element))
+        {
+            throw new KeyNotFoundException($"No UnrealSharp setting named '{elementName}' was found.");
+        }
+
+        return element;
+    }
+
+    public static bool TryGetElement(string elementName, out JsonElement element)
+    {
         if (_config == null)
         {
             throw new Exception("Run InitializeConfigFile first.");
         }
-        
-        return _config[elementName];
+
+        return _config.TryGetValue(elementName, out element);
+    }
+
+    public static bool ShouldSkipGlueGeneration(string moduleName)
+    {
+        return SkipGlueModules.Contains(moduleName);
+    }
+
+    public static IReadOnlySet<string> SkipGlueModules
+    {
+        get
+        {
+            if (_skipGlueModules != null)
+            {
+                return _skipGlueModules;
+            }
+
+            HashSet<string> modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (TryGetElement(SkipGlueModulesKey, out JsonElement element) && element.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement moduleElement in element.EnumerateArray())
+                {
+                    if (moduleElement.ValueKind != JsonValueKind.String)
+                    {
+                        continue;
+                    }
+
+                    string? moduleName = moduleElement.GetString();
+                    if (!string.IsNullOrWhiteSpace(moduleName))
+                    {
+                        modules.Add(moduleName);
+                    }
+                }
+            }
+
+            _skipGlueModules = modules;
+            return modules;
+        }
     }
     
     static string GetConfigFile(string rootDirectory)

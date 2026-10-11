@@ -63,8 +63,12 @@ public static class PackageUtilities
 
     public static bool ShouldExportPackage(this UhtPackage package)
     {
-        bool foundDefine = package.IsDefineActive(SkipGlueGenerationDefine);
-        return !foundDefine;
+        if (package.IsDefineActive(SkipGlueGenerationDefine))
+        {
+            return false;
+        }
+
+        return !UnrealSharpSettingsUtilities.ShouldSkipGlueGeneration(package.GetModuleShortName());
     }
 
     public static string GetBaseDirectoryForPackage(this UhtPackage package)
