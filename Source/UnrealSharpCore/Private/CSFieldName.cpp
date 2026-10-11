@@ -41,13 +41,12 @@ void FCSFieldName::AppendFullName(FStringBuilderBase& Builder) const
 	}
 
 	const FName NamespaceName = Namespace.GetFName();
-	if (NamespaceName.IsNone())
+	if (!NamespaceName.IsNone())
 	{
-		return;
+		NamespaceName.AppendString(Builder);
+		Builder.AppendChar(TEXT('.'));
 	}
-	
-	NamespaceName.AppendString(Builder);
-	Builder.AppendChar(TEXT('.'));
+
 	SourceName.AppendString(Builder);
 }
 

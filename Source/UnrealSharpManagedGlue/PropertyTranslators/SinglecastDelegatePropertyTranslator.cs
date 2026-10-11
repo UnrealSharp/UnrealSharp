@@ -37,7 +37,7 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     {
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;
         string fullDelegateName = GetFullDelegateName(delegateProperty.Function);
-        builder.AppendLine($"{assignmentOrReturn} SingleDelegateMarshaller<{fullDelegateName}>.FromNative({sourceBuffer} + {offset}, 0);");
+        builder.AppendLine($"{assignmentOrReturn} SingleDelegateMarshaller<{fullDelegateName}>.FromNative({sourceBuffer} + {offset}, 0, IntPtr.Zero);");
     }
 
     public override string GetNullValue(UhtProperty property)
