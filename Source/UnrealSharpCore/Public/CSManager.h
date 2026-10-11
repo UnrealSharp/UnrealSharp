@@ -84,15 +84,13 @@ public:
 	
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContextStack.Num() > 0 ? CurrentWorldContextStack.Last().Get() : nullptr; }
 
-	struct FCurrentWorldContext
+	struct FCSCurrentWorldContext
 	{
-	private:
-		bool IsValid;
 	public:
-		FCurrentWorldContext(const FCurrentWorldContext&) = delete;
-		FCurrentWorldContext& operator= (const FCurrentWorldContext&) = delete;
+		FCSCurrentWorldContext(const FCSCurrentWorldContext&) = delete;
+		FCSCurrentWorldContext& operator= (const FCSCurrentWorldContext&) = delete;
 
-		FCurrentWorldContext(UObject* WorldContext)
+		FCSCurrentWorldContext(UObject* WorldContext)
 		{
 			if (WorldContext)
 			{
@@ -105,13 +103,15 @@ public:
 			}
 		}
 
-		~FCurrentWorldContext()
+		~FCSCurrentWorldContext()
 		{
 			if (IsValid)
 			{
 				UCSManager::Get().PopCurrentWorldContext();
 			}
 		}
+	private:
+		bool IsValid;
 	};
 	
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>>& GetManagedObjectHandles() { return ManagedObjectHandles; }

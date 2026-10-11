@@ -90,7 +90,7 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	FString ExceptionMessage;
 	int32 ReturnCode;
 	{
-		UCSManager::FCurrentWorldContext CurrentWorldContext(WorldContext);
+		UCSManager::FCSCurrentWorldContext CurrentWorldContext(WorldContext);
 		ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
 			UCSManager::Get().FindManagedObject(ObjectToInvokeOn).GetPointer(),
 			ManagedFunction->MethodHandle->GetPointer(),
