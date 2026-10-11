@@ -24,7 +24,8 @@ struct FCSManagedEditorCallbacks
 {
     FCSManagedEditorCallbacks() = default;
     
-    using FRecompileDirtyProjects = bool(__stdcall*)(void*, TArray<FString>);
+    // Borrow the array for the synchronous callback; do not pass a non-trivial TArray by value across the managed boundary.
+    using FRecompileDirtyProjects = bool(__stdcall*)(void*, const TArray<FString>*);
     using FRecompileChangedFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
     using FRemoveSourceFile = void(__stdcall*)(const TCHAR*, const TCHAR*);
     
