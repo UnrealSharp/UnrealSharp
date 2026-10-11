@@ -13,9 +13,9 @@ public class GenerateUserSolution : BuildCommand
     {
         bool ForceGenerate = ParseParam("ForceGenerate");
         
-        string SolutionName = "Managed" + this.GetProjectName();
+        string SolutionName = this.GetProjectNameAsManaged();
         string OutputFolder = this.GetProjectScriptFolder();
-        string SolutionPath = Path.Combine(OutputFolder, SolutionName + ".sln");
+        string SolutionPath = Path.Combine(OutputFolder, SolutionName + ".slnx");
         
         if (!ForceGenerate && File.Exists(SolutionPath))
         {
