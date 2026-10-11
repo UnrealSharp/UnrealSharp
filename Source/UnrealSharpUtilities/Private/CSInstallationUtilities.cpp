@@ -2,6 +2,8 @@
 
 #include "CSDotnetUtilties.h"
 #include "CSPathsUtilities.h"
+#include "HAL/IConsoleManager.h"
+#include "Misc/Paths.h"
 
 static TAutoConsoleVariable<int32> CVarSimulateInstalledBuild(
 	TEXT("UnrealSharp.SimulateInstalledBuild"),

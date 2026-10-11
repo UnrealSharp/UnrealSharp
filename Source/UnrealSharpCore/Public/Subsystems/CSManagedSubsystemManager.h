@@ -1,5 +1,9 @@
 #pragma once
 
+#include "UObject/Package.h"
+#include "Templates/SubclassOf.h"
+#include "Modules/ModuleManager.h"
+
 #include "CoreMinimal.h"
 #include "Subsystems/EngineSubsystem.h"
 #include "CSManagedSubsystemManager.generated.h"

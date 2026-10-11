@@ -1,4 +1,10 @@
 #include "Factories/PropertyGenerators/CSSimplePropertyGenerator.h"
+#include "UObject/UnrealType.h"
+#include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MINOR_VERSION >= 8
+#include "UObject/TextProperty.h"
+#endif
 
 UCSSimplePropertyGenerator::UCSSimplePropertyGenerator(FObjectInitializer const& ObjectInitializer): Super(ObjectInitializer)
 {

@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "CSManagedCallbacksCache.h"
+#include "CoreMinimal.h"
+#include "UObject/ObjectMacros.h"
 #include "CSManagedGCHandle.generated.h"
 
 struct FGCHandleIntPtr

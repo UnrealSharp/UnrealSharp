@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "UObject/UnrealType.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FSetProperty)
 {

@@ -1,5 +1,8 @@
 #include "CSDialogUtilities.h"
 
+#include "HAL/PlatformMisc.h"
+#include "Misc/MessageDialog.h"
+
 FCSCommandError UnrealSharp::Dialogs::MakeDialogOnError()
 {
 	return FCSCommandError::CreateLambda([](const FString& ErrorOutput)

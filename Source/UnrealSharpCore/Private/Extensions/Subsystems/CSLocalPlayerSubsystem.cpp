@@ -1,4 +1,5 @@
 #include "Extensions/Subsystems/CSLocalPlayerSubsystem.h"
+#include "Engine/LocalPlayer.h"
 
 bool UCSLocalPlayerSubsystem::K2_ShouldCreateSubsystem_Implementation(UObject* SubsystemOuter) const
 {

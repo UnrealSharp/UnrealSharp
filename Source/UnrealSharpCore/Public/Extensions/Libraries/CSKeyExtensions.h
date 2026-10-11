@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "InputCoreTypes.h"
+
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSKeyExtensions.generated.h"
