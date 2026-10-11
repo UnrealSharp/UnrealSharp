@@ -39,6 +39,6 @@ UPackage* FCSNamespace::GetPackage() const
 bool FCSNamespace::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
-	JSON_READ_STRING(Namespace, IS_REQUIRED);
+	JSON_READ_STRING(Namespace, IS_OPTIONAL);
 	END_JSON_SERIALIZE
 }
