@@ -23,6 +23,8 @@
 #include "HotReload/CSHotReloadSubsystem.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "ReflectionData/CSClassReflectionData.h"
+#include "UObject/PropertyAccessUtil.h"
+#include "UObject/UObjectHash.h"
 #include "Utilities/CSClassUtilities.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions) : FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
@@ -57,12 +59,13 @@ void FCSCompilerContext::FinishCompilingClass(UClass* InClass)
 
 	ManagedClass->StaticLink(true);
 	
-	UObject* DefaultObject = UCSManagedClassCompiler::CreateDeferredManagedCDO(ManagedClass);
-	
-	if (FCSUnrealSharpUtils::IsEngineStartingUp())
+	UCSManagedClassCompiler::CreateDeferredManagedCDO(ManagedClass);
+
+	if (FCSClassUtilities::IsSkeletonType(ManagedClass) || FCSUnrealSharpUtils::IsEngineStartingUp())
 	{
-		// Directly copy defaults to the CDO
-		CopyTermDefaultsToDefaultObject(DefaultObject);
+		// Fast skeleton generation doesn't propagate term defaults, so it must be finalized here.
+		// Doing this on every compile keeps hot reload consistent with editor startup.
+		UCSManagedClassCompiler::FinalizeManagedCDO(ManagedClass);
 	}
 	
 	ManagedClass->SetUpRuntimeReplicationData();
@@ -150,6 +153,7 @@ void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 {
 	UCSClass* ManagedClass = static_cast<UCSClass*>(DefaultObject->GetClass());
 	UCSManagedClassCompiler::FinalizeManagedCDO(ManagedClass);
+	FKismetCompilerContext::CopyTermDefaultsToDefaultObject(DefaultObject);
 }
 
 void FCSCompilerContext::ValidateSimpleConstructionScript() const
