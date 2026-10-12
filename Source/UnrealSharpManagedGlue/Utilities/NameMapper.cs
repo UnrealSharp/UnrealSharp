@@ -239,7 +239,21 @@ public static class NameMapper
 
             if (function != null)
             {
-                isConflicting = type is not UhtFunction typeAsFunction || function.HasSameSignature(typeAsFunction);
+                if (type is UhtFunction classFunction)
+                {
+                    bool sameSignature = function.HasSameSignature(classFunction);
+                    bool implementsSameNativeMethod =
+                        outerClass.EngineType == UhtEngineType.Class
+                        && function.SourceName == classFunction.SourceName
+                        && sameSignature;
+
+                    // Matching native declarations implement the interface contract.
+                    isConflicting = !implementsSameNativeMethod && sameSignature;
+                }
+                else
+                {
+                    isConflicting = true;
+                }
             }
         }
 
