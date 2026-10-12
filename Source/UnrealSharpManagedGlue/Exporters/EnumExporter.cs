@@ -78,7 +78,11 @@ public static class EnumExporter
         Dictionary<string, UhtEnumValue> members = new(StringComparer.Ordinal);
         foreach (UhtEnumValue member in enumObj.EnumValues)
         {
+#if UE_5_7_OR_LATER
             members.Add(enumObj.GetShortEnumName(member.Name), member);
+#else
+            members.Add(GetShortEnumName(enumObj, member.Name), member);
+#endif
         }
 
         while (!reader.IsEOF && !reader.PeekToken().IsSymbol('}'))
@@ -116,6 +120,24 @@ public static class EnumExporter
 
         return initializers;
     }
+
+#if !UE_5_7_OR_LATER
+    // UE 5.6 does not expose UhtEnum.GetShortEnumName.
+    private static string GetShortEnumName(UhtEnum enumObj, string name)
+    {
+        switch (enumObj.CppForm)
+        {
+            case UhtEnumCppForm.Namespaced:
+            case UhtEnumCppForm.EnumClass:
+                int lastColons = name.LastIndexOf("::", StringComparison.Ordinal);
+                return lastColons == -1 ? name : name[(lastColons + 2)..];
+            case UhtEnumCppForm.Regular:
+                return name;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(enumObj.CppForm), enumObj.CppForm, null);
+        }
+    }
+#endif
 
     private static bool TryGetInitializer(UhtEnum enumObj, List<UhtToken> expression,
         Dictionary<string, string> previousMembers, out string initializer)
