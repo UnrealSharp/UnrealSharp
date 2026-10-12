@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Templates/SubclassOf.h"
 #include "CSUserWidgetExtensions.generated.h"
 
 UCLASS(meta = (InternalType))
