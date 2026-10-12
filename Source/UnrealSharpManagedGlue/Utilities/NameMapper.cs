@@ -248,7 +248,10 @@ public static class NameMapper
                         && sameSignature;
 
                     // Matching native declarations implement the interface contract.
-                    isConflicting = !implementsSameNativeMethod && sameSignature;
+                    // C# cannot distinguish overloads by return type alone.
+                    // Compare parameters without the return type when checking for name collisions.
+                    isConflicting = !implementsSameNativeMethod
+                        && function.HasSameSignature(classFunction, includeReturnType: false);
                 }
                 else
                 {
