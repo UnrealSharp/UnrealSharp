@@ -174,7 +174,7 @@ public static class ClassUtilities
             UhtClass interfaceClass = declaration.GetInterfaceAlternateClass();
             foreach (UhtFunction function in interfaceClass.Functions)
             {
-                if (function.MakeGetterSetterPair(getSetOverrides) || !function.CanExportFunction())
+                if (function.MakeGetterSetterPair(getSetOverrides, classObj) || !function.CanExportFunction())
                 {
                     continue;
                 }

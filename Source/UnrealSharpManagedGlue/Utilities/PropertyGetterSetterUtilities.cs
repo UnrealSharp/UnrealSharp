@@ -9,7 +9,8 @@ namespace UnrealSharpManagedGlue.Utilities;
 
 public static class PropertyGetterSetterUtilities
 {
-    public static bool MakeGetterSetterPair(this UhtFunction function, Dictionary<string, GetterSetterPair> getterSetterPairs)
+    public static bool MakeGetterSetterPair(this UhtFunction function, Dictionary<string, GetterSetterPair> getterSetterPairs,
+        UhtClass? implementationClass = null)
     {
         string scriptName = function.GetFunctionName();
         bool isGetter = CheckIfGetter(scriptName, function);
@@ -62,7 +63,7 @@ public static class PropertyGetterSetterUtilities
         if (isGetter)
         {
             pair.Getter = function;
-            pair.GetterExporter = CreateAccessorExporter(function, primaryProperty, GetterSetterMode.Get);
+            pair.GetterExporter = CreateAccessorExporter(function, primaryProperty, GetterSetterMode.Get, implementationClass);
 
             if (counterpart == null || pair.Setter != null)
             {
@@ -70,12 +71,12 @@ public static class PropertyGetterSetterUtilities
             }
             
             pair.Setter = counterpart;
-            pair.SetterExporter = CreateAccessorExporter(counterpart, primaryProperty, GetterSetterMode.Set);
+            pair.SetterExporter = CreateAccessorExporter(counterpart, primaryProperty, GetterSetterMode.Set, implementationClass);
         }
         else
         {
             pair.Setter = function;
-            pair.SetterExporter = CreateAccessorExporter(function, primaryProperty, GetterSetterMode.Set);
+            pair.SetterExporter = CreateAccessorExporter(function, primaryProperty, GetterSetterMode.Set, implementationClass);
 
             if (counterpart == null || pair.Getter != null)
             {
@@ -83,7 +84,7 @@ public static class PropertyGetterSetterUtilities
             }
             
             pair.Getter = counterpart;
-            pair.GetterExporter = CreateAccessorExporter(counterpart, primaryProperty, GetterSetterMode.Get);
+            pair.GetterExporter = CreateAccessorExporter(counterpart, primaryProperty, GetterSetterMode.Get, implementationClass);
         }
 
         return true;
@@ -145,8 +146,19 @@ public static class PropertyGetterSetterUtilities
         return getterProperty.Class.IsChildOf(setterProperty.Class);
     }
 
-    static GetterSetterFunctionExporter CreateAccessorExporter(UhtFunction function, UhtProperty property, GetterSetterMode mode)
-        => GetterSetterFunctionExporter.Create(function, property, mode, EFunctionProtectionMode.UseUFunctionProtection);
+    static GetterSetterFunctionExporter CreateAccessorExporter(UhtFunction function, UhtProperty property, GetterSetterMode mode,
+        UhtClass? implementationClass)
+    {
+        // Keep the interface declaration in the pair so explicit implementations use its
+        // name, but marshal using the override's parameters when its names differ.
+        UhtFunction? implementation = implementationClass?.FindFunctionByName(function.SourceName, includeSuper: true);
+        if (implementation != null && implementation.HasSameSignature(function))
+        {
+            function = implementation;
+        }
+
+        return GetterSetterFunctionExporter.Create(function, property, mode, EFunctionProtectionMode.UseUFunctionProtection);
+    }
     
     static UhtProperty GetPrimaryProperty(UhtFunction function)
     {
