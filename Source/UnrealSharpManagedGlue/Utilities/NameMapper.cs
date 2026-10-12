@@ -221,7 +221,9 @@ public static class NameMapper
             
                 if (child is UhtFunction function)
                 {
-                    if (scriptName == ScriptifyName(function.GetScriptName(), ENameType.Function))
+                    if (scriptName == ScriptifyName(function.GetScriptName(), ENameType.Function)
+                        || (type is UhtProperty && outer.EngineType == UhtEngineType.Class
+                            && HasSynthesizedPropertyName(function, scriptName)))
                     {
                         return true;
                     }
@@ -235,7 +237,7 @@ public static class NameMapper
         
         if (!isConflicting && outer is UhtClass outerClass)
         {
-            UhtFunction? function = FindInterfaceFunction(outerClass, scriptName);
+            UhtFunction? function = FindInterfaceFunction(outerClass, scriptName, includeSynthesizedProperties: type is UhtProperty);
 
             if (function != null)
             {
@@ -263,7 +265,15 @@ public static class NameMapper
         return isConflicting ? type.EngineName : scriptName;
     }
 
-    static UhtFunction? FindInterfaceFunction(UhtClass classObj, string scriptName)
+    static bool HasSynthesizedPropertyName(UhtFunction function, string propertyName)
+    {
+        return function.CanExportFunction() && !function.IsAutocast()
+            && !function.IsDeclaredPropertyAccessor()
+            && function.TryGetGetterSetterInfo(out string synthesizedName, out _, out _)
+            && synthesizedName == propertyName;
+    }
+
+    static UhtFunction? FindInterfaceFunction(UhtClass classObj, string scriptName, bool includeSynthesizedProperties = false)
     {
         foreach (UhtClass classInterface in classObj.GetInterfaces())
         {
@@ -272,7 +282,9 @@ public static class NameMapper
                 continue;
             }
 
-            UhtFunction? function = interfaceClass.FindFunctionByName(scriptName, (uhtFunction, s) => uhtFunction.GetFunctionName() == s);
+            UhtFunction? function = interfaceClass.FindFunctionByName(scriptName, (uhtFunction, s) =>
+                uhtFunction.GetFunctionName() == s
+                || (includeSynthesizedProperties && HasSynthesizedPropertyName(uhtFunction, s)));
 
             if (function != null)
             {

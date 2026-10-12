@@ -12,25 +12,12 @@ public static class PropertyGetterSetterUtilities
     public static bool MakeGetterSetterPair(this UhtFunction function, Dictionary<string, GetterSetterPair> getterSetterPairs,
         UhtClass? implementationClass = null)
     {
-        string scriptName = function.GetFunctionName();
-        bool isGetter = CheckIfGetter(scriptName, function);
-        bool isSetter = CheckIfSetter(scriptName, function);
-
-        if (!isGetter && !isSetter)
+        if (!function.TryGetGetterSetterInfo(out string propertyName, out bool isGetter, out UhtFunction? counterpart))
         {
             return false;
         }
-
-        string propertyName = scriptName.Length > 3 ? scriptName.Substring(3) : function.SourceName;
-        propertyName = NameMapper.EscapeKeywords(propertyName);
 
         UhtClass owningClass = (UhtClass)function.Outer!;
-
-        UhtFunction? sameNameFunction = owningClass.FindFunctionByName(propertyName);
-        if (sameNameFunction != null && sameNameFunction != function)
-        {
-            return false;
-        }
         
         UhtProperty? propertyWithSameName = owningClass.FindPropertyByName(propertyName, (property, name) =>
         {
@@ -39,12 +26,6 @@ public static class PropertyGetterSetterUtilities
         
         UhtProperty primaryProperty = GetPrimaryProperty(function);
         if (propertyWithSameName != null && (!propertyWithSameName.IsSameType(primaryProperty) || propertyWithSameName.HasAnyGetter() || propertyWithSameName.HasAnySetter()))
-        {
-            return false;
-        }
-
-        UhtFunction? counterpart = FindCounterpart(owningClass, propertyName, isGetter);
-        if (counterpart != null && !CanShareProperty(isGetter ? function : counterpart, isGetter ? counterpart : function))
         {
             return false;
         }
@@ -88,6 +69,62 @@ public static class PropertyGetterSetterUtilities
         }
 
         return true;
+    }
+
+    // Describe a Get/Set function's synthesized member before checking native properties.
+    // This lets NameMapper detect collisions without resolving property names recursively.
+    public static bool TryGetGetterSetterInfo(this UhtFunction function, out string propertyName,
+        out bool isGetter, out UhtFunction? counterpart)
+    {
+        string scriptName = function.GetFunctionName();
+        isGetter = CheckIfGetter(scriptName, function);
+        bool isSetter = CheckIfSetter(scriptName, function);
+        propertyName = string.Empty;
+        counterpart = null;
+
+        if (!isGetter && !isSetter)
+        {
+            return false;
+        }
+
+        propertyName = scriptName.Length > 3 ? scriptName.Substring(3) : function.SourceName;
+        propertyName = NameMapper.EscapeKeywords(propertyName);
+
+        UhtClass owningClass = (UhtClass)function.Outer!;
+        UhtFunction? sameNameFunction = owningClass.FindFunctionByName(propertyName);
+        if (sameNameFunction != null && sameNameFunction != function)
+        {
+            return false;
+        }
+
+        counterpart = FindCounterpart(owningClass, propertyName, isGetter);
+        return counterpart == null || CanShareProperty(isGetter ? function : counterpart, isGetter ? counterpart : function);
+    }
+
+    // Read only explicit bindings here: IsAnyPropertyGetter/Setter also infer bindings
+    // from GetPropertyName, which would recurse during name-conflict detection.
+    internal static bool IsDeclaredPropertyAccessor(this UhtFunction function)
+    {
+        if (function.HasMetadata("BlueprintGetter") || function.HasMetadata("BlueprintSetter"))
+        {
+            return true;
+        }
+
+        UhtClass owningClass = (UhtClass)function.Outer!;
+        foreach (UhtProperty property in owningClass.Properties)
+        {
+            string? getter = property.Getter ?? property.GetMetadata("BlueprintGetter");
+            string? setter = property.Setter ?? property.GetMetadata("BlueprintSetter");
+            if (string.Equals(function.SourceName, getter, StringComparison.InvariantCultureIgnoreCase)
+                || string.Equals(function.SourceName, setter, StringComparison.InvariantCultureIgnoreCase)
+                || (property.HasNativeGetter() && function.SourceName == "Get" + property.EngineName)
+                || (property.HasNativeSetter() && function.SourceName == "Set" + property.EngineName))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static bool CheckIfGetter(string scriptName, UhtFunction function)
