@@ -40,6 +40,40 @@ DECLARE_UNREALSHARP_BINDER(Bind_FProperty)
 		Property->InitializeValue(Value);
 	}
 
+	void DestroyStructDefaultValue(FProperty* Property, void* Value)
+	{
+		Property->DestroyValue(Value);
+		FMemory::Free(Value);
+	}
+
+	void* CreateStructDefaultValue(FProperty* Property, const TCHAR* Text, int32 TextLength)
+	{
+		if (!CastField<FStructProperty>(Property) || !Text || TextLength < 0)
+		{
+			return nullptr;
+		}
+
+		// FProperty owns the layout and constructor/destructor. Managed marshalling copies
+		// this temporary before DestroyStructDefaultValue releases its native storage.
+		void* Value = FMemory::Malloc(Property->GetSize(), Property->GetMinAlignment());
+		Property->InitializeValue(Value);
+		const FString Input(TextLength, Text);
+		const TCHAR* End = Property->ImportText_Direct(*Input, Value, nullptr, PPF_None);
+		if (End)
+		{
+			while (FChar::IsWhitespace(*End))
+			{
+				++End;
+			}
+		}
+		if (!End || *End != '\0')
+		{
+			DestroyStructDefaultValue(Property, Value);
+			return nullptr;
+		}
+		return Value;
+	}
+
 	bool Identical(const FProperty* Property, void* ValueA, void* ValueB)
 	{
 		bool bIsIdentical = Property->Identical(ValueA, ValueB);
@@ -130,6 +164,8 @@ DECLARE_UNREALSHARP_BINDER(Bind_FProperty)
 	BIND_UNREALSHARP_FUNCTION(DestroyValue)
 	BIND_UNREALSHARP_FUNCTION(DestroyValue_InContainer)
 	BIND_UNREALSHARP_FUNCTION(InitializeValue)
+	BIND_UNREALSHARP_FUNCTION(CreateStructDefaultValue)
+	BIND_UNREALSHARP_FUNCTION(DestroyStructDefaultValue)
 	BIND_UNREALSHARP_FUNCTION(Identical)
 	BIND_UNREALSHARP_FUNCTION(GetInnerFields)
 	BIND_UNREALSHARP_FUNCTION(GetValueTypeHash)
