@@ -1,5 +1,6 @@
 using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
+using System.Diagnostics.CodeAnalysis;
 
 namespace UnrealSharp;
 
@@ -77,6 +78,7 @@ public class SingleDelegateMarshaller<T> where T : Delegate
 
 public abstract class TDelegateBase<T> where T : Delegate
 {
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
     private static readonly Type Wrapper;
     
     public readonly DelegateBase<T> InnerDelegate;
@@ -87,7 +89,7 @@ public abstract class TDelegateBase<T> where T : Delegate
         string wrapperName = $"{delegateType.Name}__DelegateSignature";
         string fullName = $"{delegateType.Namespace}.{wrapperName}";
         
-        Type? foundWrapper = delegateType.Assembly.GetType(fullName);
+        Type? foundWrapper = UnrealTypeRegistry.FindType(delegateType.Assembly, fullName);
 
         if (foundWrapper == null)
         {

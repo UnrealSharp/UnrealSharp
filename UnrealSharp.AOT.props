@@ -1,5 +1,8 @@
 <Project>
   <PropertyGroup>
-
+    <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
+  <ItemGroup Condition="'$(PublishTrimmed)' == 'true'">
+    <RuntimeHostConfigurationOption Include="UnrealSharp.EnableDynamicLoading" Value="false" Trim="true" />
+  </ItemGroup>
 </Project>

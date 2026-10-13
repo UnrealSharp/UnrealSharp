@@ -30,7 +30,10 @@ internal static class Main
                 Marshal.PtrToStringUTF8((nint)workingDirectoryUtf8)!);
 
 #if WITH_EDITOR
-            TryRegisterMSBuild();
+            if (PluginLoader.EnableDynamicLoading)
+            {
+                TryRegisterMSBuild();
+            }
 #endif
 
             PluginsCallbacks.Initialize(pluginCallbacks);

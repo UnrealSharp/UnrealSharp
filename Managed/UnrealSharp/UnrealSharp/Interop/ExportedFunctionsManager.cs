@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 using UnrealSharp.Binds;
 
 namespace UnrealSharp.Interop;
@@ -9,6 +10,7 @@ public static class ExportedFunctionsManager
 {
     private static readonly Dictionary<string, FieldInfo> UnmanagedDelegates = new();
 
+    [RequiresUnreferencedCode("Reflection-based native binding requires preserving callback types and fields. Use the generated NativeCallbacks bindings instead.")]
     public static unsafe void Initialize(IntPtr nativeExportFunctionsPtr)
     {
         try
