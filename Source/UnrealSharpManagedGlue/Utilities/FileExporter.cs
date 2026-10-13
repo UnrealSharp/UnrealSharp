@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using EpicGames.UHT.Types;
 using UnrealSharpManagedGlue.PropertyTranslators;
@@ -35,7 +36,8 @@ public static class FileExporter
 		if (File.Exists(absoluteFilePath))
 		{
 			FileInfo fileInfo = new(absoluteFilePath);
-			if (fileInfo.Length == text.Length && File.ReadAllText(absoluteFilePath) == text)
+			// File.WriteAllText writes generated files as UTF-8 without a BOM.
+			if (fileInfo.Length == Encoding.UTF8.GetByteCount(text) && File.ReadAllText(absoluteFilePath) == text)
 			{
 				needsWrite = false;
 			}
