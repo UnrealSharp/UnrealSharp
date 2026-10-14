@@ -1,11 +1,13 @@
 #include "HotReload/CSHotReloadSubsystem.h"
 
+#include "CSDialogUtilities.h"
 #include "CSInstallationUtilities.h"
 #include "CSManager.h"
 #include "CSStyle.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Types/CSEnum.h"
 #include "Types/CSScriptStruct.h"
@@ -45,7 +47,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 bool UCSHotReloadSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
-	return !FApp::IsUnattended() && !IsRunningCommandlet() && UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled();
+	return !IsRunningCommandlet() && UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled();
 }
 
 void UCSHotReloadSubsystem::Deinitialize()
@@ -115,11 +117,14 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	UE_LOGFMT(LogUnrealSharpEditor, Display, "Starting C# Hot Reload...");
 	
-	CurrentHotReloadStatus = Active;
+	CurrentHotReloadStatus = EHotReloadStatus::Active;
 	double StartTime = FPlatformTime::Seconds();
 
 	FScopedSlowTask Progress(4, LOCTEXT("HotReload", "Reloading C#..."));
-	Progress.MakeDialog(false, true);
+	if (UnrealSharp::Dialogs::CanShowEditorUI())
+	{
+		Progress.MakeDialog(false, true);
+	}
 	
 	TArray<UCSManagedAssembly*> AssembliesSortedByDependencies;
 	FCSAssemblyUtilities::SortAssembliesByDependencyOrder(PendingModifiedAssemblies, AssembliesSortedByDependencies);
@@ -127,8 +132,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	FString ExceptionMessage;
 	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
 	{
-		CurrentHotReloadStatus = FailedToCompile;
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Compilation Failed")));
+		ReportHotReloadError(ExceptionMessage, LOCTEXT("CompilationFailed", "C# Compilation Failed"));
 		return;
 	}
 	
@@ -164,11 +168,28 @@ void UCSHotReloadSubsystem::PerformHotReload()
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 	}
 	
-	CurrentHotReloadStatus = Inactive;
+	CurrentHotReloadStatus = EHotReloadStatus::Inactive;
 	bDetectedNewManagedType = false;
 	ReloadedTypes.Reset();
 	
 	UE_LOG(LogUnrealSharpEditor, Display, TEXT("C# Hot Reload completed in %.2f seconds."), FPlatformTime::Seconds() - StartTime);
+}
+
+void UCSHotReloadSubsystem::ReportHotReloadError(const FString& Message, const FText& Title)
+{
+	CurrentHotReloadStatus = EHotReloadStatus::FailedToCompile;
+	UE_LOG(LogUnrealSharpEditor, Error, TEXT("%s: %s"), *Title.ToString(), *Message);
+
+	if (UnrealSharp::Dialogs::CanShowEditorUI())
+	{
+		FNotificationInfo Info(FText::Format(LOCTEXT("HotReloadFailed", "{0}. See the Output Log for details."), Title));
+		Info.ExpireDuration = 5.0f;
+		TSharedPtr<SNotificationItem> Notification = FSlateNotificationManager::Get().AddNotification(Info);
+		if (Notification.IsValid())
+		{
+			Notification->SetCompletionState(SNotificationItem::CS_Fail);
+		}
+	}
 }
 
 void UCSHotReloadSubsystem::OnStructRebuilt(UCSScriptStruct* NewStruct)
@@ -280,9 +301,12 @@ void UCSHotReloadSubsystem::PauseHotReload(const FString& Reason)
 		return;
 	}
 	
-	FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
-	PauseNotification = FCSEditorUtilities::MakeNotification(UnrealSharp::Icons::GetUnrealSharpIcon(), NotificationFormat);
 	bIsHotReloadPaused = true;
+	if (UnrealSharp::Dialogs::CanShowEditorUI())
+	{
+		FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
+		PauseNotification = FCSEditorUtilities::MakeNotification(UnrealSharp::Icons::GetUnrealSharpIcon(), NotificationFormat);
+	}
 }
 
 void UCSHotReloadSubsystem::ResumeHotReload()
@@ -342,7 +366,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	FString ExceptionMessage;
 	if (!FCSHotReloadUtilities::ApplyDirtiedFiles(ProjectName.ToString(), DirtiedFiles, ExceptionMessage))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Hot Reload Error")));
+		ReportHotReloadError(ExceptionMessage, LOCTEXT("HotReloadError", "C# Hot Reload Error"));
 		return;
 	}
 	

@@ -2,6 +2,7 @@
 #include "AssetToolsModule.h"
 #include "CSBuildActionUtilities.h"
 #include "CSBuildUtilties.h"
+#include "CSDialogUtilities.h"
 #include "CSEditorCommands.h"
 #include "CSInstallationUtilities.h"
 #include "CSStyle.h"
@@ -622,6 +623,12 @@ void FUnrealSharpEditorModule::OpenNewProjectDialog()
 
 void FUnrealSharpEditorModule::SuggestProjectSetup()
 {
+	if (!UnrealSharp::Dialogs::CanShowEditorUI())
+	{
+		UE_LOG(LogUnrealSharpEditor, Display, TEXT("No C# projects were found. Skipping the interactive project setup prompt."));
+		return;
+	}
+
 	FString DialogText = TEXT("No C# projects were found. Would you like to create a new C# project?");
 	EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(DialogText));
 
