@@ -1,6 +1,7 @@
 ﻿#include "UnrealSharpCore.h"
 #include "CoreMinimal.h"
 #include "CSManager.h"
+#include "CSDialogUtilities.h"
 #include "CSDotnetUtilties.h"
 #include "Properties/CSPropertyGeneratorManager.h"
 #include "Modules/ModuleManager.h"
@@ -21,10 +22,19 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 void FUnrealSharpCoreModule::StartupModule()
 {
 #if WITH_EDITOR
-	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
+	while (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
 	{
-		StartupModule();
-		return;
+		if (!UnrealSharp::Dialogs::CanShowEditorUI())
+		{
+			UE_LOG(LogUnrealSharp, Error, TEXT("UnrealSharp initialization failed. No interactive dialog is available; exiting with status 1."));
+			FPlatformMisc::RequestExitWithStatus(true, 1);
+			return;
+		}
+
+		if (IsEngineExitRequested())
+		{
+			return;
+		}
 	}
 #endif
 	
