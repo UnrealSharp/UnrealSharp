@@ -13,8 +13,6 @@ public static unsafe partial class Bind_FProperty
     public static delegate* unmanaged<IntPtr, IntPtr, void> DestroyValue;
     public static delegate* unmanaged<IntPtr, IntPtr, void> DestroyValue_InContainer;
     public static delegate* unmanaged<IntPtr, IntPtr, void> InitializeValue;
-    public static delegate* unmanaged<IntPtr, char*, int, IntPtr> CreateStructDefaultValue;
-    public static delegate* unmanaged<IntPtr, IntPtr, void> DestroyStructDefaultValue;
     public static delegate* unmanaged<IntPtr, string, int> GetPropertyOffsetFromName;
     public static delegate* unmanaged<IntPtr, string, int> GetPropertyArrayDimFromName;
     public static delegate* unmanaged<IntPtr, ref UnmanagedArray, void> GetInnerFields;
