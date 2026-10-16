@@ -100,7 +100,11 @@ public static class PackageExporter
 
         if (exportAction != null)
         {
-            TaskManager.StartTask(_ => exportAction());
+            TaskManager.StartTask(_ =>
+            {
+                using NameCollisionScope names = new();
+                exportAction();
+            });
         }
     }
 

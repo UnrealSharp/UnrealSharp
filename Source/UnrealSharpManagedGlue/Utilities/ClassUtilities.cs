@@ -10,7 +10,18 @@ namespace UnrealSharpManagedGlue.Utilities;
 public static class ClassUtilities
 {
     public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null, bool includeSuper = false)
-        => FindTypeInHierarchy(classObj, c => c.Functions, functionName, customCompare, includeSuper);
+    {
+        if (customCompare != null || NameCollisionScope.Current is not { } scope)
+        {
+            return FindTypeInHierarchy(classObj, c => c.Functions, functionName, customCompare, includeSuper);
+        }
+        for (UhtClass? current = classObj; current != null; current = includeSuper ? current.SuperClass : null)
+        {
+            UhtFunction? function = scope.FindFunction(current, functionName);
+            if (function != null) return function;
+        }
+        return null;
+    }
 
     public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null, bool includeSuper = false)
         => FindTypeInHierarchy(classObj, c => c.Properties, propertyName, customCompare, includeSuper);

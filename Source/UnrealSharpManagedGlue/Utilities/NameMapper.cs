@@ -54,6 +54,18 @@ public static class NameMapper
     
     public static string GetPropertyName(this UhtProperty property)
     {
+        NameCollisionScope? scope = NameCollisionScope.Current;
+        if (scope == null) return GetPropertyNameUncached(property);
+        if (!scope.PropertyNames.TryGetValue(property, out string? name))
+        {
+            name = GetPropertyNameUncached(property);
+            scope.PropertyNames.Add(property, name);
+        }
+        return name;
+    }
+
+    private static string GetPropertyNameUncached(UhtProperty property)
+    {
         string propertyName = ScriptifyName(property.GetScriptName(), ENameType.Property);
         if (property.Outer!.SourceName == propertyName || IsAKeyword(propertyName))
         {
@@ -108,6 +120,18 @@ public static class NameMapper
     static readonly string[] MetadataKeys = { "ScriptName", "ScriptMethod", "DisplayName" };
     
     public static string GetScriptName(this UhtType type)
+    {
+        NameCollisionScope? scope = NameCollisionScope.Current;
+        if (scope == null) return GetScriptNameUncached(type);
+        if (!scope.ScriptNames.TryGetValue(type, out string? name))
+        {
+            name = GetScriptNameUncached(type);
+            scope.ScriptNames.Add(type, name);
+        }
+        return name;
+    }
+
+    private static string GetScriptNameUncached(UhtType type)
     {
         bool OnlyContainsLetters(string str)
         {
@@ -171,6 +195,18 @@ public static class NameMapper
     
     public static string GetFunctionName(this UhtFunction function)
     {
+        NameCollisionScope? scope = NameCollisionScope.Current;
+        if (scope == null) return GetFunctionNameUncached(function);
+        if (!scope.FunctionNames.TryGetValue(function, out string? name))
+        {
+            name = GetFunctionNameUncached(function);
+            scope.FunctionNames.Add(function, name);
+        }
+        return name;
+    }
+
+    private static string GetFunctionNameUncached(UhtFunction function)
+    {
         string functionName = function.GetScriptName();
 
         if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
@@ -233,7 +269,8 @@ public static class NameMapper
             return false;
         }
         
-        bool isConflicting = IsConflictingWithChild(outer.Children);
+        bool isConflicting = NameCollisionScope.Current?.HasChildConflict(type, scriptName)
+            ?? IsConflictingWithChild(outer.Children);
         
         if (!isConflicting && outer is UhtClass outerClass)
         {
@@ -267,14 +304,24 @@ public static class NameMapper
 
     static bool HasSynthesizedPropertyName(UhtFunction function, string propertyName)
     {
+        return TryGetSynthesizedPropertyName(function, out string synthesizedName) && synthesizedName == propertyName;
+    }
+
+    internal static bool TryGetSynthesizedPropertyName(UhtFunction function, out string propertyName)
+    {
+        propertyName = string.Empty;
         return function.CanExportFunction() && !function.IsAutocast()
             && !function.IsDeclaredPropertyAccessor()
-            && function.TryGetGetterSetterInfo(out string synthesizedName, out _, out _)
-            && synthesizedName == propertyName;
+            && function.TryGetGetterSetterInfo(out propertyName, out _, out _);
     }
 
     static UhtFunction? FindInterfaceFunction(UhtClass classObj, string scriptName, bool includeSynthesizedProperties = false)
     {
+        if (NameCollisionScope.Current is { } scope)
+        {
+            return scope.FindInterfaceFunction(classObj, scriptName, includeSynthesizedProperties);
+        }
+
         foreach (UhtClass classInterface in classObj.GetInterfaces())
         {
             if (classInterface.AlternateObject is not UhtClass interfaceClass)
