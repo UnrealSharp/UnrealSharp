@@ -65,7 +65,10 @@ public static class PackageExporter
         {
             if (classObj.HasAllFlags(EClassFlags.Interface))
             {
-                if (classObj.ClassType is UhtClassType.Interface || type == GeneratorStatics.Factory.Session.IInterface)
+                // Prefer the reflected root, keeping the native root as a fallback for
+                // older UHT versions and configurations that exclude the reflected root.
+                if (classObj.ClassType is UhtClassType.Interface ||
+                    (type == GeneratorStatics.Factory.Session.IInterface && !CanExportReflectedRootInterface(specialStructs)))
                 {
                     exportAction = () => InterfaceExporter.ExportInterface(classObj);
                 }
@@ -102,6 +105,14 @@ public static class PackageExporter
         {
             TaskManager.StartTask(_ => exportAction());
         }
+    }
+
+    private static bool CanExportReflectedRootInterface(SpecialStructInfo specialStructs)
+    {
+        UhtClass rootInterface = GeneratorStatics.Factory.Session.UInterface;
+        return rootInterface.ClassType is UhtClassType.Interface &&
+               !rootInterface.CanSkipType() &&
+               !specialStructs.SkippedTypes.Contains(rootInterface.SourceName);
     }
 
     private static bool IsDelegateType(UhtType type)
