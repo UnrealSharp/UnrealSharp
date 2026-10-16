@@ -44,6 +44,12 @@ public static class UnrealSharpSettingsUtilities
     static string GetConfigFile(string rootDirectory)
     {
         string ConfigDirectory = Path.Combine(rootDirectory, "Config");
+        // BuildPlugin's temporary host project has no Config directory. Project
+        // settings are optional, so use the plugin defaults when it is absent.
+        if (!Directory.Exists(ConfigDirectory))
+        {
+            return string.Empty;
+        }
         
         EnumerationOptions EnumerationOptions = new EnumerationOptions
         {

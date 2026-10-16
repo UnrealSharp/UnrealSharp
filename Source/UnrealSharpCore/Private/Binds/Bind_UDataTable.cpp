@@ -1,4 +1,5 @@
 #include "CSBindsRegistry.h"
+#include "Engine/DataTable.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UDataTable)
 {

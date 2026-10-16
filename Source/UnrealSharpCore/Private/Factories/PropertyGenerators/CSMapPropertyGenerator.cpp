@@ -1,4 +1,5 @@
 #include "Factories/PropertyGenerators/CSMapPropertyGenerator.h"
+#include "Misc/MessageDialog.h"
 #include "Factories/CSPropertyFactory.h"
 #include "ReflectionData/CSTemplateType.h"
 

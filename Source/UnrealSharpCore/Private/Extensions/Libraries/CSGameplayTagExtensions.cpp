@@ -1,4 +1,5 @@
 ﻿#include "Extensions/Libraries/CSGameplayTagExtensions.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "GameplayTagContainer.h"
 #include "UnrealSharpUtils.h"
 

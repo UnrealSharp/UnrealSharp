@@ -1,4 +1,5 @@
 #include "Extensions/Libraries/CSObjectExtensions.h"
+#include "Engine/World.h"
 
 AWorldSettings* UCSObjectExtensions::GetWorldSettings(const UObject* Object)
 {

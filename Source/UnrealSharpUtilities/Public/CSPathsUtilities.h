@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CoreMinimal.h"
+
 namespace UnrealSharp::Paths
 {
 	UNREALSHARPUTILITIES_API FString GetPluginDirectory();

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Runtime/Launch/Resources/Version.h"
+
 #include "CoreMinimal.h"
 #include "Logging/StructuredLog.h"
 

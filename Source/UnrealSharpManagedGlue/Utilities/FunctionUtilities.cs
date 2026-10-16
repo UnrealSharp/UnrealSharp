@@ -133,14 +133,19 @@ public static class FunctionUtilities
         return $"{function.SourceName}_NativeFunction";
     }
 
-    public static bool HasSameSignature(this UhtFunction function, UhtFunction otherFunction)
+    public static bool HasSameSignature(this UhtFunction function, UhtFunction otherFunction,
+        bool includeReturnType = true)
     {
-        if (function.Children.Count != otherFunction.Children.Count)
+        // UHT stores the return property as the last child. Existing callers still
+        // compare it; name-collision checks can compare parameters only.
+        int propertyCount = function.Children.Count - (!includeReturnType && function.HasReturnProperty ? 1 : 0);
+        int otherPropertyCount = otherFunction.Children.Count - (!includeReturnType && otherFunction.HasReturnProperty ? 1 : 0);
+        if (propertyCount != otherPropertyCount)
         {
             return false;
         }
         
-        for (int i = 0; i < function.Children.Count; i++)
+        for (int i = 0; i < propertyCount; i++)
         {
             UhtProperty param = (UhtProperty) function.Children[i];
             UhtProperty otherParam = (UhtProperty) otherFunction.Children[i];

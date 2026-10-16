@@ -1,4 +1,5 @@
 #include "CSBindsRegistry.h"
+#include "Engine/World.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FWorldDelegates)
 {

@@ -1,5 +1,6 @@
 ﻿#include "Factories/PropertyGenerators/CSOptionalPropertyGenerator.h"
 #include "Factories/CSPropertyFactory.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "ReflectionData/CSTemplateType.h"
 
 struct FCSTemplateType;

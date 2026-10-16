@@ -1,4 +1,6 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include "UObject/UnrealType.h"
 #include "Utilities/CSClassUtilities.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UFunction)

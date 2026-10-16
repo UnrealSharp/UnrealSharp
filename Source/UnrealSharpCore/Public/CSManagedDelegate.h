@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "CSManagedGCHandle.h"
 
+class UObject;
+
 struct UNREALSHARPCORE_API FCSManagedDelegate
 {
 	FCSManagedDelegate(const FGCHandle& ManagedDelegate)

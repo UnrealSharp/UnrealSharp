@@ -1,4 +1,5 @@
 ﻿#include "Compilers/CSManagedEnumCompiler.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "CSManager.h"
 #include "ReflectionData/CSEnumReflectionData.h"
 #include "Types/CSEnum.h"

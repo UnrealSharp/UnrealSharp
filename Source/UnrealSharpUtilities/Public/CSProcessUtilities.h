@@ -1,5 +1,8 @@
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Delegates/Delegate.h"
+
 DECLARE_DELEGATE_OneParam(FCSCommandError, const FString&);
 
 namespace UnrealSharp::Process

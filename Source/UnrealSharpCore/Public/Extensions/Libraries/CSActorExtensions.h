@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "Engine/InheritableComponentHandler.h"
+#include "UObject/CoreNetTypes.h"
+
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSActorExtensions.generated.h"
