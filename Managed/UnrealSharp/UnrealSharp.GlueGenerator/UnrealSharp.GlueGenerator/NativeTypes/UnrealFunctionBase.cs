@@ -357,7 +357,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         nativeCall(SourceGenUtilities.ParamsBuffer, returnBuffer);
 
-        foreach (UnrealProperty parameter in Properties.Where(p => p.ReferenceKind == RefKind.Out))
+        foreach (UnrealProperty parameter in Properties.Where(p => p.ReferenceKind is RefKind.Out or RefKind.Ref))
         {
             builder.AppendLine();
             parameter.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, $"{parameter.FieldName.SourceName} = ");
