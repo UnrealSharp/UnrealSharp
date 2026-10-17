@@ -66,21 +66,43 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	else
 	{
 		OutParameters = Stack.OutParms;
+		// ProcessEvent's local out parameters need their own initialized values
+		// before managed code assigns to them. The caller owns the originals.
+		for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
+		{
+			FProperty* Property = OutParameter->Property;
+			if (Property->HasAnyPropertyFlags(CPF_ReturnParm | CPF_ConstParm))
+			{
+				continue;
+			}
+
+			uint8* LocalValue = Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
+			if (OutParameter->PropAddr != LocalValue)
+			{
+				Property->InitializeValue(LocalValue);
+				Property->CopyCompleteValue(LocalValue, OutParameter->PropAddr);
+			}
+		}
 	}
 	
 	InvokeManagedMethod(ObjectToInvokeOn, Stack, RESULT_PARAM);
 	
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{
-		if (OutParameter->Property->HasAnyPropertyFlags(CPF_ReturnParm))
+		if (OutParameter->Property->HasAnyPropertyFlags(CPF_ReturnParm | CPF_ConstParm))
 		{
 			continue;
 		}
 		
-		const uint8* ValueAddress = OutParameter->Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
+		uint8* ValueAddress = OutParameter->Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
 		if (OutParameter->PropAddr != ValueAddress)
 		{
 			OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
+			if (!IsCalledFromBlueprint)
+			{
+				// ProcessEvent does not destroy local out parameters.
+				OutParameter->Property->DestroyValue(ValueAddress);
+			}
 		}
 	}
 	

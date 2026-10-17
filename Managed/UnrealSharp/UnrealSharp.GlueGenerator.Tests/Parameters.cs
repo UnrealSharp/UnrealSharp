@@ -1,0 +1,112 @@
+using UnrealSharp.Attributes;
+using UnrealSharp.Core;
+using UnrealSharp.GameplayAbilities;
+
+namespace TestSourceGen;
+
+[USingleDelegate]
+public delegate void FRefParameterDelegate(ref int value);
+
+[UClass]
+public partial class UParameterTest : UGameplayModMagnitudeCalculation
+{
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void ReadValue(int input, out int value);
+
+    public partial void ReadValue_Implementation(int input, out int value)
+    {
+        value = input + 10;
+    }
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void ReadValues(int input, out int firstValue, out int secondValue);
+
+    public partial void ReadValues_Implementation(int input, out int firstValue, out int secondValue)
+    {
+        firstValue = input + 10;
+        secondValue = input + 20;
+    }
+
+    [UFunction(FunctionFlags.BlueprintCallable | FunctionFlags.BlueprintEvent)]
+    public partial void ReadCallableValue(int input, out int value);
+
+    public partial void ReadCallableValue_Implementation(int input, out int value)
+    {
+        value = input + 10;
+    }
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void ReceiveValue(int input);
+
+    public partial void ReceiveValue_Implementation(int input)
+    {
+    }
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void UpdateValue(ref int value);
+
+    public partial void UpdateValue_Implementation(ref int value)
+    {
+        value += 10;
+    }
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void UpdateValues(ref int firstValue, ref int secondValue);
+
+    public partial void UpdateValues_Implementation(ref int firstValue, ref int secondValue)
+    {
+        firstValue += 10;
+        secondValue -= 20;
+    }
+
+    [UFunction(FunctionFlags.BlueprintCallable | FunctionFlags.BlueprintEvent)]
+    public partial int UpdateMixed(int input, ref int value, out int output);
+
+    public partial int UpdateMixed_Implementation(int input, ref int value, out int output)
+    {
+        value += input;
+        output = value * 2;
+        return value + output;
+    }
+
+    [UFunction(FunctionFlags.BlueprintCallable)]
+    public bool VerifyRefParameters()
+    {
+        int value = 7;
+        UpdateValue(ref value);
+        if (value != 17)
+        {
+            return false;
+        }
+
+        int firstValue = -10;
+        int secondValue = 20;
+        UpdateValues(ref firstValue, ref secondValue);
+        if (firstValue != 0 || secondValue != 0)
+        {
+            return false;
+        }
+
+        int input = 3;
+        value = 4;
+        int result = UpdateMixed(input, ref value, out int output);
+        return input == 3 && value == 7 && output == 14 && result == 21;
+    }
+
+    // Invoke this override from native code with a populated spec. The const
+    // input must remain unchanged when the managed callback returns (#678).
+    public override float CalculateBaseMagnitude(FGameplayEffectSpec spec)
+    {
+        return GetSetByCallerMagnitudeByName(spec, new FName("ConstReferenceInput"));
+    }
+
+    // Native ProcessEvent callers must retain a valid attribute as well as
+    // receive the changed magnitude when this callback returns.
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void UpdateEvaluated(ref FGameplayModifierEvaluatedData evaluatedData);
+
+    public partial void UpdateEvaluated_Implementation(ref FGameplayModifierEvaluatedData evaluatedData)
+    {
+        evaluatedData.Magnitude += 10;
+    }
+}
