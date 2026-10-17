@@ -77,6 +77,13 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 				continue;
 			}
 
+			// Raw object references also need no independent lifetime, even when not POD.
+			if (Property->IsA<FObjectProperty>() && Property->HasAnyPropertyFlags(CPF_NoDestructor)
+				&& !Property->HasAnyPropertyFlags(CPF_TObjectPtr))
+			{
+				continue;
+			}
+
 			uint8* LocalValue = Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
 			if (OutParameter->PropAddr != LocalValue)
 			{
