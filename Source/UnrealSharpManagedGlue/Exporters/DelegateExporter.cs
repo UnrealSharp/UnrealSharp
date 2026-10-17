@@ -44,7 +44,7 @@ public static class DelegateExporter
         FunctionExporter.ExportDelegateExtensions(stringBuilder, functionExporter, superClass);
 
         stringBuilder.EndGlueFile(function);
-        FileExporter.SaveGlueToDisk(function.Package, function.Package.GetPackageOutputDirectory(), delegateName, stringBuilder.ToString());
+        SessionStatic.Files.SaveGlueToDisk(function.Package, function.Package.GetPackageOutputDirectory(), delegateName, stringBuilder.ToString());
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)

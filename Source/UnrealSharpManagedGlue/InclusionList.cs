@@ -4,14 +4,14 @@ using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
 
-public static class InclusionLists
+public class InclusionLists
 {
-    private static readonly IDictionary<string, HashSet<string>> BannedProperties = new Dictionary<string, HashSet<string>>();
-    private static readonly IDictionary<string, HashSet<string>> BannedFunctions = new Dictionary<string, HashSet<string>>();
-    private static readonly HashSet<string> BannedArithmetic = new();
-    private static readonly HashSet<string> BannedConstructors = new();
+    private readonly IDictionary<string, HashSet<string>> BannedProperties = new Dictionary<string, HashSet<string>>();
+    private readonly IDictionary<string, HashSet<string>> BannedFunctions = new Dictionary<string, HashSet<string>>();
+    private readonly HashSet<string> BannedArithmetic = new();
+    private readonly HashSet<string> BannedConstructors = new();
 
-    public static void BanProperty(string structName, string propertyName)
+    public void BanProperty(string structName, string propertyName)
     {
         if (!BannedProperties.TryGetValue(structName, out var propertySet))
         {
@@ -22,12 +22,12 @@ public static class InclusionLists
         propertySet.Add(propertyName);
     }
     
-    public static bool HasBannedProperty(UhtProperty property)
+    public bool HasBannedProperty(UhtProperty property)
     {
         return BannedProperties.TryGetValue(property.Outer!.SourceName, out var propertySet) && propertySet.Contains(property.SourceName);
     }
     
-    public static void BanFunction(string structName, string functionName)
+    public void BanFunction(string structName, string functionName)
     {
         if (!BannedFunctions.TryGetValue(structName, out var functionSet))
         {
@@ -38,27 +38,27 @@ public static class InclusionLists
         functionSet.Add(functionName);
     }
     
-    public static bool HasBannedFunction(UhtFunction function)
+    public bool HasBannedFunction(UhtFunction function)
     {
         return BannedFunctions.TryGetValue(function.Outer!.SourceName, out HashSet<string>? functionSet) && functionSet.Contains(function.SourceName);
     }
 
-    public static void BanArithmetic(string structName)
+    public void BanArithmetic(string structName)
     {
         BannedArithmetic.Add(structName);
     }
 
-    public static bool HasBannedArithmetic(UhtStruct scriptStruct)
+    public bool HasBannedArithmetic(UhtStruct scriptStruct)
     {
         return BannedArithmetic.Contains(scriptStruct.GetStructName());
     }
 
-    public static void BanConstructor(string structName)
+    public void BanConstructor(string structName)
     {
         BannedConstructors.Add(structName);
     }
 
-    public static bool HasBannedConstructor(UhtStruct scriptStruct)
+    public bool HasBannedConstructor(UhtStruct scriptStruct)
     {
         return BannedConstructors.Contains(scriptStruct.GetStructName());
     }

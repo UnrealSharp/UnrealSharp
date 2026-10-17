@@ -8,31 +8,37 @@ using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
-public static class GeneratorStatics
+public class GeneratorStatics
 {
-	private static IUhtExportFactory? _factory;
-	public static IUhtExportFactory Factory => _factory ?? throw new InvalidOperationException("GeneratorStatics not initialized");
+	private IUhtExportFactory? _factory;
+	public IUhtExportFactory Factory => _factory ?? throw new InvalidOperationException("GeneratorStatics not initialized");
 
-	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
+	public UHTManifest.Module PluginModule => Factory.PluginModule!;
 	
-	public static ModuleInfo PluginModuleInfo { get; private set; } = null!;
+	public ModuleInfo PluginModuleInfo { get; private set; } = null!;
 	
-	public static UhtClass BlueprintFunctionLibrary { get; private set; } = null!;
+	public UhtClass BlueprintFunctionLibrary { get; private set; } = null!;
 
-	public static string PluginDirectory { get; private set; } = "";
-	public static string EngineDirectory => Factory.Session.EngineDirectory!;
+	public string PluginDirectory { get; private set; } = "";
+	public string EngineDirectory => Factory.Session.EngineDirectory!;
 	
-	public static string ManagedPath { get; private set; } = "";
+	public string ManagedPath { get; private set; } = "";
 	
-	public static TargetType TargetType { get; private set; }
-	public static UnrealTargetConfiguration TargetConfiguration;
+	public TargetType TargetType { get; private set; }
+	public UnrealTargetConfiguration TargetConfiguration;
 	
-	public static void Initialize(IUhtExportFactory factory)
+	public void Initialize(IUhtExportFactory factory)
 	{
+		if (_factory != null)
+		{
+			factory.Session.LogError("UnrealSharp generator data was initialized more than once for this UHT session.");
+			throw new InvalidOperationException("GeneratorStatics already initialized");
+		}
+
 		_factory = factory;
 		
 		PluginDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("PLUGIN_PATH");
-		UnrealSharpSettingsUtilities.InitializeConfigFile(Factory.Session.ProjectDirectory!, PluginDirectory);
+		SessionStatic.Settings.InitializeConfigFile(Factory.Session.ProjectDirectory!, PluginDirectory);
 		
 		TargetType = (TargetType) ScriptGeneratorUtilities.TryGetPluginIntDefine("TARGET_TYPE");
 		TargetConfiguration = (UnrealTargetConfiguration) ScriptGeneratorUtilities.TryGetPluginIntDefine("TARGET_CONFIGURATION");
@@ -41,7 +47,8 @@ public static class GeneratorStatics
 		
 		BlueprintFunctionLibrary = (Factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary") as UhtClass)!;
 		
-		PluginModuleInfo = ModuleUtilities.GetModuleInfo(factory.PluginModule!.Name);
+		SessionStatic.Modules.Initialize();
+		PluginModuleInfo = SessionStatic.Modules.GetModuleInfo(factory.PluginModule!.Name);
 
 		PathUtilities.InitPaths(factory.Session.EngineDirectory!);
 	}

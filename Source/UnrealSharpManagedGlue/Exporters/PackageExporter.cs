@@ -13,12 +13,12 @@ public static class PackageExporter
 {
     public static void ExportPackages()
     {
-        foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
+        foreach (ModuleInfo moduleInfo in SessionStatic.Modules.PackageToModuleInfo.Values)
         {
             ExportPackage(moduleInfo.Module);
         }
         
-        TaskManager.WaitForTasks();
+        SessionStatic.Tasks.WaitForTasks();
     }
     
     private static void ExportPackage(UhtPackage package)
@@ -33,8 +33,8 @@ public static class PackageExporter
         for (int i = 0; i < childrenCount; i++)
         {
             UhtType child = package.Children[i];
-            bool hasChanged = !generatedGlueFolderExists || PackageHeadersTracker.HasHeaderFileChanged(packageName, child.HeaderFile);
-            Action<UhtType> processAction = hasChanged ? ExportType : FileExporter.AddUnchangedType;
+            bool hasChanged = !generatedGlueFolderExists || SessionStatic.Headers.HasHeaderFileChanged(packageName, child.HeaderFile);
+            Action<UhtType> processAction = hasChanged ? ExportType : SessionStatic.Files.AddUnchangedType;
 
             processAction(child);
 
@@ -46,12 +46,12 @@ public static class PackageExporter
             processedHeaders[i] = child.HeaderFile;
         }
         
-        PackageHeadersTracker.RecordPackageHeadersWriteTime(packageName, processedHeaders);
+        SessionStatic.Headers.RecordPackageHeadersWriteTime(packageName, processedHeaders);
     }
 
     private static void ExportType(UhtType type)
     {
-        SpecialStructInfo specialStructs = PropertyTranslatorManager.SpecialTypeInfo.Structs;
+        SpecialStructInfo specialStructs = SessionStatic.Translators.SpecialTypeInfo.Structs;
 
         if (type.CanSkipType() || specialStructs.SkippedTypes.Contains(type.SourceName))
         {
@@ -65,7 +65,7 @@ public static class PackageExporter
         {
             if (classObj.HasAllFlags(EClassFlags.Interface))
             {
-                if (classObj.ClassType is UhtClassType.Interface || type == GeneratorStatics.Factory.Session.IInterface)
+                if (classObj.ClassType is UhtClassType.Interface || type == SessionStatic.Generator.Factory.Session.IInterface)
                 {
                     exportAction = () => InterfaceExporter.ExportInterface(classObj);
                 }
@@ -100,7 +100,7 @@ public static class PackageExporter
 
         if (exportAction != null)
         {
-            TaskManager.StartTask(_ => exportAction());
+            SessionStatic.Tasks.StartTask(_ => exportAction());
         }
     }
 

@@ -8,7 +8,7 @@ namespace UnrealSharpManagedGlue.Utilities;
 
 public static class ExporterValidator
 {
-	private static string AssemblyModificationTimeFile => Path.Combine(GeneratorStatics.PluginModule.OutputDirectory, "GlueGeneratorTimestamp");
+	private static string AssemblyModificationTimeFile => Path.Combine(SessionStatic.Generator.PluginModule.OutputDirectory, "GlueGeneratorTimestamp");
 
 	static bool HasAssemblyRecentlyChanged()
 	{
@@ -35,7 +35,7 @@ public static class ExporterValidator
 
 		if (!HasAssemblyRecentlyChanged())
 		{
-			PackageHeadersTracker.DeserializeModuleHeaders();
+			SessionStatic.Headers.DeserializeModuleHeaders();
 			return;
 		}
 
@@ -60,11 +60,11 @@ public static class ExporterValidator
 
 	private static void CleanModules()
 	{
-		IEnumerable<ModuleInfo> modules = ModuleUtilities.PackageToModuleInfo.Values;
+		IEnumerable<ModuleInfo> modules = SessionStatic.Modules.PackageToModuleInfo.Values;
 
 		foreach (ModuleInfo module in modules)
 		{
-			FileExporter.CleanGeneratedFolder(module.Module.GetPackageOutputDirectory());
+			SessionStatic.Files.CleanGeneratedFolder(module.Module.GetPackageOutputDirectory());
 
 			if (module.IsPartOfEngine || !File.Exists(module.CsProjPath))
 			{
