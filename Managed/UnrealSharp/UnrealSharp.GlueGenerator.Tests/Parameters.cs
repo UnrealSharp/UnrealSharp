@@ -1,5 +1,7 @@
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
+using UnrealSharp.CoreUObject;
+using UnrealSharp.Engine;
 using UnrealSharp.GameplayAbilities;
 
 namespace TestSourceGen;
@@ -108,5 +110,66 @@ public partial class UParameterTest : UGameplayModMagnitudeCalculation
     public partial void UpdateEvaluated_Implementation(ref FGameplayModifierEvaluatedData evaluatedData)
     {
         evaluatedData.Magnitude += 10;
+    }
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial UObject ReadObject(UObject input, out UObject output);
+
+    public partial UObject ReadObject_Implementation(UObject input, out UObject output)
+    {
+        output = input;
+        return input;
+    }
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void ExchangeObjects(ref UObject first, ref UObject second);
+
+    public partial void ExchangeObjects_Implementation(ref UObject first, ref UObject second)
+    {
+        (first, second) = (second, first);
+    }
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void ReplaceObject(UObject input, ref UObject value, out UObject previous);
+
+    public partial void ReplaceObject_Implementation(UObject input, ref UObject value, out UObject previous)
+    {
+        previous = value;
+        value = input;
+    }
+
+    [UFunction(FunctionFlags.BlueprintCallable)]
+    public bool VerifyObjectParameters()
+    {
+        UObject first = NewObject<USphereComponent>();
+        UObject second = NewObject<UBoxComponent>();
+        if (ReadObject(first, out UObject output) != first || output != first)
+        {
+            return false;
+        }
+
+        UObject originalFirst = first;
+        UObject originalSecond = second;
+        ExchangeObjects(ref first, ref second);
+        if (first != originalSecond || second != originalFirst)
+        {
+            return false;
+        }
+
+        ReplaceObject(originalFirst, ref first, out UObject previous);
+        if (first != originalFirst || previous != originalSecond)
+        {
+            return false;
+        }
+
+        ReplaceObject(null!, ref first, out previous);
+        if (first != null || previous != originalFirst)
+        {
+            return false;
+        }
+
+        UObject nullValue = null!;
+        ExchangeObjects(ref nullValue, ref second);
+        return nullValue == originalFirst && second == null && ReadObject(null!, out output) == null && output == null;
     }
 }

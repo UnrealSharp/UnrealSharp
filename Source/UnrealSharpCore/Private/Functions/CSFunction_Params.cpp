@@ -66,12 +66,13 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	else
 	{
 		OutParameters = Stack.OutParms;
-		// ProcessEvent's local out parameters need their own initialized values
-		// before managed code assigns to them. The caller owns the originals.
+		// ProcessEvent already prepares plain values. Nontrivial out parameters
+		// need independent initialized values before managed code assigns to them.
+		constexpr EPropertyFlags PlainValueFlags = CPF_IsPlainOldData | CPF_NoDestructor;
 		for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 		{
 			FProperty* Property = OutParameter->Property;
-			if (Property->HasAnyPropertyFlags(CPF_ReturnParm | CPF_ConstParm))
+			if (Property->HasAnyPropertyFlags(CPF_ReturnParm | CPF_ConstParm) || Property->HasAllPropertyFlags(PlainValueFlags))
 			{
 				continue;
 			}
