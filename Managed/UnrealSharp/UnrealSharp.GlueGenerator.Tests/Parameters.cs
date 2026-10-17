@@ -95,6 +95,29 @@ public partial class UParameterTest : UGameplayModMagnitudeCalculation
         return input == 3 && value == 7 && output == 14 && result == 21;
     }
 
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void CopyString(string input, out string output);
+
+    public partial void CopyString_Implementation(string input, out string output)
+    {
+        output = input;
+    }
+
+    [UFunction(FunctionFlags.BlueprintCallable)]
+    public bool VerifyStringParameters()
+    {
+        foreach (string input in new[] { string.Empty, "ref/out: Unicode \u4e2d\u6587", new string('x', 8192) })
+        {
+            CopyString(input, out string output);
+            if (output != input)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     // Invoke this override from native code with a populated spec. The const
     // input must remain unchanged when the managed callback returns (#678).
     public override float CalculateBaseMagnitude(FGameplayEffectSpec spec)

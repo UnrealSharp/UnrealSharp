@@ -88,7 +88,11 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 			if (OutParameter->PropAddr != LocalValue)
 			{
 				Property->InitializeValue(LocalValue);
-				Property->CopyCompleteValue(LocalValue, OutParameter->PropAddr);
+				// Pure out parameters are assigned without reading their previous value.
+				if (Property->HasAnyPropertyFlags(CPF_ReferenceParm))
+				{
+					Property->CopyCompleteValue(LocalValue, OutParameter->PropAddr);
+				}
 			}
 		}
 	}
