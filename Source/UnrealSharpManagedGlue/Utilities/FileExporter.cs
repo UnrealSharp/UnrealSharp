@@ -9,25 +9,26 @@ using UnrealSharpManagedGlue.SourceGeneration;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
-public static class FileExporter
+public class FileExporter
 {
+	// Sessions can share an engine-level output directory, so keep writes serialized.
 	private static readonly ReaderWriterLockSlim ReadWriteLock = new();
-	private static readonly HashSet<string> AffectedFiles = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> AffectedFiles = new(StringComparer.OrdinalIgnoreCase);
     
-	public static bool HasModifiedEngineGlue { get; private set; }
+	public bool HasModifiedEngineGlue { get; private set; }
 
-	public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
+	public void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
 	{
 		string directory = type.Package.GetModuleInfo().GlueOutputDirectory;
 		SaveGlueToDisk(type.Package, directory, type.EngineName, stringBuilder.ToString());
 	}
 
-	public static string GetFilePath(string typeName, string directory)
+	public string GetFilePath(string typeName, string directory)
 	{
 		return Path.Combine(directory, $"{typeName}.generated.cs");
 	}
 
-	public static void SaveGlueToDisk(UhtPackage package, string directory, string typeName, string text)
+	public void SaveGlueToDisk(UhtPackage package, string directory, string typeName, string text)
 	{
 		string absoluteFilePath = GetFilePath(typeName, directory);
 		bool needsWrite = true;
@@ -70,7 +71,7 @@ public static class FileExporter
 		}
 	}
 
-	public static void AddUnchangedType(UhtType type)
+	public void AddUnchangedType(UhtType type)
 	{
 		string engineName = type is UhtFunction function ? DelegateBasePropertyTranslator.GetDelegateName(function) : type.EngineName;
 
@@ -92,17 +93,17 @@ public static class FileExporter
 		}
 	}
 
-	public static void CleanOldExportedFiles()
+	public void CleanOldExportedFiles()
 	{
 		ConsoleUtilities.Log("Cleaning up old generated C# glue files...");
 
-		foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
+		foreach (ModuleInfo plugin in SessionStatic.Modules.PackageToModuleInfo.Values)
 		{
 			CleanOldFilesInDirectories(plugin.GlueOutputDirectory);
 		}
 	}
 
-	public static void CleanGeneratedFolder(string path)
+	public void CleanGeneratedFolder(string path)
 	{
 		if (!Directory.Exists(path))
 		{
@@ -123,14 +124,14 @@ public static class FileExporter
 		}
 	}
 
-	private static void CleanOldFilesInDirectories(string path)
+	private void CleanOldFilesInDirectories(string path)
 	{
 		if (!Directory.Exists(path))
 		{
 			return;
 		}
 
-		if (!PackageHeadersTracker.HasModuleBeenExported(Path.GetFileName(path)))
+		if (!SessionStatic.Headers.HasModuleBeenExported(Path.GetFileName(path)))
 		{
 			return;
 		}

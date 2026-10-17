@@ -7,23 +7,23 @@ using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
 
-public static class ModuleFactory
+public class ModuleFactory
 {
 	const string CompileIncludeFolderVerb = "CompileIncludeFolder";
 	
-	private static readonly Dictionary<string, List<string>> ModuleDependencies;
+	private Dictionary<string, List<string>> ModuleDependencies = new();
 
-	static ModuleFactory()
+	public void Initialize()
 	{
 		ModuleDependencies = JsonUtilities.DeserializeObjectFromJson<Dictionary<string, List<string>>>(nameof(ModuleDependencies)) ?? new Dictionary<string, List<string>>();
 	}
 
-	public static void SyncModuleProjects()
+	public void SyncModuleProjects()
 	{
 		bool anyProjectChanges = false;
 		bool anyGlueDirty = false;
 
-		foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
+		foreach (ModuleInfo moduleInfo in SessionStatic.Modules.PackageToModuleInfo.Values)
 		{
 			if (!moduleInfo.Module.ShouldExportPackage() || moduleInfo.IsPartOfEngine || moduleInfo.IsExtendingModule)
 			{
@@ -68,18 +68,18 @@ public static class ModuleFactory
 		}
 	}
 
-	private static bool CompileGlueProjects()
+	private bool CompileGlueProjects()
 	{
-		if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor)
+		if (SessionStatic.Generator.TargetType != TargetRules.TargetType.Editor)
 		{
 			return false;
 		}
 
 		List<KeyValuePair<string, string>> commandArgs = new List<KeyValuePair<string, string>>
 		{
-			new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString()),
-			new("TargetType", GeneratorStatics.TargetType.ToString()),
-			new("OutputDirectory", PathUtilities.BuildOutputPath(GeneratorStatics.Factory.Session.ProjectDirectory!)),
+			new("TargetConfiguration", SessionStatic.Generator.TargetConfiguration.ToString()),
+			new("TargetType", SessionStatic.Generator.TargetType.ToString()),
+			new("OutputDirectory", PathUtilities.BuildOutputPath(SessionStatic.Generator.Factory.Session.ProjectDirectory!)),
 			new("AddReferences", "true")
 		};
 
@@ -87,7 +87,7 @@ public static class ModuleFactory
 		return true;
 	}
 
-	private static void GenerateModuleProject(ModuleInfo moduleInfo)
+	private void GenerateModuleProject(ModuleInfo moduleInfo)
 	{
 		List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
 		{
@@ -108,7 +108,7 @@ public static class ModuleFactory
 		UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateProject", arguments);
 	}
 
-	private static void AppendExtensionIncludeFolders(ModuleInfo moduleInfo, List<KeyValuePair<string, string>> arguments)
+	private void AppendExtensionIncludeFolders(ModuleInfo moduleInfo, List<KeyValuePair<string, string>> arguments)
 	{
 		foreach (ModuleInfo extensionModule in moduleInfo.Extensions)
 		{
@@ -125,7 +125,7 @@ public static class ModuleFactory
 		}
 	}
 
-	private static void UpdateModuleDependencies(ModuleInfo moduleInfo, List<string>? pluginDependencies)
+	private void UpdateModuleDependencies(ModuleInfo moduleInfo, List<string>? pluginDependencies)
 	{
 		List<KeyValuePair<string, string>> arguments = new()
 		{

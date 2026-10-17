@@ -10,9 +10,14 @@ namespace UnrealSharpManagedGlue.Utilities;
 
 public static class PropertyUtilities
 {
+    public static PropertyTranslator? GetTranslator(this UhtProperty property)
+    {
+        return SessionStatic.Translators.GetTranslator(property);
+    }
+
     public static bool CanExportProperty(this UhtProperty property)
     {
-        if (InclusionLists.HasBannedProperty(property))
+        if (SessionStatic.Inclusions.HasBannedProperty(property))
         {
             return false;
         }
@@ -136,7 +141,7 @@ public static class PropertyUtilities
             return false;
         }
 
-        if (property is not UhtObjectProperty objectProperty || objectProperty.Class != GeneratorStatics.Factory.Session.UObject)
+        if (property is not UhtObjectProperty objectProperty || objectProperty.Class != SessionStatic.Generator.Factory.Session.UObject)
         {
             return false;
         }

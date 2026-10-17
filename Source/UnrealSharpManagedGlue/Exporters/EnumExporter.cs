@@ -41,7 +41,7 @@ public static class EnumExporter
         stringBuilder.CloseBrace();
         stringBuilder.EndGlueFile(enumObj);
         
-        FileExporter.SaveGlueToDisk(enumObj, stringBuilder);
+        SessionStatic.Files.SaveGlueToDisk(enumObj, stringBuilder);
     }
 
     private static string UnderlyingEnumTypeToString(UhtEnumUnderlyingType underlyingType)

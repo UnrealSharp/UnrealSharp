@@ -5,13 +5,13 @@ using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
 
-public static class TaskManager
+public class TaskManager
 {
-	private static readonly List<Task> Tasks = new();
+	private readonly List<Task> Tasks = new();
 
-	public static void StartTask(UhtExportTaskDelegate action)
+	public void StartTask(UhtExportTaskDelegate action)
 	{
-		Task? task = GeneratorStatics.Factory.CreateTask(action);
+		Task? task = SessionStatic.Generator.Factory.CreateTask(action);
 		
 		if (task == null)
 		{
@@ -22,7 +22,7 @@ public static class TaskManager
 		Tasks.Add(task);
 	}
 	
-	public static void WaitForTasks()
+	public void WaitForTasks()
 	{
 		Task.WaitAll(Tasks.ToArray());
 	}

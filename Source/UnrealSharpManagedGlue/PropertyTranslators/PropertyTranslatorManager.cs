@@ -10,14 +10,14 @@ using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue.PropertyTranslators;
 
-public static class PropertyTranslatorManager
+public class PropertyTranslatorManager
 {
-    private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
-    public static SpecialTypeInfo SpecialTypeInfo { get; } = new();
+    private readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
+    public SpecialTypeInfo SpecialTypeInfo { get; } = new();
     
-    static PropertyTranslatorManager()
+    public void Initialize()
     {
-        string? projectDirectory = GeneratorStatics.Factory.Session.ProjectDirectory;
+        string? projectDirectory = SessionStatic.Generator.Factory.Session.ProjectDirectory;
         string configDirectory = Path.Combine(projectDirectory!, "Config");
         
         string pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
@@ -30,7 +30,7 @@ public static class PropertyTranslatorManager
         IEnumerable<string> files = pluginFiles
             .Select(x => x.DirectoryName!)
             .Select(x => Path.Combine(x, "Config"))
-            .Concat(new List<string> { Path.Combine(GeneratorStatics.PluginDirectory, "Config"), configDirectory })
+            .Concat(new List<string> { Path.Combine(SessionStatic.Generator.PluginDirectory, "Config"), configDirectory })
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(x => new DirectoryInfo(x))
             .Where(x => x.Exists)
@@ -137,41 +137,41 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
         
         // Manually exported properties
-        InclusionLists.BanProperty("UWorld", "GameState");
-        InclusionLists.BanProperty("UWorld", "AuthorityGameMode");
+        SessionStatic.Inclusions.BanProperty("UWorld", "GameState");
+        SessionStatic.Inclusions.BanProperty("UWorld", "AuthorityGameMode");
         
         // Replicated properties handled by custom code
-        InclusionLists.BanProperty("AActor", "bReplicates");
-        InclusionLists.BanProperty("UActorComponent", "bReplicates");
-        InclusionLists.BanFunction("UActorComponent", "SetIsReplicated");
+        SessionStatic.Inclusions.BanProperty("AActor", "bReplicates");
+        SessionStatic.Inclusions.BanProperty("UActorComponent", "bReplicates");
+        SessionStatic.Inclusions.BanFunction("UActorComponent", "SetIsReplicated");
 
         // Doesn't have any fields
-        InclusionLists.BanArithmetic("FSubsystemCollectionBaseRef");
-        InclusionLists.BanArithmetic("FRandomStream");
-        InclusionLists.BanArithmetic("FRotator");
-        InclusionLists.BanArithmetic("FVector3f");
-        InclusionLists.BanArithmetic("FVector2f");
-        InclusionLists.BanArithmetic("FVector4f");
-        InclusionLists.BanArithmetic("FVector_NetQuantize");
-        InclusionLists.BanArithmetic("FVector_NetQuantize10");
-        InclusionLists.BanArithmetic("FVector_NetQuantize100");
-        InclusionLists.BanArithmetic("FVector_NetQuantizeNormal");
+        SessionStatic.Inclusions.BanArithmetic("FSubsystemCollectionBaseRef");
+        SessionStatic.Inclusions.BanArithmetic("FRandomStream");
+        SessionStatic.Inclusions.BanArithmetic("FRotator");
+        SessionStatic.Inclusions.BanArithmetic("FVector3f");
+        SessionStatic.Inclusions.BanArithmetic("FVector2f");
+        SessionStatic.Inclusions.BanArithmetic("FVector4f");
+        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantize");
+        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantize10");
+        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantize100");
+        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantizeNormal");
 
         // Custom arithmetic needed
-        InclusionLists.BanArithmetic("FQuat");
+        SessionStatic.Inclusions.BanArithmetic("FQuat");
 
         // Renamed variable
-        InclusionLists.BanConstructor("FPlane");
+        SessionStatic.Inclusions.BanConstructor("FPlane");
 
         // Has constructor with with defaults
-        InclusionLists.BanConstructor("FGameplayTagContainer");
-        InclusionLists.BanConstructor("FLinearColor");
+        SessionStatic.Inclusions.BanConstructor("FGameplayTagContainer");
+        SessionStatic.Inclusions.BanConstructor("FLinearColor");
 
         // Calls native to init
-        InclusionLists.BanConstructor("FGameplayTag");
-        InclusionLists.BanConstructor("FPrimaryAssetType");
+        SessionStatic.Inclusions.BanConstructor("FGameplayTag");
+        SessionStatic.Inclusions.BanConstructor("FPrimaryAssetType");
     }
-    public static void AddTranslationManifest(TypeTranslationManifest manifest)
+    public void AddTranslationManifest(TypeTranslationManifest manifest)
     {
         if (!manifest.Structs.CustomTypes.IsDefaultOrEmpty)
         {
@@ -225,7 +225,7 @@ public static class PropertyTranslatorManager
         }
     }
     
-    public static PropertyTranslator? GetTranslator(this UhtProperty property)
+    public PropertyTranslator? GetTranslator(UhtProperty property)
     {
         if (!RegisteredTranslators.TryGetValue(property.GetType(), out List<PropertyTranslator>? translator))
         {
@@ -243,7 +243,7 @@ public static class PropertyTranslatorManager
         return null;
     }
 
-    static void AddBlittablePropertyTranslator(Type propertyType, string managedType)
+    void AddBlittablePropertyTranslator(Type propertyType, string managedType)
     {
         if (RegisteredTranslators.TryGetValue(propertyType, out List<PropertyTranslator>? translators))
         {
@@ -257,7 +257,7 @@ public static class PropertyTranslatorManager
         });
     }
 
-    static void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)
+    void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)
     {
         if (RegisteredTranslators.TryGetValue(propertyClass, out List<PropertyTranslator>? translators))
         {

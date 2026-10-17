@@ -8,7 +8,7 @@ public static class BuildUtilities
 {
     public static void BuildBindings()
     {
-        if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor || !FileExporter.HasModifiedEngineGlue)
+        if (SessionStatic.Generator.TargetType != TargetRules.TargetType.Editor || !SessionStatic.Files.HasModifiedEngineGlue)
         {
             return;
         }
@@ -17,8 +17,8 @@ public static class BuildUtilities
 
         List<KeyValuePair<string, string>> actionArgs =
         [
-            new("Folders", Path.Combine(GeneratorStatics.ManagedPath, "UnrealSharp")),
-            new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString())
+            new("Folders", Path.Combine(SessionStatic.Generator.ManagedPath, "UnrealSharp")),
+            new("TargetConfiguration", SessionStatic.Generator.TargetConfiguration.ToString())
         ];
         
         UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("BuildSolution", actionArgs);
@@ -26,15 +26,15 @@ public static class BuildUtilities
     
     public static void GenerateUserSolution()
     {
-        if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor)
+        if (SessionStatic.Generator.TargetType != TargetRules.TargetType.Editor)
         {
             return;
         }
         
         List<KeyValuePair<string, string>> ActionArgs =
         [
-            new("TargetType", GeneratorStatics.TargetType.ToString()),
-            new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString())
+            new("TargetType", SessionStatic.Generator.TargetType.ToString()),
+            new("TargetConfiguration", SessionStatic.Generator.TargetConfiguration.ToString())
         ];
         UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateUserSolution", ActionArgs);
     }

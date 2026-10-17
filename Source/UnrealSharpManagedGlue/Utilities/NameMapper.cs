@@ -76,12 +76,12 @@ public static class NameMapper
     
     public static string GetStructName(this UhtType type)
     {
-        if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == GeneratorStatics.Factory.Session.UInterface)
+        if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == SessionStatic.Generator.Factory.Session.UInterface)
         {
             return "I" + type.EngineName;
         }
         
-        if (type is UhtClass uhtClass && uhtClass.IsChildOf(GeneratorStatics.BlueprintFunctionLibrary))
+        if (type is UhtClass uhtClass && uhtClass.IsChildOf(SessionStatic.Generator.BlueprintFunctionLibrary))
         {
             return type.GetScriptName();
         }

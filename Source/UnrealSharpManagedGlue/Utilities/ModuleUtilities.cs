@@ -66,9 +66,9 @@ public sealed class ModuleInfo
 	
 	internal void ResolveOutputPaths()
 	{
-		string root = EmitsToProjectDirectory ? GeneratorStatics.Factory.Session.ProjectDirectory! : ModuleRoot;
+		string root = EmitsToProjectDirectory ? SessionStatic.Generator.Factory.Session.ProjectDirectory! : ModuleRoot;
 
-		GlueOutputDirectory = PathUtilities.GetUhtGeneratedModuleOutputPath(root, GeneratorStatics.TargetType, ModuleName);
+		GlueOutputDirectory = PathUtilities.GetUhtGeneratedModuleOutputPath(root, SessionStatic.Generator.TargetType, ModuleName);
 		CsProjPath = Path.Combine(GlueOutputDirectory, $"{ModuleName}.csproj");
 	}
 	
@@ -80,18 +80,18 @@ public sealed class ModuleInfo
 	public override string ToString() => ModuleName;
 }
 
-public static class ModuleUtilities
+public class ModuleUtilities
 {
-	public static readonly Dictionary<UhtPackage, ModuleInfo> PackageToModuleInfo = new();
-	private static readonly Dictionary<string, ModuleInfo> BySourceName = new(StringComparer.OrdinalIgnoreCase);
-	private static readonly Dictionary<string, List<ModuleInfo>> ModuleExtensions = new();
+	public readonly Dictionary<UhtPackage, ModuleInfo> PackageToModuleInfo = new();
+	private readonly Dictionary<string, ModuleInfo> BySourceName = new(StringComparer.OrdinalIgnoreCase);
+	private readonly Dictionary<string, List<ModuleInfo>> ModuleExtensions = new();
 
-	static ModuleUtilities()
+	public void Initialize()
 	{
 		Build();
 	}
 
-	private static void Build()
+	private void Build()
 	{
 		Dictionary<UhtPackage, List<UhtPackage>> referencedPackages = DiscoverModules();
 		
@@ -125,7 +125,7 @@ public static class ModuleUtilities
 		}
 	}
 
-	public static ModuleInfo GetModuleInfo(this UhtPackage package)
+	public ModuleInfo GetModuleInfo(UhtPackage package)
 	{
 		if (PackageToModuleInfo.TryGetValue(package, out ModuleInfo? moduleInfo))
 		{
@@ -135,7 +135,7 @@ public static class ModuleUtilities
 		throw new KeyNotFoundException($"No ModuleInfo registered for package '{package.SourceName}'.");
 	}
 
-	public static ModuleInfo GetModuleInfo(string packageName)
+	public ModuleInfo GetModuleInfo(string packageName)
 	{
 		if (TryGetModuleInfo(packageName, out ModuleInfo? moduleInfo))
 		{
@@ -145,19 +145,19 @@ public static class ModuleUtilities
 		throw new KeyNotFoundException($"No ModuleInfo registered for package name '{packageName}'.");
 	}
 
-	public static bool TryGetModuleInfo(string packageName, [NotNullWhen(true)] out ModuleInfo? moduleInfo)
+	public bool TryGetModuleInfo(string packageName, [NotNullWhen(true)] out ModuleInfo? moduleInfo)
 	{
 		string sourceName = packageName.StartsWith("/Script/", StringComparison.OrdinalIgnoreCase) ? packageName : $"/Script/{packageName}";
 		return BySourceName.TryGetValue(sourceName, out moduleInfo);
 	}
 
-	private static Dictionary<UhtPackage, List<UhtPackage>> DiscoverModules()
+	private Dictionary<UhtPackage, List<UhtPackage>> DiscoverModules()
 	{
 		Dictionary<UhtPackage, List<UhtPackage>> referencedPackages = new();
 		Queue<UhtPackage> pending = new();
 		HashSet<UhtPackage> seen = new();
 
-		foreach (UhtModule module in GeneratorStatics.Factory.Session.Modules)
+		foreach (UhtModule module in SessionStatic.Generator.Factory.Session.Modules)
 		{
 			foreach (UhtPackage package in module.Packages)
 			{
@@ -194,7 +194,7 @@ public static class ModuleUtilities
 		return referencedPackages;
 	}
 
-	private static ModuleInfo? TryRegisterModule(UhtPackage package)
+	private ModuleInfo? TryRegisterModule(UhtPackage package)
 	{
 		if (PackageToModuleInfo.TryGetValue(package, out ModuleInfo? existing))
 		{
@@ -207,7 +207,7 @@ public static class ModuleUtilities
 		}
 
 		string moduleName = package.GetModuleShortName();
-		string moduleRoot = package.IsPartOfEngine() ? GeneratorStatics.PluginDirectory : package.GetBaseDirectoryForPackage();
+		string moduleRoot = package.IsPartOfEngine() ? SessionStatic.Generator.PluginDirectory : package.GetBaseDirectoryForPackage();
 
 		ModuleInfo moduleInfo = new(moduleName, moduleRoot, package);
 
@@ -218,7 +218,7 @@ public static class ModuleUtilities
 		return moduleInfo;
 	}
 
-	private static void RegisterExtensionTargets(ModuleInfo moduleInfo, UhtPackage package)
+	private void RegisterExtensionTargets(ModuleInfo moduleInfo, UhtPackage package)
 	{
 		string extendedModuleName = package.GetPackageExtensions();
 		if (string.IsNullOrEmpty(extendedModuleName))
@@ -235,7 +235,7 @@ public static class ModuleUtilities
 		extenders.Add(moduleInfo);
 	}
 
-	private static List<UhtPackage> CollectReferencedPackages(UhtPackage package)
+	private List<UhtPackage> CollectReferencedPackages(UhtPackage package)
 	{
 		HashSet<UhtPackage> references = new();
 
@@ -247,7 +247,7 @@ public static class ModuleUtilities
 		return references.ToList();
 	}
 
-	private static void CollectTypeReferences(UhtType type, HashSet<UhtPackage> references)
+	private void CollectTypeReferences(UhtType type, HashSet<UhtPackage> references)
 	{
 		if (type is UhtStruct uhtStruct)
 		{
@@ -278,7 +278,7 @@ public static class ModuleUtilities
 		}
 	}
 
-	private static void AddDirectDependency(UhtPackage sourcePackage, UhtPackage referencedPackage, ModuleInfo sourceModule)
+	private void AddDirectDependency(UhtPackage sourcePackage, UhtPackage referencedPackage, ModuleInfo sourceModule)
 	{
 		if (referencedPackage == sourcePackage)
 		{
@@ -298,7 +298,7 @@ public static class ModuleUtilities
 		sourceModule.DirectDependencies.Add(referencedModule);
 	}
 
-	private static void FlattenDependencies(ModuleInfo module)
+	private void FlattenDependencies(ModuleInfo module)
 	{
 		HashSet<ModuleInfo> visited = new();
 
@@ -308,7 +308,7 @@ public static class ModuleUtilities
 		}
 	}
 
-	private static void CollectFlattenedDependency(ModuleInfo dependency, HashSet<ModuleInfo> result, HashSet<ModuleInfo> visited)
+	private void CollectFlattenedDependency(ModuleInfo dependency, HashSet<ModuleInfo> result, HashSet<ModuleInfo> visited)
 	{
 		if (!dependency.IsExtendingModule)
 		{
@@ -327,7 +327,7 @@ public static class ModuleUtilities
 		}
 	}
 	
-	private static void PropagateProjectRedirection()
+	private void PropagateProjectRedirection()
 	{
 		Dictionary<ModuleInfo, List<ModuleInfo>> dependents = new();
 		Queue<ModuleInfo> queue = new();
