@@ -18,6 +18,7 @@ public static class PackageArchiveUtilities
         {
             throw new AutomationException("Archive directory resolution supports Windows and Mac archives.");
         }
+        archiveDirectory = new DirectoryReference(archiveDirectory).FullName;
         if (!Directory.Exists(archiveDirectory))
         {
             throw new DirectoryNotFoundException($"Archive directory does not exist: {archiveDirectory}");
