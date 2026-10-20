@@ -1,6 +1,6 @@
 #include "Json/CSJsonUtilities.h"
 
-DEFINE_LOG_CATEGORY(LogCSJsonUtilties);
+DEFINE_LOG_CATEGORY(LogUnrealSharpRapidJson);
 
 bool UnrealSharp::Json::ReadBoolField(bool& Destination, FConstObject Object, FStringView FieldName, bool bIsOptional)
 {
@@ -13,38 +13,38 @@ bool UnrealSharp::Json::ReadBoolField(bool& Destination, FConstObject Object, FS
 
 bool UnrealSharp::Json::ReadIntField(int32& Destination, FConstObject Object, FStringView FieldName, bool bIsOptional)
 {
-    return ReadJsonField(GetInt32Field(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](int32 V)
+    return ReadJsonField(GetInt32Field(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](int32 Value)
     {
-        Destination = V; 
+        Destination = Value; 
         return true;
     });
 }
 
 bool UnrealSharp::Json::ReadStringField(FString& Destination, FConstObject Object, FStringView FieldName, bool bIsOptional)
 {
-    return ReadJsonField(GetStringField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](FStringView V)
+    return ReadJsonField(GetStringField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](FStringView Value)
     {
-        Destination = V; 
+        Destination = Value; 
         return true;
     });
 }
 
 bool UnrealSharp::Json::ReadStringField(FName& Destination, FConstObject Object, FStringView FieldName, bool bIsOptional)
 {
-    return ReadJsonField(GetStringField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](FStringView V)
+    return ReadJsonField(GetStringField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](FStringView Value)
     {
-        Destination = FName(V); 
+        Destination = FName(Value); 
         return true;
     });
 }
 
 bool UnrealSharp::Json::ReadStringArrayField(TArray<FName>& Destination, FConstObject Object, FStringView FieldName, bool bIsOptional)
 {
-    return ReadJsonField(GetArrayField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](const FConstArray& FieldArray) -> bool
+    return ReadJsonField(GetArrayField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](const FConstArray& Value) -> bool
     {
-        Destination.Reset(FieldArray.Size());
+        Destination.Reset(Value.Size());
         
-        for (const FValue& Element : FieldArray)
+        for (const FValue& Element : Value)
         {
             Destination.Emplace(Element.GetString());
         }
@@ -55,11 +55,11 @@ bool UnrealSharp::Json::ReadStringArrayField(TArray<FName>& Destination, FConstO
 
 bool UnrealSharp::Json::ReadStringArrayField(TArray<FString>& Destination, FConstObject Object, FStringView FieldName, bool bIsOptional)
 {
-    return ReadJsonField(GetArrayField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](const FConstArray& FieldArray) -> bool
+    return ReadJsonField(GetArrayField(Object, FieldName.GetData()), bIsOptional, FieldName, [&Destination](const FConstArray& Value) -> bool
     {
-        Destination.Reset(FieldArray.Size());
+        Destination.Reset(Value.Size());
         
-        for (const FValue& Element : FieldArray)
+        for (const FValue& Element : Value)
         {
             Destination.Emplace(Element.GetString());
         }

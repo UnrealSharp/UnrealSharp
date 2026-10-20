@@ -11,44 +11,45 @@ UCSManagedTypeCompiler* FCSUtilities::ResolveCompilerFromFieldType(ECSFieldType 
 	UClass* CompilerClass;
 	switch (FieldType)
 	{
-		case ECSFieldType::Class:
-			CompilerClass = UCSManagedClassCompiler::StaticClass();
-			break;
-		case ECSFieldType::Struct:
-			CompilerClass = UCSManagedStructCompiler::StaticClass();
-			break;
-		case ECSFieldType::Enum:
-			CompilerClass = UCSManagedEnumCompiler::StaticClass();
-			break;
-		case ECSFieldType::Interface:
-			CompilerClass = UCSManagedInterfaceCompiler::StaticClass();
-			break;
-		case ECSFieldType::Delegate:
-			CompilerClass = UCSManagedDelegateCompiler::StaticClass();
-			break;
-		default:
-			return nullptr;
+	case ECSFieldType::Class:
+		CompilerClass = UCSManagedClassCompiler::StaticClass();
+		break;
+	case ECSFieldType::Struct:
+		CompilerClass = UCSManagedStructCompiler::StaticClass();
+		break;
+	case ECSFieldType::Enum:
+		CompilerClass = UCSManagedEnumCompiler::StaticClass();
+		break;
+	case ECSFieldType::Interface:
+		CompilerClass = UCSManagedInterfaceCompiler::StaticClass();
+		break;
+	case ECSFieldType::Delegate:
+		CompilerClass = UCSManagedDelegateCompiler::StaticClass();
+		break;
+	default:
+		return nullptr;
 	}
-	
+
 	return CompilerClass->GetDefaultObject<UCSManagedTypeCompiler>();
 }
 
-bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const TCHAR* NewJsonReflectionData)
+bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition,
+                                          const TCHAR* NewJsonReflectionData)
 {
 	if (!ManagedTypeDefinition->RequiresCompile())
 	{
 		return false;
 	}
-	
+
 	if (ManagedTypeDefinition->HasConstructorChanges())
 	{
 		return true;
 	}
-	
+
 	const TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData = ManagedTypeDefinition->GetReflectionData();
 	const FString& ExistingReflectionData = ReflectionData->GetRawReflectionData();
 	bool IdenticalReflectionData = ExistingReflectionData.Equals(NewJsonReflectionData, ESearchCase::CaseSensitive);
-	
+
 	return !IdenticalReflectionData;
 }
 
@@ -128,7 +129,7 @@ void FCSUtilities::ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR
 		TEXT("DuplicateTransient"),
 		TEXT("0x0000000000400000"),
 		TEXT("0x0000000000800000"),
-		TEXT("SaveGame"),	
+		TEXT("SaveGame"),
 		TEXT("NoClear"),
 		TEXT("Virtual"),
 		TEXT("ReferenceParm"),
@@ -228,4 +229,3 @@ void FCSUtilities::ParseClassFlags(EClassFlags InFlags, TArray<const TCHAR*>& Re
 		}
 	}
 }
-

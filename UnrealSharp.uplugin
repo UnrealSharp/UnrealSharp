@@ -15,6 +15,11 @@
 	"Installed": false,
 	"Modules": [
 		{
+			"Name": "UnrealSharpUtilities",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
 			"Name": "UnrealSharpCore",
 			"Type": "Runtime",
 			"LoadingPhase": "PostDefault"

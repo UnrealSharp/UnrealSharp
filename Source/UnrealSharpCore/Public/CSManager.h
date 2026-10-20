@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "CSBindsRegistry.h"
 #include "CSManagedAssembly.h"
 #include "CSObjectID.h"
 #include "CSManager.generated.h"
@@ -45,11 +44,9 @@ public:
 	UNREALSHARPCORE_API UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = false);
 	UNREALSHARPCORE_API UCSManagedAssembly* LoadUserAssemblyByName(FName AssemblyName, bool bIsCollectible = false);
 	UNREALSHARPCORE_API UCSManagedAssembly* LoadPluginAssemblyByName(FName AssemblyName, bool bIsCollectible = false);
-
-	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UClass* Class);
-	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UScriptStruct* Struct);
-	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UEnum* Enum);
 	
+	UNREALSHARPCORE_API UCSManagedAssembly* FindOwningAssembly(UField* Field);
+
 	UNREALSHARPCORE_API UCSManagedAssembly* FindAssembly(FName AssemblyName) const { return Assemblies.FindRef(AssemblyName); }
 	UNREALSHARPCORE_API UCSManagedAssembly* FindOrLoadAssembly(FName AssemblyName, bool bIsCollectible = false)
 	{
@@ -85,8 +82,37 @@ public:
 	UNREALSHARPCORE_API bool IsManagedType(const UField* Field) const { return IsManagedPackage(Field->GetOutermost()); }
 	UNREALSHARPCORE_API bool IsLoadingAnyAssembly() const;
 	
-	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
-	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
+	UObject* GetCurrentWorldContext() const { return CurrentWorldContextStack.Num() > 0 ? CurrentWorldContextStack.Last().Get() : nullptr; }
+
+	struct FCSCurrentWorldContext
+	{
+	public:
+		FCSCurrentWorldContext(const FCSCurrentWorldContext&) = delete;
+		FCSCurrentWorldContext& operator= (const FCSCurrentWorldContext&) = delete;
+
+		FCSCurrentWorldContext(UObject* WorldContext)
+		{
+			if (WorldContext)
+			{
+				UCSManager::Get().PushCurrentWorldContext(WorldContext);
+				IsValid = true;
+			}
+			else
+			{
+				IsValid = false;
+			}
+		}
+
+		~FCSCurrentWorldContext()
+		{
+			if (IsValid)
+			{
+				UCSManager::Get().PopCurrentWorldContext();
+			}
+		}
+	private:
+		bool IsValid;
+	};
 	
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>>& GetManagedObjectHandles() { return ManagedObjectHandles; }
 	TMap<FCSObjectID, TMap<FCSObjectID, TSharedPtr<FGCHandle>>>& GetManagedInterfaceWrappers() { return ManagedInterfaceWrapperHandles; }
@@ -102,7 +128,7 @@ private:
 	TObjectPtr<UPackage> GlobalManagedPackage;
 	
 	UPROPERTY(Transient)
-	TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>> NativeTypeToAssembly;
+	TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>> PackageToManagedAssembly;
 
 	UPROPERTY(Transient)
 	TMap<FName, TObjectPtr<UCSManagedAssembly>> Assemblies;
@@ -110,7 +136,10 @@ private:
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>> ManagedObjectHandles;
 	TMap<FCSObjectID, TMap<FCSObjectID, TSharedPtr<FGCHandle>>> ManagedInterfaceWrapperHandles;
 
-	TWeakObjectPtr<UObject> CurrentWorldContext;
+	TArray<TWeakObjectPtr<UObject>> CurrentWorldContextStack;
+
+	void PushCurrentWorldContext(UObject* WorldContext) { CurrentWorldContextStack.Push(WorldContext); }
+	void PopCurrentWorldContext() { CurrentWorldContextStack.Pop(); }
 	
 	FCSManagerInitializedEvent OnInitialized;
 
@@ -123,5 +152,5 @@ private:
 	
 	bool bHasInitialized = false;
 	
-	static UCSManager* Instance;
+	UNREALSHARPCORE_API static UCSManager* Instance;
 };

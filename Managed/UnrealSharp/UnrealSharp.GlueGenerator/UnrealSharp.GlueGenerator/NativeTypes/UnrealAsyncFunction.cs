@@ -19,8 +19,8 @@ public record UnrealAsyncFunction : UnrealFunctionBase
     private const string FallbackErrorMessage = "An unknown error occurred during async operation.";
     private const string StaticOuterExpression = "UnrealSharp.Engine.UGameplayStatics.GameInstance";
 
-    public string WrapperName => $"{Outer!.SourceName}_{SourceName}Action";
-    public string WrapperDelegateName => $"F{Outer!.EngineName}_{SourceName}";
+    public string WrapperName => $"{Outer!.FieldName.SourceName}_{FieldName.SourceName}Action";
+    public string WrapperDelegateName => $"F{Outer!.FieldName.SourceName}_{FieldName.SourceName}";
 
     public bool HasTaskResultReturnValue => ReturnType is TaskPropertyBase task && task.HasTemplateParameters;
 
@@ -31,8 +31,8 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         get
         {
             string fullName = ReturnType.ManagedType.FullName;
-            return fullName == "System.Threading.Tasks.ValueTask" 
-                   || fullName.StartsWith("System.Threading.Tasks.ValueTask<") 
+            return fullName == "System.Threading.Tasks.ValueTask"
+                   || fullName.StartsWith("System.Threading.Tasks.ValueTask<")
                    || fullName.StartsWith("System.Threading.Tasks.ValueTask`");
         }
     }
@@ -68,7 +68,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         AppendStaticConstructor(builder, asyncWrapperClass);
 
         builder.CloseBrace();
-        
+
         builder.GenerateTypeRegistration(asyncWrapperClass);
 
         spc.AddSource($"{WrapperName}.g.cs", builder.ToString());
@@ -102,26 +102,26 @@ public record UnrealAsyncFunction : UnrealFunctionBase
             AsyncBaseClassName,
             AsyncBaseClassNamespace,
             WrapperName,
-            Outer!.Namespace,
+            Outer!.FieldName.Namespace,
             Accessibility.Public,
-            AssemblyName)
+            Outer!.FieldName.AssemblyName)
         {
             Overrides = new EquatableList<string>(["ReceiveActivate", "ReceiveCancel"]),
         };
 
         asyncWrapperClass.AddMetaData("HasDedicatedAsyncNode", "true");
-        Outer.AddSourceGeneratorDependency(asyncWrapperClass);
+        Outer.AddDependency(asyncWrapperClass);
         return asyncWrapperClass;
     }
 
     private void AppendDelegateWrapper(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        UnrealDelegateFunction delegateFunction = new UnrealDelegateFunction(
+        UnrealFunction delegateFunction = new UnrealFunction(
             EFunctionFlags.None,
             WrapperDelegateName,
-            Outer!.Namespace,
+            Outer!.FieldName.Namespace,
             Accessibility.Public,
-            Outer.AssemblyName,
+            Outer!.FieldName.AssemblyName,
             Outer);
 
         StringProperty exceptionParam = new StringProperty(ExceptionParamName, Accessibility.Public, delegateFunction);
@@ -132,7 +132,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         if (ReturnType is TaskPropertyBase taskReturn && taskReturn.HasTemplateParameters)
         {
             UnrealProperty resultParam = taskReturn.TemplateParameters[0];
-            resultParam.SourceName = ResultParamName;
+            resultParam.FieldName = FieldName.Member(ResultParamName);
             resultParam.PropertyFlags = 0;
             resultParam.MakeParameter();
             properties.Add(resultParam);
@@ -143,18 +143,19 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         delegateFunction.Properties = new EquatableList<UnrealProperty>(properties);
         delegateFunction.ReturnType = new VoidProperty(delegateFunction);
 
-        UnrealDelegate asyncDelegate = new UnrealDelegate(delegateFunction, true);
+        UnrealDelegate asyncDelegate = new UnrealDelegate(delegateFunction, DelegateType.MulticastDelegate);
         delegateFunction.Outer = asyncDelegate;
 
         asyncDelegate.AppendFunctionAsDelegate(builder);
         asyncDelegate.ExportType(builder, spc);
-        
+
         builder.AppendLine();
 
-        Outer.AddSourceGeneratorDependency(asyncDelegate);
+        Outer.AddDependency(asyncDelegate);
     }
 
-    private void AppendWrapperVariables(GeneratorStringBuilder builder, UnrealClass asyncWrapperClass, bool hasCancellationToken)
+    private void AppendWrapperVariables(GeneratorStringBuilder builder, UnrealClass asyncWrapperClass,
+        bool hasCancellationToken)
     {
         MulticastDelegateProperty completed = CreateMulticastDelegate(asyncWrapperClass, CompletedEventName);
         MulticastDelegateProperty failed = CreateMulticastDelegate(asyncWrapperClass, FailedEventName);
@@ -172,7 +173,9 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         if (HasVoidReturn)
         {
-            builder.AppendLine(hasCancellationToken ? "public Action<CancellationToken>? asyncDelegate;" : "public Action? asyncDelegate;");
+            builder.AppendLine(hasCancellationToken
+                ? "public Action<CancellationToken>? asyncDelegate;"
+                : "public Action? asyncDelegate;");
         }
         else
         {
@@ -183,32 +186,28 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     private MulticastDelegateProperty CreateMulticastDelegate(UnrealClass asyncWrapperClass, string eventName)
     {
-        FieldName unrealDelegateType = new FieldName(
-            DelegateProperty.MakeDelegateSignatureName(WrapperDelegateName),
-            asyncWrapperClass.Namespace,
-            asyncWrapperClass.AssemblyName);
+        FieldName unrealDelegateType = new FieldName(DelegateProperty.MakeDelegateSignatureName(WrapperDelegateName),
+            asyncWrapperClass.FieldName.Namespace, asyncWrapperClass.FieldName.AssemblyName, FieldType.Delegate);
 
-        FieldName managedDelegateType = new FieldName(
-            WrapperDelegateName,
-            asyncWrapperClass.Namespace,
-            asyncWrapperClass.AssemblyName);
+        FieldName managedDelegateType =
+            FieldName.InScopeOf(asyncWrapperClass.FieldName, WrapperDelegateName, FieldType.Unknown);
 
         FieldProperty signatureField = new FieldProperty(
             PropertyType.SignatureDelegate,
+            ManagedTypeName.FromFieldName(managedDelegateType),
             unrealDelegateType,
-            managedDelegateType,
             DelegateFieldName,
             Accessibility.Public,
             asyncWrapperClass);
 
-        MulticastDelegateProperty multicast = new MulticastDelegateProperty(
+        MulticastDelegateProperty multicastDelegateProperty = new MulticastDelegateProperty(
             new EquatableArray<UnrealProperty>([signatureField]),
             eventName,
             Accessibility.Public,
             asyncWrapperClass);
 
-        multicast.MakeBlueprintAssignable();
-        return multicast;
+        multicastDelegateProperty.MakeBlueprintAssignable();
+        return multicastDelegateProperty;
     }
 
     private static void AppendActivateOverride(GeneratorStringBuilder builder)
@@ -240,7 +239,8 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         builder.AppendLine("async void RunAsync()");
         builder.OpenBrace();
-        builder.AppendLine("if (asyncDelegate == null) { throw new InvalidOperationException(\"AsyncDelegate was null\"); }");
+        builder.AppendLine(
+            "if (asyncDelegate == null) { throw new InvalidOperationException(\"AsyncDelegate was null\"); }");
 
         builder.AppendLine("try");
         builder.OpenBrace();
@@ -253,6 +253,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
             builder.AppendLine($"_task = asyncDelegate({cancellationTokenArg});");
             builder.AppendLine($"await {taskValueAccess}.ConfigureWithUnrealContext();");
         }
+
         builder.CloseBrace();
 
         builder.AppendLine("catch (OperationCanceledException)");
@@ -273,7 +274,9 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     private void AppendOnTaskCompleted(GeneratorStringBuilder builder, bool hasCancellationToken)
     {
-        builder.AppendLine(HasVoidReturn ? "void OnTaskCompleted(string? exception)" : $"void OnTaskCompleted({ReturnType.ManagedType}? t, string? exception)");
+        builder.AppendLine(HasVoidReturn
+            ? "void OnTaskCompleted(string? exception)"
+            : $"void OnTaskCompleted({ReturnType.ManagedType}? t, string? exception)");
         builder.OpenBrace();
 
         if (hasCancellationToken)
@@ -284,7 +287,9 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         builder.AppendLine("if (IsDestroyed) { return; }");
 
         string taskValueAccess = HasValueTaskReturn ? "t.Value" : "t";
-        string faultedCondition = HasVoidReturn ? "!string.IsNullOrEmpty(exception)" : $"t is null || {taskValueAccess}.IsFaulted || !string.IsNullOrEmpty(exception)";
+        string faultedCondition = HasVoidReturn
+            ? "!string.IsNullOrEmpty(exception)"
+            : $"t is null || {taskValueAccess}.IsFaulted || !string.IsNullOrEmpty(exception)";
         builder.AppendLine($"if ({faultedCondition})");
         builder.OpenBrace();
         string defaultResultArg = HasTaskResultReturnValue ? "default!, " : string.Empty;
@@ -293,27 +298,31 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         builder.AppendLine("else");
         builder.OpenBrace();
-        builder.AppendLine(HasTaskResultReturnValue ? $"Completed?.InnerDelegate.Invoke({taskValueAccess}.Result, string.Empty);" : "Completed?.InnerDelegate.Invoke(null);");
+        builder.AppendLine(HasTaskResultReturnValue
+            ? $"Completed?.InnerDelegate.Invoke({taskValueAccess}.Result, string.Empty);"
+            : "Completed?.InnerDelegate.Invoke(null);");
         builder.CloseBrace();
 
         builder.CloseBrace();
     }
 
-    private void AppendAsyncFactoryFunction(GeneratorStringBuilder builder, UnrealClass asyncWrapperClass, bool hasCancellationToken, SourceProductionContext spc)
+    private void AppendAsyncFactoryFunction(GeneratorStringBuilder builder, UnrealClass asyncWrapperClass,
+        bool hasCancellationToken, SourceProductionContext spc)
     {
         bool isStatic = FunctionFlags.HasFlag(EFunctionFlags.Static);
         UnrealFunctionBase factory = BuildFactoryFunctionMetadata(asyncWrapperClass, isStatic);
 
-        string parameterList = string.Join(", ", factory.Properties.Select(p => $"{p.ManagedType} {p.SourceName}"));
+        string parameterList =
+            string.Join(", ", factory.Properties.Select(p => p.GetParameterDeclaration()));
         string ownerExpression = isStatic ? StaticOuterExpression : TargetParamName;
-        string callTarget = isStatic ? Outer!.SourceName : TargetParamName;
+        string callTarget = isStatic ? Outer!.FieldName.SourceName : TargetParamName;
         string arguments = BuildArguments(factory, hasCancellationToken);
         string lambdaHeader = hasCancellationToken ? "cancellationToken => " : "() => ";
 
-        builder.AppendLine($"public static {WrapperName} {SourceName}({parameterList})");
+        builder.AppendLine($"public static {WrapperName} {FieldName.SourceName}({parameterList})");
         builder.OpenBrace();
         builder.AppendLine($"var action = NewObject<{WrapperName}>({ownerExpression});");
-        builder.AppendLine($"action.asyncDelegate = {lambdaHeader}{callTarget}.{SourceName}({arguments});");
+        builder.AppendLine($"action.asyncDelegate = {lambdaHeader}{callTarget}.{FieldName.SourceName}({arguments});");
         builder.AppendLine("return action;");
         builder.CloseBrace();
 
@@ -325,14 +334,16 @@ public record UnrealAsyncFunction : UnrealFunctionBase
     {
         UnrealFunction factory = new UnrealFunction(
             EFunctionFlags.BlueprintCallable | EFunctionFlags.Static,
-            SourceName,
-            Namespace,
+            FieldName.SourceName,
+            FieldName.Namespace,
             Accessibility.Public,
-            AssemblyName,
+            FieldName.AssemblyName,
             asyncWrapperClass);
 
-        FieldName wrapperType = new FieldName(WrapperName, Namespace, AssemblyName);
-        ObjectProperty returnValue = new ObjectProperty(wrapperType, SourceGenUtilities.ReturnValueName, Accessibility.NotApplicable, factory);
+        FieldName wrapperType =
+            new FieldName(WrapperName, FieldName.Namespace, FieldName.AssemblyName, FieldType.Class);
+        ObjectProperty returnValue = new ObjectProperty(wrapperType, SourceGenUtilities.ReturnValueName,
+            Accessibility.NotApplicable, factory);
         returnValue.MakeReturnParameter();
 
         List<UnrealProperty> factoryParameters = Properties.List;
@@ -343,8 +354,8 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         if (!isStatic)
         {
-            FieldName targetType = new FieldName(Outer!.SourceName, Outer.Namespace, Outer.AssemblyName);
-            ObjectProperty targetParam = new ObjectProperty(targetType, TargetParamName, Accessibility.NotApplicable, factory);
+            ObjectProperty targetParam =
+                new ObjectProperty(Outer!.FieldName, TargetParamName, Accessibility.NotApplicable, factory);
             targetParam.MakeParameter();
 
             factoryParameters.Insert(0, targetParam);
@@ -357,6 +368,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         {
             factory.AddMetaData("DefaultToSelf", TargetParamName);
         }
+
         factory.AddMetaData("BlueprintInternalUseOnly", "true");
         factory.AddMetaDataRange(MetaData);
 
@@ -365,7 +377,11 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     private string BuildArguments(UnrealFunctionBase factory, bool hasCancellationToken)
     {
-        string arguments = HasParams ? string.Join(", ", factory.Properties.Where(p => p.SourceName != TargetParamName).Select(p => p.SourceName)) : string.Empty;
+        string arguments = HasParams
+            ? string.Join(", ",
+                factory.Properties.Where(p => p.FieldName.SourceName != TargetParamName)
+                    .Select(p => p.FieldName.SourceName))
+            : string.Empty;
 
         if (!hasCancellationToken)
         {

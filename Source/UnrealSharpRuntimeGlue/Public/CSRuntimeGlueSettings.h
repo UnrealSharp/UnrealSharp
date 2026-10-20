@@ -17,6 +17,6 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	// End of UObject interface
 	
-	UPROPERTY(Config, EditAnywhere)
+	UPROPERTY(Config, EditAnywhere, Category = "UnrealSharp|Runtime Glue")
 	TArray<TSoftClassPtr<UCSGlueGenerator>> Generators;
 };

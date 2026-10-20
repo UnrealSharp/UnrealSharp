@@ -33,6 +33,12 @@ public partial record struct FVector2D
         X = vector.X;
         Y = vector.Y;
     }
+
+    public FVector2D(FVector2f vector)
+    {
+        X = vector.X;
+        Y = vector.Y;
+    }
     
     /// <summary>
     /// Returns the vector (0,0).
@@ -464,4 +470,5 @@ public partial record struct FVector2D
     public static implicit operator FVector2D(Vector2 vector) => new FVector2D(vector.X, vector.Y);
     public static implicit operator FVector2D(FVector vector) => new FVector2D(vector.X, vector.Y);
     public static implicit operator FVector2D(FVector4 vector) => new FVector2D(vector.X, vector.Y);
+    public static implicit operator FVector2D(FVector2f vector) => new FVector2D(vector.X, vector.Y);
 }

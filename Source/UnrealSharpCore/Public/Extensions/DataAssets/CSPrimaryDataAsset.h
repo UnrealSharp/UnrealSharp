@@ -18,7 +18,7 @@ public:
 protected:
 
 	// The name of the asset which AssetManager will use to identify this asset
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = "UnrealSharp|Asset Manager")
 	FName AssetName;
 	
 };

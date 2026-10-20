@@ -12,16 +12,16 @@ UCSEnumPropertyGenerator::UCSEnumPropertyGenerator()
 FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
 	const TSharedPtr<FCSFieldType> EnumType = PropertyReflectionData.GetInnerTypeData<FCSFieldType>();
-	const FCSFieldName& FieldName = EnumType->InnerType.FieldName;
+	const FCSFieldName& FieldName = EnumType->InnerType;
 	
 	UEnum* Enum;
-	if (UEnum** FoundRedirector = EnumRedirectors.Find(FieldName.GetFName()))
+	if (UEnum** FoundRedirector = EnumRedirectors.Find(FieldName.GetEngineFName()))
 	{
 		Enum = *FoundRedirector;
 	}
 	else
 	{
-		UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(EnumType->InnerType.AssemblyName);
+		UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(EnumType->InnerType.GetAssemblyName());
 		Enum = Assembly->ResolveUField<UEnum>(FieldName);
 	}
 	

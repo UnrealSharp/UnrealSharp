@@ -1,4 +1,5 @@
-﻿#include "CSManager.h"
+﻿#include "CSBindsRegistry.h"
+#include "CSManager.h"
 
 #if WITH_EDITOR
 #include "Editor.h"

@@ -152,6 +152,7 @@ public static class AutocastExporter
 				string modifiers = isToString ? "override " : "";
 				string memberSuffix = isToString ? "()" : "";
 
+				FunctionExporter.ExportDeprecation(stringBuilder, function);
 				stringBuilder.AppendLine($"public {modifiers}{returnType} {methodName}{memberSuffix} => {functionCall}(this);");
 			}
 

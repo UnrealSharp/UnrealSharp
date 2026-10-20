@@ -7,8 +7,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 public record TemplateProperty : UnrealProperty
 {
     public readonly EquatableArray<UnrealProperty> TemplateParameters;
-    
-    public override string MarshallerType 
+
+    public override string MarshallerType
     {
         get
         {
@@ -16,65 +16,84 @@ public record TemplateProperty : UnrealProperty
             {
                 return string.Empty;
             }
-            
-            return MakeMarshallerType(_marshallerName, TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+
+            return MakeMarshallerType(field, TemplateParameters.Select(t => t.ManagedTypeWithNullability).ToArray());
         }
     }
-    
-    public bool HasTemplateParameters => TemplateParameters.Count > 0;
-    
-    private readonly string _marshallerName;
 
-    public TemplateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller, SyntaxNode? syntaxNode = null)
-        : base(memberSymbol, typeSymbol, propertyType, outer, syntaxNode)
+    public bool HasTemplateParameters => TemplateParameters.Count > 0;
+
+    private static readonly SymbolDisplayFormat NoTypeArgumentsFormat =
+        SymbolDisplayFormat.FullyQualifiedFormat
+            .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted)
+            .WithGenericsOptions(SymbolDisplayGenericsOptions.None);
+
+    public TemplateProperty(ISymbol symbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer,
+        string marshaller, SyntaxNode? syntaxNode = null)
+        : base(symbol, typeSymbol, propertyType, outer, syntaxNode)
     {
-        _marshallerName = marshaller;
-        INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol) typeSymbol!;
-        
+        MarshallerType = marshaller;
+        INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol)typeSymbol!;
+
         int argumentCount = namedTypeSymbol.TypeArguments.Length;
         UnrealProperty[] arguments = new UnrealProperty[argumentCount];
-        
+
         for (int i = 0; i < argumentCount; i++)
         {
             ITypeSymbol argumentSymbol = namedTypeSymbol.TypeArguments[i];
             UnrealProperty newArgument = PropertyFactory.CreateProperty(argumentSymbol, argumentSymbol, this);
-            newArgument.SourceName = $"{SourceName}_Arg{i}";
+
+            newArgument.FieldName = FieldName.Member($"{FieldName.SourceName}_Arg{i}");
+
             arguments[i] = newArgument;
         }
-        
-        TemplateParameters = new EquatableArray<UnrealProperty>(arguments);
 
-        string fullNamespace = namedTypeSymbol.GetNamespace();
-        string typedArguments = string.Join(", ", TemplateParameters.Select(t => $"{t.ManagedType}{t.GetNullableAnnotation()}"));
+        TemplateParameters = new EquatableArray<UnrealProperty>(arguments);
 
         if (HasTemplateParameters)
         {
-            ManagedType = new FieldName($"{namedTypeSymbol.Name}<{typedArguments}>", fullNamespace, namedTypeSymbol.ContainingAssembly.Name);
+            ManagedType = ManagedTypeName.Generic(
+                namedTypeSymbol.ConstructedFrom.ToDisplayString(NoTypeArgumentsFormat),
+                TemplateParameters.Select(t => t.ManagedTypeWithNullability));
         }
         else
         {
-            ManagedType = new FieldName(namedTypeSymbol);
+            ManagedType = ManagedTypeName.FromSymbol(namedTypeSymbol);
         }
     }
-    
-    public TemplateProperty(EquatableArray<UnrealProperty> templateParameters, FieldName fieldName, PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer) 
+
+    public TemplateProperty(EquatableArray<UnrealProperty> templateParameters, ManagedTypeName openType,
+        PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer)
         : base(propertyType, sourceName, accessibility, outer)
     {
-        _marshallerName = marshaller;
+        MarshallerType = marshaller;
         TemplateParameters = templateParameters;
-        
-        string typedArguments = string.Join(", ", TemplateParameters.Select(t => t.ManagedType));
-        ManagedType = new FieldName($"{fieldName.Name}<{typedArguments}>", "UnrealSharp", outer.AssemblyName);
+        ManagedType = ManagedTypeName.Generic(openType.Text, TemplateParameters.Select(t => t.ManagedTypeWithNullability));
     }
-    
+
     public string MakeMarshallerType(string marshallerName, params string[] innerTypes)
     {
         return $"{marshallerName}<{string.Join(", ", innerTypes)}>";
     }
 
+    public override void CollectDependencies()
+    {
+        base.CollectDependencies();
+
+        foreach (UnrealProperty parameter in TemplateParameters)
+        {
+            parameter.CollectDependencies();
+
+            if (parameter is FieldProperty fieldParameter)
+            {
+                Outer?.AddDependency(fieldParameter.InnerType);
+            }
+        }
+    }
+
     public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
         base.PopulateJsonObject(jsonWriter);
-        TemplateParameters.PopulateJsonWithArray(jsonWriter, "TemplateParameters");
+        TemplateParameters.PopulateJsonWithArray(jsonWriter, JsonKeys.TemplateParameters);
     }
 }

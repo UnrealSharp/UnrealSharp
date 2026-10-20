@@ -21,17 +21,6 @@ public class AttributeBuilder
     {
         AddAttribute(GetAttributeForType(type));
     }
-    
-    public void AddIsBlittableAttribute()
-    {
-        AddAttribute("BlittableType");
-    }
-
-    public void AddStructLayoutAttribute(System.Runtime.InteropServices.LayoutKind layoutKind)
-    {
-        AddAttribute("StructLayout");
-        AddArgument($"LayoutKind.{layoutKind}");
-    }
 
     private static string GetAttributeForType(UhtType type)
     {

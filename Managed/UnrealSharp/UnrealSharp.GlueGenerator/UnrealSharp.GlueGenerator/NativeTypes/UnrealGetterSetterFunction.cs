@@ -6,18 +6,21 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 public record UnrealGetterSetterFunction : UnrealFunction
 {
     private readonly string _propertyName;
-    
-    public UnrealGetterSetterFunction(UnrealProperty property, IMethodSymbol typeSymbol, UnrealType outer) : base(typeSymbol, outer)
+
+    public UnrealGetterSetterFunction(UnrealProperty property, IMethodSymbol typeSymbol, UnrealType outer) : base(
+        typeSymbol, outer)
     {
-        _propertyName = property.SourceName;
-        SourceName = HasReturnValue ? $"Get{property.SourceName}" : $"Set{property.SourceName}";
+        _propertyName = property.FieldName.SourceName;
+        string newSourceName =
+            HasReturnValue ? $"Get{property.FieldName.SourceName}" : $"Set{property.FieldName.SourceName}";
+        FieldName = FieldName.InScopeOf(FieldName, newSourceName, FieldType.Unknown);
     }
 
     protected override void ExportInvokeMethodCallSignature(GeneratorStringBuilder builder)
     {
         if (HasReturnValue)
         {
-            builder.AppendLine($"{ReturnType.ManagedType} returnValue = {_propertyName};");
+            builder.AppendLine($"{ReturnType.ManagedTypeWithNullability} returnValue = {_propertyName};");
         }
         else
         {

@@ -37,7 +37,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromReflectionData(UClass* Ou
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::CreateFunctionFromReflectionData);
 	
-	UCSFunctionBase* NewFunction = CreateFunction_Internal(Outer, FunctionReflectionData.FieldName.GetFName(), FunctionReflectionData);
+	UCSFunctionBase* NewFunction = CreateFunction_Internal(Outer, FunctionReflectionData.FieldName.GetEngineFName(), FunctionReflectionData);
 
 	if (!NewFunction)
 	{
@@ -122,15 +122,15 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 
 #if WITH_EDITOR
 	// The BP compiler purges the interfaces from the UClass pre-compilation, so we need to get them from the metadata instead.
-	for (const FCSTypeReferenceReflectionData& InterfaceInfo : ClassReflectionData->Interfaces)
+	for (const FCSFieldName& InterfaceInfo : ClassReflectionData->Interfaces)
 	{
-		if (UClass* Interface = InterfaceInfo.ResolveUField<UClass>())
+		if (UClass* Interface = InterfaceInfo.ResolveField<UClass>())
 		{
 			IterateInterfaceFunctions(Interface);
 		}
 		else
 		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Can't find interface: %s"), *InterfaceInfo.FieldName.GetName());
+			UE_LOG(LogUnrealSharp, Error, TEXT("Can't find interface: %s"), *InterfaceInfo.GetSourceName());
 		}
 	}
 #else

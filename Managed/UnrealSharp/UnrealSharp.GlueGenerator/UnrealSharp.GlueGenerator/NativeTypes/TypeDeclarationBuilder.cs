@@ -12,8 +12,8 @@ public class TypeDeclarationBuilder
     private string? _accessibility;
     private readonly List<string> _interfaces = [];
     private string _nativeTypePtrName = SourceGenUtilities.NativeTypePtr;
-    
-    private string _engineName = string.Empty;
+
+    private string _sourceName = string.Empty;
     private string _namespace = string.Empty;
     private string _declarationName = string.Empty;
     private string _assemblyName = string.Empty;
@@ -28,20 +28,20 @@ public class TypeDeclarationBuilder
     {
         return new TypeDeclarationBuilder(typeKeyword);
     }
-    
+
     public static TypeDeclarationBuilder FromUnrealType(UnrealType type, string typeKeyword)
     {
         return Create(typeKeyword)
-            .WithEngineName(type.EngineName)
-            .WithNamespace(type.Namespace)
-            .WithDeclarationName(type.SourceName)
-            .WithAssemblyName(type.AssemblyName)
-            .Accessibility(type.TypeAccessibility.AccessibilityToString());
+            .WithSourceName(type.FieldName.SourceName)
+            .WithNamespace(type.FieldName.Namespace)
+            .WithDeclarationName(type.FieldName.SourceName)
+            .WithAssemblyName(type.FieldName.AssemblyName)
+            .Accessibility(type.Accessibility.AccessibilityToString());
     }
 
-    public TypeDeclarationBuilder WithEngineName(string engineName)
+    public TypeDeclarationBuilder WithSourceName(string sourceName)
     {
-        _engineName = engineName;
+        _sourceName = sourceName;
         return this;
     }
 
@@ -102,10 +102,9 @@ public class TypeDeclarationBuilder
     public void Build(GeneratorStringBuilder builder)
     {
         string protection = _accessibility ?? _defaultAccessibility;
-        builder.AppendLine($"[GeneratedType(\"{_engineName}\", \"{_namespace}.{_engineName}\")]");
         builder.AppendLine($"{protection}partial {_modifiers}{_typeKeyword} {_declarationName}");
 
-        List<string> inheritance = _baseType is not null ? [_baseType, .._interfaces] : _interfaces;
+        List<string> inheritance = _baseType is not null ? [_baseType, .. _interfaces] : _interfaces;
 
         if (inheritance.Count > 0)
         {
@@ -113,6 +112,7 @@ public class TypeDeclarationBuilder
         }
 
         builder.OpenBrace();
-        builder.AppendNewBackingField($"static IntPtr {_nativeTypePtrName} = Bind_UCoreUObject.CallGetType(\"{_assemblyName}\", \"{_namespace}\", \"{_engineName}\");");
+        builder.AppendNewBackingField(
+            $"static IntPtr {_nativeTypePtrName} = NativeReflectionHelper.GetNativeField<{_sourceName}>();");
     }
 }

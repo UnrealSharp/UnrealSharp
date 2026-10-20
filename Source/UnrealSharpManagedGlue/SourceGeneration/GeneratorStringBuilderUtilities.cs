@@ -105,7 +105,8 @@ public static class GeneratorStringBuilderUtilities
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.CoreNamespace);
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.CoreAttributeNamespace);
-        stringBuilder.DeclareDirective(ScriptGeneratorUtilities.InteropNamespace);
+        stringBuilder.DeclareDirective(ScriptGeneratorUtilities.UnrealSharpInteropNamespace);
+        stringBuilder.DeclareDirective(ScriptGeneratorUtilities.CoreInteropNamespace);
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.MarshallerNamespace);
         
         stringBuilder.AppendLine($"using static UnrealSharp.Interop.{ExporterCallbacks.Bind_FProperty};");
@@ -164,7 +165,7 @@ public static class GeneratorStringBuilderUtilities
 
     public static void AppendNativeTypePtr(this GeneratorStringBuilder stringBuilder, UhtStruct structType)
     {
-        stringBuilder.AppendLine($"static readonly IntPtr NativeClassPtr = {ExporterCallbacks.Bind_CoreUObject}.CallGetType({structType.ExportGetAssemblyName()}, \"{structType.GetNamespace()}\", \"{structType.EngineName}\");");
+        stringBuilder.AppendLine($"static readonly IntPtr NativeClassPtr = UnrealSharp.Core.NativeReflectionHelper.GetNativeField(typeof({structType.GetStructName()}), \"{structType.SourceName}\");");
     }
     
     public static void AppendStackAlloc(this GeneratorStringBuilder stringBuilder, string sizeVariableName)

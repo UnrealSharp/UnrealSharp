@@ -74,21 +74,35 @@ public:
 
 	static UClass* GetFirstNonBlueprintClass(UClass* InClass)
 	{
-		UClass* CurrentClass = InClass;
+		return Cast<UClass>(GetFirstNonBlueprintField(InClass));
+	}
+	
+	static UField* GetFirstNonBlueprintField(UField* InField)
+	{
+		UStruct* Struct = Cast<UStruct>(InField);
 		
-		while (CurrentClass)
+		if (!Struct)
 		{
-			UPackage* ClassPackage = CurrentClass->GetPackage();
+			if (IsBlueprintObject(InField))
+			{
+				return nullptr;
+			}
 			
-			if (!IsBlueprintField(ClassPackage))
+			return InField;
+		}
+		
+		UStruct* CurrentStruct = Struct;
+		while (CurrentStruct)
+		{
+			if (!IsBlueprintObject(CurrentStruct))
 			{
 				break;
 			}
 
-			CurrentClass = CurrentClass->GetSuperClass();
+			CurrentStruct = CurrentStruct->GetSuperStruct();
 		}
 		
-		return CurrentClass;
+		return CurrentStruct;
 	}
 	
 	static bool IsBlueprintField(UPackage* FieldPackage)

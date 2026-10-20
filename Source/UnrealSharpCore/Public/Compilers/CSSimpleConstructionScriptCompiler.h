@@ -56,7 +56,7 @@ private:
 
 	static void TryFindOrPromoteRootComponent(USimpleConstructionScript* SimpleConstructionScript, FCSRootNodeInfo& RootComponentNode, UBlueprintGeneratedClass* Outer, const TArray<FCSNodeInfo>& AllNodes);
 	
-	static void DetachNodeFromOldParent(USCS_Node* Node, USimpleConstructionScript* CurrentSCS, const FCSAttachmentNode& AttachmentNode);
+	static void DetachNodeFromOldParent(USCS_Node* Node, USimpleConstructionScript* CurrentSCS);
 	
 	static USCS_Node* GetNodeByName(const TArray<FCSNodeInfo>& AllNodes, FName NodeName);
 	

@@ -31,12 +31,15 @@ public static class StructExporter
             inheritance.GetExportedProperties(exportedProperties, getSetBackedProperties);
         }
         
-        // Check there are not properties with the same name, remove otherwise
+        // Deduplicate the actual emitted member names. Parameter normalization
+        // strips boolean prefixes without property collision resolution, so it
+        // would incorrectly drop Foo beside bFoo even though GetPropertyName()
+        // emits distinct members for them.
         List<string> propertyNames = new();
         for (int i = 0; i < exportedProperties.Count; i++)
         {
             UhtProperty property = exportedProperties[i];
-            string scriptName = property.GetParameterName();
+            string scriptName = property.GetPropertyName();
             if (propertyNames.Contains(scriptName))
             {
                 exportedProperties.RemoveAt(i);
@@ -70,7 +73,6 @@ public static class StructExporter
             }
         }
         
-        attributeBuilder.AddGeneratedTypeAttribute(structObj);
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
 
@@ -92,7 +94,7 @@ public static class StructExporter
 
         if (isCopyable)
         {
-            stringBuilder.AppendLine(isDestructible ? "private NativeStructHandle NativeHandle;" : "private byte[] Allocation;");
+            stringBuilder.AppendLine(isDestructible ? "private NativeStructHandle? NativeHandle;" : "private byte[]? Allocation;");
         }
         
         // For manual exports we just want to generate attributes

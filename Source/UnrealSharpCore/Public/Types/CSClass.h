@@ -20,6 +20,11 @@ public:
 	virtual bool IsNameStableForNetworking() const override { return true; }
 	// End of UObject interface
 	
+	// UClass interface
+	virtual UObject* FindArchetype(const UClass* ArchetypeClass, const FName ArchetypeName) const override;
+	// End of UClass interface
+
+	
 	void SetOwningBlueprint(UBlueprint* InOwningBlueprint)
 	{
 		OwningBlueprint = InOwningBlueprint;

@@ -7,8 +7,9 @@ public record BlittableProperty : SimpleProperty
     public override string MarshallerType => $"BlittableMarshaller<{ManagedType}>";
     public override bool IsBlittable => true;
 
-    public BlittableProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, SyntaxNode? syntaxNode = null) 
-        : base(memberSymbol, typeSymbol, propertyType, outer, syntaxNode)
+    public BlittableProperty(ISymbol symbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer,
+        SyntaxNode? syntaxNode = null)
+        : base(symbol, typeSymbol, propertyType, outer, syntaxNode)
     {
     }
 }

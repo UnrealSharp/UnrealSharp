@@ -1,4 +1,5 @@
-﻿using UnrealSharp.Attributes;
+﻿using System.Diagnostics.CodeAnalysis;
+using UnrealSharp.Attributes;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
 
@@ -16,7 +17,7 @@ public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValu
     /// <inheritdoc />
     public TValue this[TKey key]
     {
-        get => Get(key);
+        get => TryGetInternal(key, out var value) ? value : throw new KeyNotFoundException();
         set => AddInternal(key, value);
     }
 
@@ -85,7 +86,7 @@ public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValu
     }
 
     /// <inheritdoc />
-    public bool TryGetValue(TKey key, out TValue value)
+    public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
         return TryGetInternal(key, out value);
     }

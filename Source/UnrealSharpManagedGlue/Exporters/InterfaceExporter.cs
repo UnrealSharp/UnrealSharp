@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpManagedGlue.Attributes;
 using UnrealSharpManagedGlue.PropertyTranslators;
@@ -17,19 +15,17 @@ public static class InterfaceExporter
     public static void ExportInterface(UhtClass interfaceObj)
     {
         GeneratorStringBuilder stringBuilder = new();
-        
-        bool nullableEnabled = interfaceObj.HasMetadata(UhtTypeUtilities.NullableEnable);
         string interfaceName = interfaceObj.GetStructName();
         
         stringBuilder.StartGlueFile(interfaceObj);
         stringBuilder.AppendTooltip(interfaceObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);
-        attributeBuilder.AddGeneratedTypeAttribute(interfaceObj);
         attributeBuilder.Finish();
-        
         stringBuilder.AppendLine(attributeBuilder.ToString());
+        
         stringBuilder.DeclareType(interfaceObj, "interface", interfaceName);
+        
         stringBuilder.AppendNativeTypePtr(interfaceObj);
         
         stringBuilder.AppendLine();
@@ -90,13 +86,13 @@ public static class InterfaceExporter
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
+        stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName}? obj)");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine($"UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.ToNative(nativeBuffer, arrayIndex, obj);");
         stringBuilder.CloseBrace();
         stringBuilder.AppendLine();
 
-        stringBuilder.AppendLine($"public static {interfaceName} FromNative(IntPtr nativeBuffer, int arrayIndex)");
+        stringBuilder.AppendLine($"public static {interfaceName}? FromNative(IntPtr nativeBuffer, int arrayIndex)");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine($"return UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.FromNative(nativeBuffer, arrayIndex);");
         stringBuilder.CloseBrace();
@@ -154,7 +150,6 @@ public static class InterfaceExporter
             attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
         }
         
-        attributeBuilder.AddGeneratedTypeAttribute(function);
         attributeBuilder.Finish();
         
         stringBuilder.AppendLine(attributeBuilder.ToString());

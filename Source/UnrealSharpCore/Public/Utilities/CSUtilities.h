@@ -18,26 +18,30 @@ namespace FCSUtilities
 	UNREALSHARPCORE_API void ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results);
 	UNREALSHARPCORE_API void ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR*>& Results);
 	UNREALSHARPCORE_API void ParseClassFlags(EClassFlags InFlags, TArray<const TCHAR*>& Results);
-	
+
 	template<typename T = UField>
 	T* FindField(const FCSFieldName& FieldName)
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(FCSUtilities::TryFindField);
-		static_assert(TIsDerivedFrom<T, UObject>::Value, "T must be a UObject-derived type.");
+		TRACE_CPUPROFILER_EVENT_SCOPE(FCSUtilities::FindField);
 
+#if WITH_EDITOR
 		if (!FieldName.IsValid())
 		{
-			UE_LOGFMT(LogUnrealSharp, Warning, "Invalid field name: {0}", *FieldName.GetName());
+			UE_LOGFMT(LogUnrealSharp, Warning, "Invalid field name: {0}", *FieldName.GetSourceName());
 			return nullptr;
 		}
+#endif
 
-		UPackage* Package = FieldName.GetPackage();
+		UPackage* Package = FieldName.ResolvePackage();
+		
+#if WITH_EDITOR
 		if (!IsValid(Package))
 		{
-			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find package for field: {0}", *FieldName.GetName());
+			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find package for field: {0}", *FieldName.GetSourceName());
 			return nullptr;
 		}
-
-		return FindObject<T>(Package, *FieldName.GetName());
+#endif
+		
+		return FindObjectFast<T>(Package, *FieldName.GetEngineName());
 	}
 };

@@ -13,9 +13,9 @@ public readonly record struct PropertyMethod
         Accessibility = accessibility;
         CustomPropertyMethod = customPropertyMethod;
     }
-    
+
     public bool HasCustomMethod => CustomPropertyMethod != null;
-    
+
     public readonly Accessibility Accessibility;
     public readonly UnrealFunction? CustomPropertyMethod;
 }
@@ -23,11 +23,9 @@ public readonly record struct PropertyMethod
 [Inspector]
 public record UnrealProperty : UnrealType
 {
-    // Constants
     private const string UPropertyAttributeName = "UPropertyAttribute";
     private const EPropertyFlags InstancedFlags = EPropertyFlags.InstancedReference | EPropertyFlags.ExportObject;
 
-    // General property configuration
     public EPropertyFlags PropertyFlags = EPropertyFlags.None;
     public bool DefaultComponent;
     public bool IsRootComponent;
@@ -36,95 +34,105 @@ public record UnrealProperty : UnrealType
     public string ReplicatedUsing = string.Empty;
     public ELifetimeCondition LifetimeCondition = ELifetimeCondition.None;
 
-    // Immutable metadata
     public readonly bool IsPartial = true;
     public readonly bool IsNullable;
     public readonly bool IsRequired;
     public readonly bool IsInitOnly;
     public readonly bool FieldNotify;
 
-    // Type and marshaling information
     public PropertyType PropertyType = PropertyType.Unknown;
-    public FieldName ManagedType;
+
+    public ManagedTypeName ManagedType;
+
+    public string ManagedTypeWithNullability => $"{ManagedType}{this.GetNullableAnnotation()}";
+
     public RefKind ReferenceKind;
 
     public bool CanInstanceMarshallerBeStatic = false;
-    
+
     public virtual string MarshallerType => throw new NotImplementedException();
     public virtual bool NeedsCachedMarshaller => false;
     public virtual bool NeedsBackingNativeProperty => false;
     public virtual bool IsBlittable => false;
 
-    // Getter / Setter info
     public PropertyMethod? GetterMethod;
     public PropertyMethod? SetterMethod;
 
-    // Codegen variables
-    public string OffsetVariable => $"{Outer!.SourceName}_{SourceName}_Offset";
-    public string NativePropertyVariable => $"{Outer!.SourceName}_{SourceName}_Property";
-    public string InstancedMarshallerVariable => $"{Outer!.SourceName}_{SourceName}_Marshaller";
+    private string OuterSourceName => (Outer ?? GetOutermost()).FieldName.SourceName;
+
+    public string OffsetVariable => $"{OuterSourceName}_{FieldName.SourceName}_Offset";
+    public string NativePropertyVariable => $"{OuterSourceName}_{FieldName.SourceName}_Property";
+    public string InstancedMarshallerVariable => $"{OuterSourceName}_{FieldName.SourceName}_Marshaller";
 
     protected string ToNative => ".ToNative";
     protected string FromNative => ".FromNative";
 
     public string CallToNative => MarshallerType + ToNative;
-    public string CallFromNative => MarshallerType + FromNative;
-    
+    public virtual string CallFromNative => MarshallerType + FromNative;
+
     public virtual string NullValue => $"default({ManagedType})";
 
-    // Parameter helpers
-    public string GetParameterDeclaration() => $"{ReferenceKind.RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {SourceName}";
-    public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{SourceName}";
-    
-    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, SyntaxNode? syntaxNode = null) : base(memberSymbol, outer, syntaxNode)
+    public string GetParameterDeclaration() =>
+        $"{ReferenceKind.RefKindToString()}{ManagedTypeWithNullability} {FieldName.SourceName}";
+
+    public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{FieldName.SourceName}";
+
+    public UnrealProperty(ISymbol symbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer,
+        SyntaxNode? syntaxNode = null)
+        : base(symbol, outer, syntaxNode)
     {
         PropertyType = propertyType;
-        Namespace = typeSymbol.GetNamespace();
         IsNullable = typeSymbol.NullableAnnotation == NullableAnnotation.Annotated;
-        
+        FieldName = FieldName.Member(symbol.Name);
+
         if (syntaxNode is PropertyDeclarationSyntax propertyDeclarationSyntax)
         {
-            IPropertySymbol propertySymbol = (IPropertySymbol) memberSymbol;
-            GetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.GetMethod);
-            SetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.SetMethod);
+            IPropertySymbol propertySymbol = (IPropertySymbol)symbol;
+            GetterMethod =
+                propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.GetMethod);
+            SetterMethod =
+                propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.SetMethod);
             IsRequired = propertySymbol.IsRequired;
             IsInitOnly = propertySymbol.SetMethod?.IsInitOnly ?? false;
             FieldNotify = propertySymbol.HasAttribute("FieldNotifyAttribute");
         }
     }
-    
+
     public UnrealProperty(PropertyType propertyType, UnrealType outer) : base(outer)
     {
         PropertyType = propertyType;
     }
-    
-    public UnrealProperty(PropertyType type, string sourceName, Accessibility accessibility, UnrealType outer) 
-        : base(sourceName, outer.Namespace, accessibility, outer.AssemblyName, outer)
+
+    public UnrealProperty(PropertyType type, string sourceName, Accessibility accessibility, UnrealType outer) :
+        base(outer)
     {
+        FieldName = FieldName.Member(sourceName);
+        Accessibility = accessibility;
         PropertyType = type;
         IsPartial = false;
         GetterMethod = new PropertyMethod(Accessibility.NotApplicable);
         SetterMethod = new PropertyMethod(Accessibility.NotApplicable);
     }
-    
+
     [Inspect("UnrealSharp.Attributes.UPropertyAttribute", "UPropertyAttribute")]
-    public static UnrealType UPropertyAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType UPropertyAttribute(UnrealType? outer, SyntaxNode? syntaxNode,
+        GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        UnrealStruct owningStruct = (UnrealStruct) outer!;
+        UnrealStruct owningStruct = (UnrealStruct)outer!;
         UnrealProperty property = PropertyFactory.CreateProperty(symbol, outer!, syntaxNode);
         owningStruct.Properties.List.Add(property);
         return property;
     }
-    
+
     [InspectArgument(["PropertyFlags", "flags"], UPropertyAttributeName)]
     public static void PropertyFlagsSpecifier(UnrealType topType, TypedConstant flags)
     {
         UnrealProperty property = (UnrealProperty)topType;
         EPropertyFlags flagValue = (EPropertyFlags)(flags.Value ?? EPropertyFlags.None);
         property.PropertyFlags |= flagValue;
-            
+
         UnrealClass? outerClass = topType.Outer as UnrealClass;
-            
+
         if (property.PropertyFlags.HasFlag(EPropertyFlags.PersistentInstance))
         {
             property.PropertyFlags |= InstancedFlags;
@@ -135,44 +143,45 @@ public record UnrealProperty : UnrealType
                 outerClass.ClassFlags |= EClassFlags.HasInstancedReference;
             }
         }
-            
+
         if (property.PropertyFlags.HasFlag(EPropertyFlags.Config) && outerClass != null)
         {
             outerClass.ClassFlags |= EClassFlags.Config;
         }
     }
-    
+
     [InspectArgument("DefaultComponent", UPropertyAttributeName)]
     public static void DefaultComponentSpecifier(UnrealType topType, TypedConstant defaultComponent)
     {
         UnrealProperty property = (UnrealProperty)topType;
         property.DefaultComponent = (bool)defaultComponent.Value!;
         property.PropertyType = PropertyType.DefaultComponent;
-        property.PropertyFlags |= EPropertyFlags.BlueprintVisible | EPropertyFlags.NonTransactional | EPropertyFlags.InstancedReference;
+        property.PropertyFlags |= EPropertyFlags.BlueprintVisible | EPropertyFlags.NonTransactional |
+                                  EPropertyFlags.InstancedReference;
         property.AddEditInlineMeta();
     }
-    
+
     [InspectArgument("RootComponent", UPropertyAttributeName)]
     public static void RootComponentSpecifier(UnrealType topType, TypedConstant rootComponent)
     {
         UnrealProperty property = (UnrealProperty)topType;
         property.IsRootComponent = (bool)rootComponent.Value!;
     }
-    
+
     [InspectArgument("AttachmentComponent", UPropertyAttributeName)]
     public static void AttachmentComponentSpecifier(UnrealType topType, TypedConstant attachmentComponent)
     {
         UnrealProperty property = (UnrealProperty)topType;
         property.AttachmentComponent = (string)attachmentComponent.Value!;
     }
-    
+
     [InspectArgument("AttachmentSocket", UPropertyAttributeName)]
     public static void AttachmentSocketSpecifier(UnrealType topType, TypedConstant attachmentSocket)
     {
         UnrealProperty property = (UnrealProperty)topType;
         property.AttachmentSocket = (string)attachmentSocket.Value!;
     }
-    
+
     [InspectArgument("ReplicatedUsing", UPropertyAttributeName)]
     public static void ReplicatedUsingSpecifier(UnrealType topType, TypedConstant replicatedUsing)
     {
@@ -180,14 +189,14 @@ public record UnrealProperty : UnrealType
         property.ReplicatedUsing = (string)replicatedUsing.Value!;
         property.PropertyFlags |= EPropertyFlags.RepNotify | EPropertyFlags.Net;
     }
-    
+
     [InspectArgument("LifetimeCondition", UPropertyAttributeName)]
     public static void LifetimeConditionSpecifier(UnrealType topType, TypedConstant lifetimeCondition)
     {
         UnrealProperty property = (UnrealProperty)topType;
         property.LifetimeCondition = (ELifetimeCondition)lifetimeCondition.Value!;
     }
-    
+
     [InspectArgument("Category", UPropertyAttributeName)]
     public static void CategorySpecifier(UnrealType topType, TypedConstant category)
     {
@@ -199,7 +208,7 @@ public record UnrealProperty : UnrealType
     {
         ExportBackingVariables(builder);
         builder.AppendLine();
-        
+
         if (this.HasCustomGetterOrSetter())
         {
             if (SetterMethod.HasCustomPropertyMethod())
@@ -211,23 +220,23 @@ public record UnrealProperty : UnrealType
             {
                 GetterMethod!.Value.CustomPropertyMethod!.ExportType(builder, spc);
             }
-            
+
             return;
         }
-        
-        string nullableSign = IsNullable ? "?" : string.Empty;
+
         string partialDeclaration = IsPartial ? "partial " : string.Empty;
         string isRequiredSign = IsRequired ? "required " : string.Empty;
-        
-        builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}{isRequiredSign}{partialDeclaration}{ManagedType}{nullableSign} {SourceName}");
+
+        builder.AppendLine(
+            $"{Accessibility.AccessibilityToString()}{isRequiredSign}{partialDeclaration}{ManagedTypeWithNullability} {FieldName.SourceName}");
         builder.OpenBrace();
-        
+
         if (GetterMethod != null)
         {
             builder.AppendGet(GetterMethod.Value.Accessibility);
             ExportGetter(builder);
         }
-        
+
         if (SetterMethod != null)
         {
             if (IsInitOnly)
@@ -238,9 +247,10 @@ public record UnrealProperty : UnrealType
             {
                 builder.AppendSet(SetterMethod.Value.Accessibility);
             }
+
             ExportSetter(builder);
         }
-        
+
         builder.CloseBrace();
     }
 
@@ -249,7 +259,7 @@ public record UnrealProperty : UnrealType
         builder.Append(" => ");
         ExportFromNative(builder, SourceGenUtilities.NativeObject);
     }
-    
+
     protected virtual void ExportSetter(GeneratorStringBuilder builder)
     {
         builder.Append(" => ");
@@ -259,38 +269,37 @@ public record UnrealProperty : UnrealType
     public override void ExportBackingVariables(GeneratorStringBuilder builder)
     {
         string offsetCode = $"static int {OffsetVariable}";
-        
+
         if (NeedsBackingNativeProperty || NeedsCachedMarshaller)
         {
             ExportNativeProperty(builder);
         }
-        
+
         if (NeedsCachedMarshaller)
         {
             string staticModifier = CanInstanceMarshallerBeStatic ? "static " : string.Empty;
             builder.AppendNewBackingField($"{staticModifier}{MarshallerType}? {InstancedMarshallerVariable};");
-            builder.AppendNewBackingField($"{offsetCode};");
         }
-        else
-        {
-            builder.AppendNewBackingField($"{offsetCode};");
-        }
+
+        builder.AppendNewBackingField($"{offsetCode};");
     }
 
     public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
     {
         if (NeedsBackingNativeProperty || NeedsCachedMarshaller)
         {
-            builder.AppendLine($"{NativePropertyVariable} = CallGetNativePropertyFromName({nativeType}, \"{SourceName}\");"); 
+            builder.AppendLine(
+                $"{NativePropertyVariable} = CallGetNativePropertyFromName({nativeType}, \"{GetNativeLookupName()}\");");
         }
-        
+
         if (NeedsCachedMarshaller)
         {
             builder.AppendLine($"{OffsetVariable} = CallGetPropertyOffset({NativePropertyVariable});");
         }
         else
         {
-            builder.AppendLine($"{OffsetVariable} = CallGetPropertyOffsetFromName({nativeType}, \"{SourceName}\");");
+            builder.AppendLine(
+                $"{OffsetVariable} = CallGetPropertyOffsetFromName({nativeType}, \"{GetNativeLookupName()}\");");
         }
 
         if (SetterMethod.HasCustomPropertyMethod())
@@ -304,11 +313,13 @@ public record UnrealProperty : UnrealType
         }
     }
 
+    protected string GetNativeLookupName() => FieldName.EngineName;
+
     public void ExportNativeProperty(GeneratorStringBuilder builder)
     {
         builder.AppendNewBackingField($"static IntPtr {NativePropertyVariable};");
     }
-    
+
     protected string AppendOffsetMath(string basePtr)
     {
         return $"{basePtr} + {OffsetVariable}";
@@ -318,19 +329,21 @@ public record UnrealProperty : UnrealType
     {
         AppendCallToNative(builder, MarshallerType, buffer, value);
     }
-    
-    public virtual void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
+
+    public virtual void ExportFromNative(GeneratorStringBuilder builder, string buffer,
+        string? assignmentOperator = null)
     {
         AppendCallFromNative(builder, MarshallerType, buffer, assignmentOperator);
     }
-    
+
     protected void AppendCallToNative(GeneratorStringBuilder builder, string marshaller, string buffer, string value)
     {
         string offsetMathOperation = PropertyFlags.IsReturnValue() ? buffer : AppendOffsetMath(buffer);
         builder.Append($"{marshaller}.ToNative({offsetMathOperation}, 0, {value});");
     }
-    
-    protected void AppendCallFromNative(GeneratorStringBuilder builder, string marshaller, string buffer, string? assignmentOperator = null)
+
+    protected void AppendCallFromNative(GeneratorStringBuilder builder, string marshaller, string buffer,
+        string? assignmentOperator = null)
     {
         builder.Append($"{assignmentOperator}{marshaller}.FromNative({AppendOffsetMath(buffer)}, 0);");
     }
@@ -347,11 +360,11 @@ public record UnrealProperty : UnrealType
         jsonWriter.TrySetJsonString("AttachmentSocket", AttachmentSocket);
         jsonWriter.TrySetJsonString("ReplicatedUsing", ReplicatedUsing);
         jsonWriter.TrySetJsonEnum("LifetimeCondition", LifetimeCondition);
-        
+
         SetGetterSetterToJson(jsonWriter, "GetterMethod", GetterMethod);
         SetGetterSetterToJson(jsonWriter, "SetterMethod", SetterMethod);
     }
-    
+
     private void SetGetterSetterToJson(JsonWriter jsonWriter, string key, PropertyMethod? method)
     {
         if (method == null || !method.Value.HasCustomMethod)

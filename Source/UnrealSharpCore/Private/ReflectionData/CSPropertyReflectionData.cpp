@@ -37,7 +37,7 @@ bool FCSPropertyReflectionData::Serialize(FConstObject JsonObject)
 
 	if (!InnerType.IsValid())
 	{
-		UE_LOGFMT(LogUnrealSharp, Error, "Failed to create type reflection data for property '{0}' of type '{1}'", *FieldName.GetFullName().ToString(), static_cast<uint8>(PropertyType));
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to create type reflection data for property '{0}' of type '{1}'", *FieldName.GetFullName(), static_cast<uint8>(PropertyType));
 		SET_SUCCESS(false);
 		END_JSON_SERIALIZE
 	}
