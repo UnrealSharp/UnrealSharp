@@ -19,12 +19,15 @@ public class MergeSolution : BuildCommand
     public override void ExecuteBuild()
     {
         string nativeSlnxPath = Path.Combine(this.GetProjectRootFolder(), this.GetProjectName() + ".slnx");
+        string nativeSlnPath = Path.Combine(this.GetProjectRootFolder(), this.GetProjectName() + ".sln");
         string managedSlnxPath = Path.Combine(this.GetProjectScriptFolder(), $"{this.GetProjectNameAsManaged()}.slnx");
         string mixedSlnxPath = Path.ChangeExtension(nativeSlnxPath, null) + ".Mixed.slnx";
 
-        if (!File.Exists(nativeSlnxPath))
+        string nativeSolutionPath = File.Exists(nativeSlnxPath) ? nativeSlnxPath : nativeSlnPath;
+
+        if (!File.Exists(nativeSolutionPath))
         {
-            throw new AutomationException($"Failed to load native solution: {nativeSlnxPath}.");
+            throw new AutomationException($"Failed to load native solution: {nativeSolutionPath}.");
         }
 
         if (!File.Exists(managedSlnxPath))
@@ -32,12 +35,12 @@ public class MergeSolution : BuildCommand
             throw new AutomationException($"Failed to load managed solution: {managedSlnxPath}.");
         }
 
-        MergeSolutionsAsync(nativeSlnxPath, managedSlnxPath, mixedSlnxPath).GetAwaiter().GetResult();
+        MergeSolutionsAsync(nativeSolutionPath, managedSlnxPath, mixedSlnxPath).GetAwaiter().GetResult();
     }
 
-    private static async Task<bool> MergeSolutionsAsync(string nativeSlnxPath, string managedSlnxPath, string mixedSlnxPath)
+    private static async Task<bool> MergeSolutionsAsync(string nativeSolutionPath, string managedSlnxPath, string mixedSlnxPath)
     {
-        ISolutionSerializer? nativeSerializer = SolutionSerializers.GetSerializerByMoniker(nativeSlnxPath);
+        ISolutionSerializer? nativeSerializer = SolutionSerializers.GetSerializerByMoniker(nativeSolutionPath);
         ISolutionSerializer? managedSerializer = SolutionSerializers.GetSerializerByMoniker(managedSlnxPath);
 
         if (nativeSerializer is null || managedSerializer is null)
@@ -45,11 +48,11 @@ public class MergeSolution : BuildCommand
             throw new AutomationException("Failed to get solution serializer for one or both solution files.");
         }
 
-        SolutionModel nativeSolution = await nativeSerializer.OpenAsync(nativeSlnxPath, CancellationToken.None);
+        SolutionModel nativeSolution = await nativeSerializer.OpenAsync(nativeSolutionPath, CancellationToken.None);
         SolutionModel managedSolution = await managedSerializer.OpenAsync(managedSlnxPath, CancellationToken.None);
 
         string sourceDirectory = Path.GetDirectoryName(managedSlnxPath)!;
-        string targetDirectory = Path.GetDirectoryName(nativeSlnxPath)!;
+        string targetDirectory = Path.GetDirectoryName(nativeSolutionPath)!;
 
         MergeProjects(nativeSolution, managedSolution, sourceDirectory, targetDirectory);
 
