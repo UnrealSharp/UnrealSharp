@@ -2,7 +2,6 @@ using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Engine;
-using UnrealSharp.GameplayAbilities;
 
 namespace TestSourceGen;
 
@@ -10,7 +9,7 @@ namespace TestSourceGen;
 public delegate void FRefParameterDelegate(ref int value);
 
 [UClass]
-public partial class UParameterTest : UGameplayModMagnitudeCalculation
+public partial class UParameterTest : UObject
 {
     [UFunction(FunctionFlags.BlueprintEvent)]
     public partial void ReadValue(int input, out int value);
@@ -118,21 +117,14 @@ public partial class UParameterTest : UGameplayModMagnitudeCalculation
         return true;
     }
 
-    // Invoke this override from native code with a populated spec. The const
-    // input must remain unchanged when the managed callback returns (#678).
-    public override float CalculateBaseMagnitude(FGameplayEffectSpec spec)
-    {
-        return GetSetByCallerMagnitudeByName(spec, new FName("ConstReferenceInput"));
-    }
-
-    // Native ProcessEvent callers must retain a valid attribute as well as
-    // receive the changed magnitude when this callback returns.
+    // This Engine-owned, non-POD struct has native copy/destruction operations.
+    // Native callers must retain its path and references and receive the changed name.
     [UFunction(FunctionFlags.BlueprintEvent)]
-    public partial void UpdateEvaluated(ref FGameplayModifierEvaluatedData evaluatedData);
+    public partial void UpdateComponentReference(ref FComponentReference componentReference);
 
-    public partial void UpdateEvaluated_Implementation(ref FGameplayModifierEvaluatedData evaluatedData)
+    public partial void UpdateComponentReference_Implementation(ref FComponentReference componentReference)
     {
-        evaluatedData.Magnitude += 10;
+        componentReference.ComponentName = new FName("UpdatedComponent");
     }
 
     [UFunction(FunctionFlags.BlueprintEvent)]
