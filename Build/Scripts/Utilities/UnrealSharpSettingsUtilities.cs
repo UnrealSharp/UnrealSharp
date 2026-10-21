@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AutomationTool;
 
@@ -9,27 +8,37 @@ namespace UnrealSharp.Automation.Utilities;
 
 public static class UnrealSharpSettingsUtilities
 {
-    private static readonly ConditionalWeakTable<BuildCommand, Dictionary<string, JsonElement>> Configs = new();
+    private static Dictionary<string, JsonElement>? _config;
     
-    static Dictionary<string, JsonElement> InitializeConfigFile(BuildCommand buildCommand)
+    static void InitializeConfigFile(BuildCommand buildCommand)
     {
+        if (_config != null)
+        {
+            return;
+        }
+        
         string PluginConfigPath = GetConfigFile(buildCommand.GetUnrealSharpRootFolder());
         string ProjectConfigPath = GetConfigFile(buildCommand.GetProjectRootFolder());
 
-        Dictionary<string, JsonElement> Config = LoadJsonAsDictionary(PluginConfigPath);
+        _config = LoadJsonAsDictionary(PluginConfigPath);
         Dictionary<string, JsonElement> ProjectDict = File.Exists(ProjectConfigPath) ? LoadJsonAsDictionary(ProjectConfigPath) : new Dictionary<string, JsonElement>();
         
         foreach (KeyValuePair<string, JsonElement> Kvp in ProjectDict)
         {
-            Config[Kvp.Key] = Kvp.Value;
+            _config[Kvp.Key] = Kvp.Value;
         }
-
-        return Config;
     }
 
     public static JsonElement GetElement(this BuildCommand buildCommand, string elementName)
     {
-        return Configs.GetValue(buildCommand, InitializeConfigFile)[elementName];
+        InitializeConfigFile(buildCommand);
+        
+        if (_config == null)
+        {
+            throw new Exception("Run InitializeConfigFile first.");
+        }
+        
+        return _config[elementName];
     }
     
     static string GetConfigFile(string rootDirectory)

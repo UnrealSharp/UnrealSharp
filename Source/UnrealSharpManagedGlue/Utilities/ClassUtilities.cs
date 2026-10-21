@@ -140,7 +140,7 @@ public static class ClassUtilities
                 functions.Add(function);
             }
             
-            if (function.HasAllFlags(EFunctionFlags.Static) && classObj.IsChildOf(SessionStatic.Generator.BlueprintFunctionLibrary))
+            if (function.HasAllFlags(EFunctionFlags.Static) && classObj.IsChildOf(GeneratorStatics.BlueprintFunctionLibrary))
             {
                 FunctionExporter.TryAddExtensionMethod(function, extensionMethods);
             }

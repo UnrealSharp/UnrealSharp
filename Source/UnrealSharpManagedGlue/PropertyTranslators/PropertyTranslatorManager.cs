@@ -10,14 +10,14 @@ using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue.PropertyTranslators;
 
-public class PropertyTranslatorManager
+public static class PropertyTranslatorManager
 {
-    private readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
-    public SpecialTypeInfo SpecialTypeInfo { get; } = new();
+    private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
+    public static SpecialTypeInfo SpecialTypeInfo { get; } = new();
     
-    public void Initialize()
+    static PropertyTranslatorManager()
     {
-        string? projectDirectory = SessionStatic.Generator.Factory.Session.ProjectDirectory;
+        string? projectDirectory = GeneratorStatics.Factory.Session.ProjectDirectory;
         string configDirectory = Path.Combine(projectDirectory!, "Config");
         
         string pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
@@ -30,7 +30,7 @@ public class PropertyTranslatorManager
         IEnumerable<string> files = pluginFiles
             .Select(x => x.DirectoryName!)
             .Select(x => Path.Combine(x, "Config"))
-            .Concat(new List<string> { Path.Combine(SessionStatic.Generator.PluginDirectory, "Config"), configDirectory })
+            .Concat(new List<string> { Path.Combine(GeneratorStatics.PluginDirectory, "Config"), configDirectory })
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(x => new DirectoryInfo(x))
             .Where(x => x.Exists)
@@ -137,41 +137,41 @@ public class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
         
         // Manually exported properties
-        SessionStatic.Inclusions.BanProperty("UWorld", "GameState");
-        SessionStatic.Inclusions.BanProperty("UWorld", "AuthorityGameMode");
+        InclusionLists.BanProperty("UWorld", "GameState");
+        InclusionLists.BanProperty("UWorld", "AuthorityGameMode");
         
         // Replicated properties handled by custom code
-        SessionStatic.Inclusions.BanProperty("AActor", "bReplicates");
-        SessionStatic.Inclusions.BanProperty("UActorComponent", "bReplicates");
-        SessionStatic.Inclusions.BanFunction("UActorComponent", "SetIsReplicated");
+        InclusionLists.BanProperty("AActor", "bReplicates");
+        InclusionLists.BanProperty("UActorComponent", "bReplicates");
+        InclusionLists.BanFunction("UActorComponent", "SetIsReplicated");
 
         // Doesn't have any fields
-        SessionStatic.Inclusions.BanArithmetic("FSubsystemCollectionBaseRef");
-        SessionStatic.Inclusions.BanArithmetic("FRandomStream");
-        SessionStatic.Inclusions.BanArithmetic("FRotator");
-        SessionStatic.Inclusions.BanArithmetic("FVector3f");
-        SessionStatic.Inclusions.BanArithmetic("FVector2f");
-        SessionStatic.Inclusions.BanArithmetic("FVector4f");
-        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantize");
-        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantize10");
-        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantize100");
-        SessionStatic.Inclusions.BanArithmetic("FVector_NetQuantizeNormal");
+        InclusionLists.BanArithmetic("FSubsystemCollectionBaseRef");
+        InclusionLists.BanArithmetic("FRandomStream");
+        InclusionLists.BanArithmetic("FRotator");
+        InclusionLists.BanArithmetic("FVector3f");
+        InclusionLists.BanArithmetic("FVector2f");
+        InclusionLists.BanArithmetic("FVector4f");
+        InclusionLists.BanArithmetic("FVector_NetQuantize");
+        InclusionLists.BanArithmetic("FVector_NetQuantize10");
+        InclusionLists.BanArithmetic("FVector_NetQuantize100");
+        InclusionLists.BanArithmetic("FVector_NetQuantizeNormal");
 
         // Custom arithmetic needed
-        SessionStatic.Inclusions.BanArithmetic("FQuat");
+        InclusionLists.BanArithmetic("FQuat");
 
         // Renamed variable
-        SessionStatic.Inclusions.BanConstructor("FPlane");
+        InclusionLists.BanConstructor("FPlane");
 
         // Has constructor with with defaults
-        SessionStatic.Inclusions.BanConstructor("FGameplayTagContainer");
-        SessionStatic.Inclusions.BanConstructor("FLinearColor");
+        InclusionLists.BanConstructor("FGameplayTagContainer");
+        InclusionLists.BanConstructor("FLinearColor");
 
         // Calls native to init
-        SessionStatic.Inclusions.BanConstructor("FGameplayTag");
-        SessionStatic.Inclusions.BanConstructor("FPrimaryAssetType");
+        InclusionLists.BanConstructor("FGameplayTag");
+        InclusionLists.BanConstructor("FPrimaryAssetType");
     }
-    public void AddTranslationManifest(TypeTranslationManifest manifest)
+    public static void AddTranslationManifest(TypeTranslationManifest manifest)
     {
         if (!manifest.Structs.CustomTypes.IsDefaultOrEmpty)
         {
@@ -225,7 +225,7 @@ public class PropertyTranslatorManager
         }
     }
     
-    public PropertyTranslator? GetTranslator(UhtProperty property)
+    public static PropertyTranslator? GetTranslator(this UhtProperty property)
     {
         if (!RegisteredTranslators.TryGetValue(property.GetType(), out List<PropertyTranslator>? translator))
         {
@@ -243,7 +243,7 @@ public class PropertyTranslatorManager
         return null;
     }
 
-    void AddBlittablePropertyTranslator(Type propertyType, string managedType)
+    static void AddBlittablePropertyTranslator(Type propertyType, string managedType)
     {
         if (RegisteredTranslators.TryGetValue(propertyType, out List<PropertyTranslator>? translators))
         {
@@ -257,7 +257,7 @@ public class PropertyTranslatorManager
         });
     }
 
-    void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)
+    static void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)
     {
         if (RegisteredTranslators.TryGetValue(propertyClass, out List<PropertyTranslator>? translators))
         {

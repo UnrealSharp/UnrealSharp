@@ -91,13 +91,13 @@ public static class ScriptGeneratorUtilities
 
     public static string TryGetPluginStringDefine(string key)
     {
-        SessionStatic.Generator.PluginModule.TryGetDefine(key, out string? generatedCodePath);
+        GeneratorStatics.PluginModule.TryGetDefine(key, out string? generatedCodePath);
         return generatedCodePath!;
     }
     
     public static int TryGetPluginIntDefine(string key)
     {
-        SessionStatic.Generator.PluginModule.TryGetDefine(key, out int valueStr);
+        GeneratorStatics.PluginModule.TryGetDefine(key, out int valueStr);
         return valueStr;
     }
 

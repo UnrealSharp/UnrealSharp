@@ -8,7 +8,7 @@ public static class CommonUnrealSharpSettings
     {
         get
         {
-            JsonElement scriptDirectoryName = SessionStatic.Settings.GetElement("ScriptDirectoryName");
+            JsonElement scriptDirectoryName = UnrealSharpSettingsUtilities.GetElement("ScriptDirectoryName");
             return scriptDirectoryName.GetString()!;
         }
     }

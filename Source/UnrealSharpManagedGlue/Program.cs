@@ -45,15 +45,15 @@ public static class Program
     [UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default, ModuleName = "UnrealSharpCore")]
     private static void Main(IUhtExportFactory factory)
     {
-        ConsoleUtilities.Log($"Initializing UnrealSharp C# bindings generator for {factory.Session.Manifest?.TargetName}...");
+        ConsoleUtilities.Log("Initializing UnrealSharp C# bindings generator...");
         
-        using SessionStatic session = new(factory);
+        GeneratorStatics.Initialize(factory);
         ExportBindings();
         
-        SessionStatic.Files.CleanOldExportedFiles();
+        FileExporter.CleanOldExportedFiles();
         BuildUtilities.BuildBindings();
         
-        SessionStatic.ModuleFactory.SyncModuleProjects();
+        ModuleFactory.SyncModuleProjects();
         BuildUtilities.GenerateUserSolution();
     }
 
@@ -66,7 +66,7 @@ public static class Program
             Stopwatch stopwatch = Stopwatch.StartNew();
             
             GlueGenerator.GenerateBindings();
-            SessionStatic.Tasks.WaitForTasks();
+            TaskManager.WaitForTasks();
 
             stopwatch.Stop();
             

@@ -160,7 +160,7 @@ public static class StructExporter
         }
         
         stringBuilder.EndGlueFile(structObj);
-        SessionStatic.Files.SaveGlueToDisk(structObj, stringBuilder);
+        FileExporter.SaveGlueToDisk(structObj, stringBuilder);
     }
 
     public static void ExportConstructor(UhtStruct structObj, string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)

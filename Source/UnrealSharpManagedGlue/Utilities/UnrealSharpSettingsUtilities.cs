@@ -5,15 +5,15 @@ using System.Text.Json;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
-public class UnrealSharpSettingsUtilities
+public static class UnrealSharpSettingsUtilities
 {
-    private Dictionary<string, JsonElement>? _config;
+    private static Dictionary<string, JsonElement>? _config;
     
-    public void InitializeConfigFile(string projectRoot, string unrealSharpRoot)
+    public static void InitializeConfigFile(string projectRoot, string unrealSharpRoot)
     {
         if (_config != null)
         {
-            throw new InvalidOperationException("UnrealSharp settings already initialized for this UHT session.");
+            return;
         }
         
         string pluginConfigPath = GetConfigFile(unrealSharpRoot);
@@ -28,7 +28,7 @@ public class UnrealSharpSettingsUtilities
         }
     }
 
-    public JsonElement GetElement(string elementName)
+    public static JsonElement GetElement(string elementName)
     {
         if (_config == null)
         {
@@ -38,7 +38,7 @@ public class UnrealSharpSettingsUtilities
         return _config[elementName];
     }
     
-    string GetConfigFile(string rootDirectory)
+    static string GetConfigFile(string rootDirectory)
     {
         string configDirectory = Path.Combine(rootDirectory, "Config");
         if (!Directory.Exists(configDirectory))
@@ -66,7 +66,7 @@ public class UnrealSharpSettingsUtilities
         return foundConfigs[0];
     }
 
-    Dictionary<string, JsonElement> LoadJsonAsDictionary(string path)
+    static Dictionary<string, JsonElement> LoadJsonAsDictionary(string path)
     {
         string json = File.ReadAllText(path);
         return JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) ?? new Dictionary<string, JsonElement>();

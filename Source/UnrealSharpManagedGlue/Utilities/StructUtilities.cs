@@ -9,7 +9,7 @@ public static class StructUtilities
 {
     public static bool IsStructBlittable(this UhtStruct structObj)
     {
-        if (SessionStatic.Translators.SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structObj.SourceName))
+        if (PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structObj.SourceName))
         {
             return true;
         }
@@ -29,7 +29,7 @@ public static class StructUtilities
     
     public static string? GetAttributeValue(this UhtStruct structObj, string key)
     {
-        if (!SessionStatic.Translators.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out BlittableStructInfo info))
+        if (!PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out BlittableStructInfo info))
         {
             return null;
         }
@@ -40,17 +40,17 @@ public static class StructUtilities
 
     public static bool IsStructNativelyCopyable(this UhtStruct structObj)
     {
-        return SessionStatic.Translators.SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structObj.SourceName);
+        return PropertyTranslatorManager.SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structObj.SourceName);
     }
     
     public static bool IsStructNativelyDestructible(this UhtStruct structObj)
     {
-        return SessionStatic.Translators.SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structObj.SourceName, out var info) && info.HasDestructor;
+        return PropertyTranslatorManager.SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structObj.SourceName, out var info) && info.HasDestructor;
     }
 
     public static bool CanSupportArithmetic(this UhtStruct structObj, List<UhtProperty> exportedProperties)
     {
-        if (SessionStatic.Inclusions.HasBannedArithmetic(structObj))
+        if (InclusionLists.HasBannedArithmetic(structObj))
         {
             return false;
         }
@@ -78,6 +78,6 @@ public static class StructUtilities
             return false;
         }
 
-        return !SessionStatic.Inclusions.HasBannedConstructor(structObj);
+        return !InclusionLists.HasBannedConstructor(structObj);
     }
 }

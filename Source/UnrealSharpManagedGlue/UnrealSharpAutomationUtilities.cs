@@ -9,6 +9,6 @@ public static class UnrealSharpAutomationUtilities
 {
     public static bool InvokeUnrealSharpAutomation(string action, List<KeyValuePair<string, string>>? actionArgs = null)
     {
-        return CommandUtilities.RunCommand(action, SessionStatic.Generator.Factory.Session.ProjectFile!, actionArgs);
+        return CommandUtilities.RunCommand(action, GeneratorStatics.Factory.Session.ProjectFile!, actionArgs);
     }
 }

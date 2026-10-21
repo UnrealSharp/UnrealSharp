@@ -23,7 +23,7 @@ public static class FunctionUtilities
             return false;
         }
         
-        if (SessionStatic.Inclusions.HasBannedFunction(function))
+        if (InclusionLists.HasBannedFunction(function))
         {
             return false;
         }

@@ -99,7 +99,7 @@ public static class InterfaceExporter
         stringBuilder.CloseBrace();
         
         stringBuilder.EndGlueFile(interfaceObj);
-        SessionStatic.Files.SaveGlueToDisk(interfaceObj, stringBuilder);
+        FileExporter.SaveGlueToDisk(interfaceObj, stringBuilder);
     }
 
     static void ExportInterfaceProperties(GeneratorStringBuilder stringBuilder,

@@ -85,7 +85,7 @@ public static class ClassExporter
         ExportExtensionMethods(stringBuilder, classObj.Package, classObj, exportedExtensionMethods);
         AutocastExporter.ExportAutocast(stringBuilder, autocastFunctions);
 
-        SessionStatic.Files.SaveGlueToDisk(classObj, stringBuilder);
+        FileExporter.SaveGlueToDisk(classObj, stringBuilder);
     }
 
     static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder,
