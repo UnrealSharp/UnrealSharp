@@ -5,6 +5,18 @@ using UnrealSharp.Engine;
 
 namespace TestSourceGen;
 
+// Received_Notify supplies a native const reference to a non-POD Engine struct.
+// Native callers must retain the event reference and its context after the callback.
+[UClass]
+public partial class UConstParameterTest : UAnimNotify
+{
+    public override bool Received_Notify(USkeletalMeshComponent meshComp, UAnimSequenceBase animation,
+        FAnimNotifyEventReference eventReference)
+    {
+        return meshComp == null;
+    }
+}
+
 [USingleDelegate]
 public delegate void FRefParameterDelegate(ref int value);
 
