@@ -65,6 +65,7 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	}
 	else
 	{
+		// Non-Blueprint frames must come from ProcessEvent or our direct invoke path.
 		OutParameters = Stack.OutParms;
 		// ProcessEvent already prepares plain values. Nontrivial out parameters
 		// need independent initialized values before managed code assigns to them.
