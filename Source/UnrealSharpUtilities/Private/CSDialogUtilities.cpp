@@ -91,12 +91,19 @@ FCSCommandError UnrealSharp::Dialogs::MakeDialogOnError()
 FCSCommandError UnrealSharp::Dialogs::MakeOkCancelDialogOnError()
 {
 	return FCSCommandError::CreateLambda([](const FString& ErrorOutput)
-{
-	EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::OkCancel, FText::FromString(ErrorOutput));
-
-	if (Result == EAppReturnType::Cancel)
 	{
-		FPlatformMisc::RequestExit(true);
-	}
-});
+		if (IsHeadless())
+		{
+			// RequestExit(true) exits with 0 on Windows; let StartupModule fail instead.
+			UE_LOGFMT(LogUnrealSharpUtilities, Display, "Running headless, not showing the OK/Cancel dialog for this error.");
+			return;
+		}
+
+		EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::OkCancel, FText::FromString(ErrorOutput));
+
+		if (Result == EAppReturnType::Cancel)
+		{
+			FPlatformMisc::RequestExit(true);
+		}
+	});
 }
