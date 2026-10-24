@@ -484,7 +484,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	
 	int32 BuildConfigValue = static_cast<int32>(PlatformsPackagingSettings->BuildConfiguration);
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
-	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
+	Arguments.Add(TEXT("UEBuildConfig"), LexToString(ConfigurationInfo.Configuration));
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
