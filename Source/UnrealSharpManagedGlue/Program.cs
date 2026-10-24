@@ -48,7 +48,8 @@ public static class Program
     [UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default, ModuleName = "UnrealSharpCore")]
     private static void Main(IUhtExportFactory factory)
     {
-        // UBT can run UHT for different target groups concurrently in this process.
+        // UBT can run multiple UHT sessions concurrently in the same process for different target groups.
+        // Serialize exporter runs to protect shared static state and output files.
         lock (ExporterLock)
         {
             RunExporter(factory);
