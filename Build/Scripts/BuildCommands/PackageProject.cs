@@ -40,7 +40,7 @@ public class PackageProject : BuildCommand
         StartPackaging(Options);
     }
 
-    private void StartPackaging(PackagingOptions options)
+    internal void StartPackaging(PackagingOptions options)
     {
         ValidateOptions(options);
         LogOptions(options);
