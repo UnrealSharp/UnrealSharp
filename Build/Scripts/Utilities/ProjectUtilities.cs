@@ -118,26 +118,15 @@ public static class ProjectUtilities
     public static FileReference GetUnrealSharpUPlugin(this BuildCommand command)
     {
         FileReference Project = command.GetUProjectFile();
-        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(Project);
-        
-        FileReference? UnrealSharpPlugin = null;
-        foreach (FileReference Plugin in FoundPlugins)
-        {
-            if (Plugin.GetFileName() != "UnrealSharp.uplugin")
-            {
-                continue;
-            }
-            
-            UnrealSharpPlugin = Plugin;
-            break;
-        }
-        
-        if (UnrealSharpPlugin == null)
+        ProjectDescriptor Descriptor = ProjectDescriptor.FromFile(Project);
+        Dictionary<string, PluginInfo> AvailablePlugins = ReadAvailablePlugins(Project, Descriptor);
+
+        if (!AvailablePlugins.TryGetValue("UnrealSharp", out PluginInfo? UnrealSharpPlugin))
         {
             throw new Exception("Failed to find UnrealSharp.uplugin in the project plugins folder. Make sure UnrealSharp is properly installed and added to your project.");
         }
         
-        return UnrealSharpPlugin;
+        return UnrealSharpPlugin.File;
     }
 
     public static FileReference GetUProjectFile(this BuildCommand command)
