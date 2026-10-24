@@ -1,5 +1,11 @@
 #include "CSBindsRegistry.h"
 
+#if WITH_EDITOR
+#include "Async/TaskGraphInterfaces.h"
+#include "Editor.h"
+#include "TimerManager.h"
+#endif
+
 DECLARE_UNREALSHARP_BINDER(Bind_TimerExtensions)
 {
 	using FNextTickEvent = void(*)();

@@ -2,6 +2,9 @@
 
 
 #include "Subsystems/CSManagedSubsystemManager.h"
+#include "Templates/SubclassOf.h"
+#include "Subsystems/Subsystem.h"
+#include "Subsystems/SubsystemCollection.h"
 
 UCSManagedSubsystemManager* UCSManagedSubsystemManager::Instance = nullptr;
 

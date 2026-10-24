@@ -12,6 +12,7 @@
 #include "Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtils.h"
 #include "Subsystems/CSManagedSubsystemManager.h"
+#include "Subsystems/SubsystemCollection.h"
 #include "Utilities/CSClassUtilities.h"
 
 #if WITH_EDITOR

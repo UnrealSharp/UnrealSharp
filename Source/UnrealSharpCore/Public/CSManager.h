@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#include "UObject/Package.h"
+#include "UObject/UObjectArray.h"
+#include "UObject/UObjectGlobals.h"
+
 #include "CSManagedAssembly.h"
 #include "CSObjectID.h"
 #include "CSManager.generated.h"

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "CSAsyncActionBase.h"
+#include "UObject/SoftObjectPath.h"
 #include "CSAsyncLoadSoftObjectPtr.generated.h"
 
 UCLASS(meta = (InternalType))

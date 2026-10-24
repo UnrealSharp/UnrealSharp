@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "UObject/CoreNetTypes.h"
+
 #include "CSTypeReferenceReflectionData.h"
 #include "CSUnrealType.h"
 

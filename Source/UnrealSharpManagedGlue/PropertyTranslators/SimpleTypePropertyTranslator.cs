@@ -68,9 +68,52 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
         return property.IsGenericType() ? "DOT" : ManagedType;
     }
 
+    private static bool CanExportDefaultValue(UhtProperty property, string defaultValue)
+    {
+        if (property is not UhtStructProperty structProperty)
+        {
+            return true;
+        }
+
+        ReadOnlySpan<char> fields = defaultValue.AsSpan();
+        if (fields.StartsWith("(") && fields.EndsWith(")"))
+        {
+            fields = fields[1..^1];
+        }
+
+        if (fields.IsEmpty)
+        {
+            return true;
+        }
+
+        // Temporary guard for the flat writer: skip nested defaults and avoid
+        // indexing beyond the reflected members. Full conversion is separate work.
+        int fieldCount = 1;
+        foreach (char character in fields)
+        {
+            if (character is '(' or ')')
+            {
+                return false;
+            }
+            if (character == ',')
+            {
+                fieldCount++;
+            }
+        }
+
+        return fieldCount <= structProperty.ScriptStruct.Children.Count;
+    }
+
     protected void ExportDefaultStructParameter(GeneratorStringBuilder builder, string variableName, string cppDefaultValue,
         UhtProperty paramProperty, PropertyTranslator translator)
     {
+	    if (!CanExportDefaultValue(paramProperty, cppDefaultValue))
+	    {
+		    builder.AppendLine($"{translator.GetManagedType(paramProperty)} {variableName} = {translator.GetNullValue(paramProperty)};");
+		    ConsoleUtilities.Log($"Warning: Cannot translate default value '{cppDefaultValue}' for {paramProperty.Outer?.Outer?.SourceName}.{paramProperty.Outer?.SourceName}.{paramProperty.SourceName}. Using the managed type default; pass an explicit value to preserve the intended behavior.");
+		    return;
+	    }
+
 	    UhtStructProperty structProperty = (UhtStructProperty)paramProperty;
 	    string structName = structProperty.ScriptStruct.GetStructName();
 

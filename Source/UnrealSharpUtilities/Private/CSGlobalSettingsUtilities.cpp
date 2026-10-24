@@ -2,6 +2,13 @@
 #include "CSPathsBlueprintFunctionLibrary.h"
 #include "UnrealSharpUtilities.h"
 #include "Logging/StructuredLog.h"
+#include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
+#include "HAL/FileManager.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 static TMap<FString, TSharedPtr<FJsonValue>> Config;
 

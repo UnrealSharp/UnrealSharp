@@ -23,8 +23,9 @@ public static class ClassExporter
         Dictionary<string, GetterSetterPair> getSetOverrides = new();
         List<ExtensionMethod> exportedExtensionMethods = new();
         List<UhtFunction> autocastFunctions = new();
+        Dictionary<UhtFunction, UhtFunction> reflectedImplementations = new();
         classObj.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides,
-            exportedExtensionMethods, autocastFunctions);
+            exportedExtensionMethods, autocastFunctions, reflectedImplementations);
 
         List<UhtProperty> exportedProperties = new List<UhtProperty>();
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
@@ -74,7 +75,7 @@ public static class ClassExporter
 
             ExportClassFunctions(stringBuilder, exportedFunctions, exportedFunctionNames);
             ExportGetSetOverrides(stringBuilder, getSetOverrides, exportedPropertyNames, exportedFunctionNames);
-            ExportOverrides(stringBuilder, exportedOverrides, exportedFunctionNames);
+            ExportOverrides(stringBuilder, exportedOverrides, exportedFunctionNames, reflectedImplementations);
             stringBuilder.AppendLine();
         }
 
@@ -151,11 +152,12 @@ public static class ClassExporter
     }
 
     static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides,
-        HashSet<string> exportedFunctionNames)
+        HashSet<string> exportedFunctionNames, Dictionary<UhtFunction, UhtFunction> reflectedImplementations)
     {
         foreach (UhtFunction function in exportedOverrides)
         {
-            FunctionExporter.ExportOverridableFunction(builder, function, exportedFunctionNames);
+            reflectedImplementations.TryGetValue(function, out UhtFunction? implementation);
+            FunctionExporter.ExportOverridableFunction(builder, function, exportedFunctionNames, implementation);
             exportedFunctionNames.Add(function.SourceName);
         }
     }

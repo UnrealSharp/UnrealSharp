@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Internationalization/Text.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FText)
 {

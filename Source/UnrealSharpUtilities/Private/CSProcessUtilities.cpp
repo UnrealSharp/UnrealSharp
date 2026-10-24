@@ -4,6 +4,9 @@
 #include "CSPathsUtilities.h"
 #include "UnrealSharpUtilities.h"
 #include "Logging/StructuredLog.h"
+#include "HAL/PlatformProcess.h"
+#include "HAL/PlatformTime.h"
+#include "Misc/Paths.h"
 
 bool UnrealSharp::Process::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory, const FCSCommandError& OnError)
 {

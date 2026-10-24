@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#include "CoreMinimal.h"
+#include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
+
 struct FCSDefaultComponentType;
 struct FCSPropertyReflectionData;
 class USCS_Node;
