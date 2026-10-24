@@ -46,7 +46,7 @@ public partial record struct FRotator
     
     public FRotator(FMatrix rotationMatrix)
     {
-        Bind_FRotator.CallFromMatrix(ref this, rotationMatrix);
+        Bind_FRotator.CallFromMatrix(ref this, ref rotationMatrix);
     }
 
     public FRotator(FVector vec)

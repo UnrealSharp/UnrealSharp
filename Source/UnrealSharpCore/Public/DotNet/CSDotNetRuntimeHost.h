@@ -10,11 +10,19 @@
 struct FCSManagedCallbacks;
 struct FCSManagedPluginCallbacks;
 
+/**
+ * Result of the managed InitializeUnrealSharp entry point. Mirrors UnrealSharp.Plugins.FCSInitializationResult:
+ * on failure, managed code writes the exception text into Message as a null-terminated UTF-8 string.
+ */
 struct FCSInitializationResult
 {
+	static constexpr int32 MessageCapacity = 4096;
+
 	bool bSuccess = false;
-	const TCHAR* Message = nullptr;
+	UTF8CHAR Message[MessageCapacity] = {};
 };
+
+static_assert(sizeof(FCSInitializationResult) == 1 + FCSInitializationResult::MessageCapacity, "FCSInitializationResult must match the managed layout.");
 
 using FInitializeUnrealSharp = void (*)(const UTF8CHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks*, FCSInitializationResult*);
 
