@@ -23,7 +23,7 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 void FUnrealSharpCoreModule::StartupModule()
 {
 #if WITH_EDITOR
-	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
+	while (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
 	{
 		if (UnrealSharp::Dialogs::IsHeadless())
 		{
@@ -32,8 +32,10 @@ void FUnrealSharpCoreModule::StartupModule()
 			return;
 		}
 
-		StartupModule();
-		return;
+		if (IsEngineExitRequested())
+		{
+			return;
+		}
 	}
 #endif
 	
