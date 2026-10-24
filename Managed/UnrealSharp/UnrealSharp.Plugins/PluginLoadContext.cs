@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace UnrealSharp.Plugins;
@@ -35,21 +36,29 @@ public class PluginLoadContext : AssemblyLoadContext
         }
         else
         {
-            using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
-        
-            if (File.Exists(pdbPath))
+            if (!PluginLoader.EnableDynamicLoading)
             {
-                using FileStream pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                newAssembly = LoadFromStream(assemblyFile, pdbFile);
+                return Default.LoadFromAssemblyName(assemblyName);
             }
-            else
-            {
-                newAssembly = LoadFromAssemblyPath(assemblyPath);
-            }
+
+            newAssembly = LoadAssemblyFile(assemblyPath);
         }
 
         AssemblyCache.AddAssembly(newAssembly);
         return newAssembly;
+    }
+
+    [RequiresUnreferencedCode("Dynamically loaded plugins can depend on code removed from a trimmed runtime. Trimmed builds must publish their complete dependency graph and use the default load context.")]
+    private Assembly LoadAssemblyFile(string assemblyPath)
+    {
+        using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
+        if (File.Exists(pdbPath))
+        {
+            using FileStream pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return LoadFromStream(assemblyFile, pdbFile);
+        }
+
+        return LoadFromAssemblyPath(assemblyPath);
     }
 }

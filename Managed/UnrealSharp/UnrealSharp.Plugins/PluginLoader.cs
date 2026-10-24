@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using UnrealSharp.Engine.Core.Modules;
 
@@ -8,6 +9,12 @@ namespace UnrealSharp.Plugins;
 public static class PluginLoader
 {
 	private static readonly Dictionary<string, Plugin> Plugins = [];
+
+	[FeatureSwitchDefinition("UnrealSharp.EnableDynamicLoading")]
+	[FeatureGuard(typeof(RequiresUnreferencedCodeAttribute))]
+	[UnconditionalSuppressMessage("Trimming", "IL4000", Justification = "UnrealSharp.AOT.props substitutes this feature with false for trimmed publishes.")]
+	internal static bool EnableDynamicLoading =>
+		!AppContext.TryGetSwitch("UnrealSharp.EnableDynamicLoading", out bool enabled) || enabled;
 
 	public static Assembly? LoadPlugin(string assemblyPath, bool isCollectible)
 	{

@@ -66,6 +66,19 @@ public static class StringBuilderExtensions
 
         builder.StartModuleInitializer(registrarClassName);
 
+        if (type is UnrealClass unrealClass)
+        {
+            unrealClass.ExportInvokeDependencies(builder);
+        }
+        else if (type is UnrealScriptStruct)
+        {
+            builder.AppendLine($"[System.Diagnostics.CodeAnalysis.DynamicDependency(\"ToNative\", typeof({type.FieldName}))]");
+        }
+        else if (type is UnrealInterface)
+        {
+            builder.AppendLine($"[System.Diagnostics.CodeAnalysis.DynamicDependency(\"Wrap\", typeof({type.FieldName}))]");
+        }
+
         builder.AppendLine(
             $"public static void {registrationMethodName}() => " +
             $"RegisterManagedType(typeof({type.FieldName}), {jsonPropertyName}, {(byte)type.FieldType});");
