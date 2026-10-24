@@ -118,26 +118,15 @@ public static class ProjectUtilities
     public static FileReference GetUnrealSharpUPlugin(this BuildCommand command)
     {
         FileReference Project = command.GetUProjectFile();
-        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(Project);
-        
-        FileReference? UnrealSharpPlugin = null;
-        foreach (FileReference Plugin in FoundPlugins)
-        {
-            if (Plugin.GetFileName() != "UnrealSharp.uplugin")
-            {
-                continue;
-            }
-            
-            UnrealSharpPlugin = Plugin;
-            break;
-        }
-        
-        if (UnrealSharpPlugin == null)
+        ProjectDescriptor Descriptor = ProjectDescriptor.FromFile(Project);
+        Dictionary<string, PluginInfo> AvailablePlugins = ReadAvailablePlugins(Project, Descriptor);
+
+        if (!AvailablePlugins.TryGetValue("UnrealSharp", out PluginInfo? UnrealSharpPlugin))
         {
             throw new Exception("Failed to find UnrealSharp.uplugin in the project plugins folder. Make sure UnrealSharp is properly installed and added to your project.");
         }
         
-        return UnrealSharpPlugin;
+        return UnrealSharpPlugin.File;
     }
 
     public static FileReference GetUProjectFile(this BuildCommand command)
@@ -214,8 +203,26 @@ public static class ProjectUtilities
 
     private static Dictionary<string, PluginInfo> ReadAvailablePlugins(FileReference project, ProjectDescriptor descriptor)
     {
-        return Plugins.ToFilteredDictionary(
-                Plugins.ReadAvailablePlugins(Unreal.EngineDirectory, project.Directory, descriptor.AdditionalPluginDirectories))
+        Dictionary<string, PluginSet> AvailablePlugins = Plugins.ToFilteredDictionary(
+            Plugins.ReadAvailablePlugins(Unreal.EngineDirectory, project.Directory, descriptor.AdditionalPluginDirectories));
+
+        PluginReferenceDescriptor? Reference = descriptor.Plugins?.FirstOrDefault(reference =>
+            reference.Name.Equals("UnrealSharp", StringComparison.OrdinalIgnoreCase) &&
+            reference.bEnabled && reference.RequestedVersion.HasValue);
+        if (Reference != null && AvailablePlugins.TryGetValue(Reference.Name, out PluginSet? Versions))
+        {
+            PluginInfo? RequestedPlugin = Versions.KnownVersions.Find(plugin => plugin.Descriptor.Version == Reference.RequestedVersion!.Value);
+            if (RequestedPlugin != null)
+            {
+                Versions.ChoiceVersion = RequestedPlugin;
+            }
+            else
+            {
+                AvailablePlugins.Remove(Reference.Name);
+            }
+        }
+
+        return AvailablePlugins
             .ToDictionary(pair => pair.Key, pair => pair.Value.ChoiceVersion!, StringComparer.OrdinalIgnoreCase);
     }
 
