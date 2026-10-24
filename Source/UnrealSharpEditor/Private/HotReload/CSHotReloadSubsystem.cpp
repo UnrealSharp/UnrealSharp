@@ -46,7 +46,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 bool UCSHotReloadSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
-	return !FApp::IsUnattended() && !IsRunningCommandlet() && UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled();
+	return !IsRunningCommandlet() && UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled();
 }
 
 void UCSHotReloadSubsystem::Deinitialize()
@@ -116,11 +116,14 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	UE_LOGFMT(LogUnrealSharpEditor, Display, "Starting C# Hot Reload...");
 	
-	CurrentHotReloadStatus = Active;
+	CurrentHotReloadStatus = EHotReloadStatus::Active;
 	double StartTime = FPlatformTime::Seconds();
 
 	FScopedSlowTask Progress(4, LOCTEXT("HotReload", "Reloading C#..."));
-	Progress.MakeDialog(false, true);
+	if (!UnrealSharp::Dialogs::IsHeadless())
+	{
+		Progress.MakeDialog(false, true);
+	}
 	
 	TArray<UCSManagedAssembly*> AssembliesSortedByDependencies;
 	FCSAssemblyUtilities::SortAssembliesByDependencyOrder(PendingModifiedAssemblies, AssembliesSortedByDependencies);
@@ -128,7 +131,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	FString ExceptionMessage;
 	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
 	{
-		CurrentHotReloadStatus = FailedToCompile;
+		CurrentHotReloadStatus = EHotReloadStatus::FailedToCompile;
 		UnrealSharp::Dialogs::ShowError(FText::FromString(ExceptionMessage), LOCTEXT("CompilationFailedTitle", "C# Compilation Failed"));
 		return;
 	}
@@ -165,7 +168,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 	}
 	
-	CurrentHotReloadStatus = Inactive;
+	CurrentHotReloadStatus = EHotReloadStatus::Inactive;
 	bDetectedNewManagedType = false;
 	ReloadedTypes.Reset();
 	
@@ -281,9 +284,12 @@ void UCSHotReloadSubsystem::PauseHotReload(const FString& Reason)
 		return;
 	}
 	
-	FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
-	PauseNotification = FCSEditorUtilities::MakeNotification(UnrealSharp::Icons::GetUnrealSharpIcon(), NotificationFormat);
 	bIsHotReloadPaused = true;
+	if (!UnrealSharp::Dialogs::IsHeadless())
+	{
+		FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
+		PauseNotification = FCSEditorUtilities::MakeNotification(UnrealSharp::Icons::GetUnrealSharpIcon(), NotificationFormat);
+	}
 }
 
 void UCSHotReloadSubsystem::ResumeHotReload()
