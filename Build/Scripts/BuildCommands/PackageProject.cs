@@ -12,6 +12,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 
 [Help("Packages the UnrealSharp managed code into an Unreal Engine packaged build.")]
 [Help("ArchiveDirectory=<Path>", "REQUIRED. The base directory containing the packaged game.")]
+[Help("UETargetName=<Name>", "Optional. Resolve ArchiveDirectory using this Unreal build target's receipt.")]
 [Help("UETargetType=<TargetType>", "REQUIRED. The Unreal Engine target type (Editor, Game, Client, Server).")]
 [Help("UEBuildConfig=<Config>", "REQUIRED. The build configuration (Debug, Development, Shipping, Test).")]
 [Help("TargetPlatform=<Platform>", "Optional. Target platform. Defaults to Win64.")]
@@ -71,14 +72,30 @@ public class PackageProject : BuildCommand
         string? PlatformString = ParseOptionalStringParam("TargetPlatform");
         UnrealTargetPlatform TargetPlatform = string.IsNullOrEmpty(PlatformString) ? UnrealTargetPlatform.Win64 : UnrealTargetPlatform.Parse(PlatformString);
 
+        string? TargetName = ParseOptionalStringParam("UETargetName");
+
         string? ArchString = ParseOptionalStringParam("TargetArchitecture");
-        UnrealArch TargetArchitecture = string.IsNullOrEmpty(ArchString) ? UnrealArch.X64 : UnrealArch.Parse(ArchString);
+        UnrealArchitectures Architectures = !string.IsNullOrEmpty(ArchString)
+            ? UnrealArchitectures.FromString(ArchString, TargetPlatform)!
+            : !string.IsNullOrEmpty(TargetName)
+                ? UnrealArchitectureConfig.ForPlatform(TargetPlatform).ActiveArchitectures(this.GetUProjectFile(), TargetName)
+                : new UnrealArchitectures(UnrealArch.X64);
+        if (Architectures.Architectures.Count != 1)
+        {
+            throw new AutomationException("Managed packaging requires a single target architecture. Universal Mac archives are not supported.");
+        }
+        UnrealArch TargetArchitecture = Architectures.SingleArchitecture;
+
+        string ProjectDirectory = string.IsNullOrEmpty(TargetName)
+            ? ArchiveDirectory
+            : PackageArchiveUtilities.GetProjectDirectory(ArchiveDirectory, this.GetUProjectFile(), TargetName,
+                TargetType, TargetPlatform, TargetConfiguration, TargetArchitecture);
 
         bool NativeAot = ParseParam("NativeAOT");
 
         string[] UserParams = ParseParamValues("UserParams");
 
-        return new PackagingOptions(ArchiveDirectory, TargetType, TargetConfiguration, TargetPlatform, TargetArchitecture, NativeAot, UserParams);
+        return new PackagingOptions(ProjectDirectory, TargetType, TargetConfiguration, TargetPlatform, TargetArchitecture, NativeAot, UserParams);
     }
 
     private static void LogOptions(PackagingOptions options)

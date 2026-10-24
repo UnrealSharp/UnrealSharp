@@ -6,6 +6,7 @@
 #include "CSInstallationUtilities.h"
 #include "CSStyle.h"
 #include "DesktopPlatformModule.h"
+#include "IDesktopPlatform.h"
 #include "IPluginBrowser.h"
 #include "ISettingsModule.h"
 #include "LevelEditor.h"
@@ -17,6 +18,7 @@
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
+#include "Misc/DataDrivenPlatformInfoRegistry.h"
 #include "Misc/LowLevelTestAdapter.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Plugins/CSPluginTemplateDescription.h"
@@ -468,23 +470,45 @@ void FUnrealSharpEditorModule::PackageProject()
 		return;
 	}
 
-	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + TEXT(".exe");
-	if (!FPaths::FileExists(ExecutablePath))
+	const UProjectPackagingSettings* PlatformsPackagingSettings = GetDefault<UProjectPackagingSettings>();
+	const UPlatformsMenuSettings* PlatformsMenuSettings = GetDefault<UPlatformsMenuSettings>();
+	const FString& BuildTargetName = PlatformsMenuSettings->PackageBuildTarget.IsEmpty()
+		? PlatformsPackagingSettings->BuildTarget : PlatformsMenuSettings->PackageBuildTarget;
+	bool bIsProjectBuildTarget = false;
+	const FTargetInfo* BuildTargetInfo = PlatformsMenuSettings->GetBuildTargetInfo(BuildTargetName, bIsProjectBuildTarget);
+	if (!BuildTargetInfo)
 	{
-		FString DialogText = FString::Printf(TEXT("The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."), FApp::GetProjectName(), *ArchiveDirectory);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("PackagingTargetNotFound", "The build target for packaging could not be found. Please select a valid build target in the Platforms menu or Project Settings."));
 		return;
 	}
-	
-	const UProjectPackagingSettings* PlatformsPackagingSettings = GetDefault<UProjectPackagingSettings>();
-	
+
+	const FName TargetPlatform = PlatformsMenuSettings->PackagePlatform.IsNone()
+		? FName(FPlatformProperties::IniPlatformName()) : PlatformsMenuSettings->PackagePlatform;
+	const FString UBTPlatform = FDataDrivenPlatformInfoRegistry::GetPlatformInfo(TargetPlatform).UBTPlatformString;
+	if ((TargetPlatform != TEXT("Windows") && TargetPlatform != TEXT("Mac")) || UBTPlatform.IsEmpty())
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("UnsupportedPackagingPlatform", "Managed packaging from this menu supports Windows and Mac archives."));
+		return;
+	}
 	TMap<FString, FString> Arguments;
-	Arguments.Add(TEXT("ArchiveDirectory"), UnrealSharp::Paths::MakeQuotedPath(FPaths::Combine(ArchiveDirectory, FApp::GetProjectName())));
+	Arguments.Add(TEXT("ArchiveDirectory"), UnrealSharp::Paths::MakeQuotedPath(ArchiveDirectory));
+	Arguments.Add(TEXT("UETargetName"), UnrealSharp::Paths::MakeQuotedPath(BuildTargetInfo->Name));
+	Arguments.Add(TEXT("TargetPlatform"), UBTPlatform);
+	const FString Architecture = PlatformsMenuSettings->GetArchitectureForPlatform(TargetPlatform);
+	if (!Architecture.IsEmpty())
+	{
+		Arguments.Add(TEXT("TargetArchitecture"), Architecture);
+	}
 	
-	int32 BuildConfigValue = static_cast<int32>(PlatformsPackagingSettings->BuildConfiguration);
+	EProjectPackagingBuildConfigurations BuildConfiguration = PlatformsMenuSettings->GetPackageBuildConfiguration();
+	if (BuildConfiguration == EProjectPackagingBuildConfigurations::PPBC_MAX)
+	{
+		BuildConfiguration = PlatformsPackagingSettings->BuildConfiguration;
+	}
+	int32 BuildConfigValue = static_cast<int32>(BuildConfiguration);
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
-	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
-	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
+	Arguments.Add(TEXT("UEBuildConfig"), LexToString(ConfigurationInfo.Configuration));
+	Arguments.Add(TEXT("UETargetType"), LexToString(BuildTargetInfo->Type));
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
