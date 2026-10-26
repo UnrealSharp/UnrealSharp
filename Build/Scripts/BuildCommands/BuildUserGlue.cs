@@ -50,6 +50,7 @@ public class BuildUserGlue : BuildCommand
             return;
         }
 
+        CsProjectUtilities.UpdateUnrealSharpImports(command, GlueProjectPaths);
         GenerateSolution(command, SolutionDirectory, GlueProjectPaths);
         BuildSolution(command, SolutionDirectory, outputDirectory, buildConfig, GlueProjectPaths, extraArguments);
         CreateSolutionStamp(SolutionDirectory, GlueProjectPaths);
