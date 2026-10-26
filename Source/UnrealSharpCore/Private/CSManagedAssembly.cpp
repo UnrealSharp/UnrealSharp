@@ -246,6 +246,13 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::CreateManagedObjectFromNative);
 
+	// The managed type can be missing if it was removed from C# and hot reloaded while the UClass is still alive.
+	if (!TypeGCHandle.IsValid() || TypeGCHandle->IsNull())
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning, "No managed type found for {0}. Was the C# type removed?", Object->GetName());
+		return nullptr;
+	}
+
 	TCHAR* Error = nullptr;
 	FGCHandle NewObjectHandle = GetManagedCallbacks().
 		CreateNewManagedObject(Object, TypeGCHandle->GetPointer(), &Error);
