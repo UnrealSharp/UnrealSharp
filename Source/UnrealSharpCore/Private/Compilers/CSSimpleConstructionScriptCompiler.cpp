@@ -318,7 +318,13 @@ void FCSSimpleConstructionScriptCompiler::UpdateChildren(UClass* Outer, USCS_Nod
 			continue;
 		}
 
-		UActorComponent* Template = Blueprint->InheritableComponentHandler->GetOverridenComponentTemplate(ComponentKey);
+		UInheritableComponentHandler* ComponentHandler = Blueprint->InheritableComponentHandler;
+		if (!IsValid(ComponentHandler))
+		{
+			continue;
+		}
+
+		UActorComponent* Template = ComponentHandler->GetOverridenComponentTemplate(ComponentKey);
 			
 		if (!IsValid(Template))
 		{
@@ -330,7 +336,7 @@ void FCSSimpleConstructionScriptCompiler::UpdateChildren(UClass* Outer, USCS_Nod
 		Template->RemoveFromRoot();
 		Template->MarkAsGarbage();
 		
-		Blueprint->InheritableComponentHandler->RemoveOverridenComponentTemplate(ComponentKey);
+		ComponentHandler->RemoveOverridenComponentTemplate(ComponentKey);
 	}
 #endif
 }
