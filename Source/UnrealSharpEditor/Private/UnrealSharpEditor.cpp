@@ -2,6 +2,7 @@
 #include "AssetToolsModule.h"
 #include "CSBuildActionUtilities.h"
 #include "CSBuildUtilties.h"
+#include "CSDialogUtilities.h"
 #include "CSEditorCommands.h"
 #include "CSInstallationUtilities.h"
 #include "CSStyle.h"
@@ -483,7 +484,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	
 	int32 BuildConfigValue = static_cast<int32>(PlatformsPackagingSettings->BuildConfiguration);
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
-	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
+	Arguments.Add(TEXT("UEBuildConfig"), LexToString(ConfigurationInfo.Configuration));
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
@@ -505,7 +506,7 @@ void FUnrealSharpEditorModule::OpenSolution()
 		return;
 	}
 	
-	FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Opening C# Project Failed")));
+	UnrealSharp::Dialogs::ShowError(FText::FromString(ExceptionMessage), LOCTEXT("OpenSolutionFailedTitle", "Opening C# Project Failed"));
 };
 
 FString FUnrealSharpEditorModule::SelectArchiveDirectory()
@@ -623,7 +624,7 @@ void FUnrealSharpEditorModule::OpenNewProjectDialog()
 void FUnrealSharpEditorModule::SuggestProjectSetup()
 {
 	FString DialogText = TEXT("No C# projects were found. Would you like to create a new C# project?");
-	EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(DialogText));
+	EAppReturnType::Type Result = UnrealSharp::Dialogs::OpenMessageDialog(EAppMsgType::YesNo, EAppReturnType::No, FText::FromString(DialogText));
 
 	if (Result == EAppReturnType::No)
 	{
