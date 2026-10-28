@@ -50,5 +50,7 @@
     </Reference>
 
     <Compile Include="..\..\Managed\Shared\*.cs" Link="..\..\Managed\Shared\*.cs" />
+    <Compile Remove="Staging\*.cs" Condition="!Exists('$(EngineDir)\Source\Programs\AutomationTool\AutomationUtils\CustomStagingHandler.cs')" />
+    <Compile Remove="BuildCommands\BuildCookRunUnrealSharp.cs" Condition="Exists('$(EngineDir)\Source\Programs\AutomationTool\AutomationUtils\CustomStagingHandler.cs')" />
   </ItemGroup>
 </Project>
