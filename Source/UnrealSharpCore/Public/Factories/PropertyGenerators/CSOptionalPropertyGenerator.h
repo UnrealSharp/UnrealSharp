@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
+#include "Runtime/Launch/Resources/Version.h"
+
 #include "CoreMinimal.h"
 #include "CSPropertyGenerator.h"
 #include "UnrealSharpUtils.h"

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "CoreTypes.h"
+
 #if !defined(_WIN32)
 #define __stdcall
 #endif

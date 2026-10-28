@@ -1,4 +1,5 @@
 #include "CSBindsRegistry.h"
+#include "Logging/LogMacros.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FMsg)
 {

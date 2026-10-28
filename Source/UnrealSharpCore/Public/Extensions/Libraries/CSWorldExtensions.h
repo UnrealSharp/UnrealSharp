@@ -1,5 +1,9 @@
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Engine/EngineTypes.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
+
 #include "CSWorldExtensions.generated.h"
 
 USTRUCT()

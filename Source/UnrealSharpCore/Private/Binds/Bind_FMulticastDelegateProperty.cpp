@@ -1,4 +1,7 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include "UObject/UnrealType.h"
+#include "UObject/ScriptDelegates.h"
 #include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 

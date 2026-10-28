@@ -7,6 +7,8 @@
 #include "CSProjectUtilities.h"
 #include "UnrealSharpUtils.h"
 #include "HAL/FileManager.h"
+#include "HAL/IConsoleManager.h"
+#include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 
 static TAutoConsoleVariable<int32> CVarSimulateNoDotNetSDK(

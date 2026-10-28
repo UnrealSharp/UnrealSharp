@@ -1,4 +1,12 @@
 ﻿#include "CSBindsRegistry.h"
+#include "UObject/WeakObjectPtr.h"
+#include "UObject/ScriptDelegates.h"
+#include "UObject/Object.h"
+#include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MINOR_VERSION >= 6
+#include "UObject/ScriptDelegateFwd.h"
+#endif
 
 DECLARE_UNREALSHARP_BINDER(Bind_FScriptDelegate)
 {
