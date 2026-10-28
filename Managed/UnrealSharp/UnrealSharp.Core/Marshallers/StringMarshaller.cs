@@ -30,7 +30,10 @@ public static class StringMarshaller
         unsafe
         {
             UnmanagedArray unrealString = BlittableMarshaller<UnmanagedArray>.FromNative(nativeBuffer, arrayIndex);
-            return unrealString.Data == IntPtr.Zero ? string.Empty : new string((char*) unrealString.Data);
+            // Empty FStrings can retain an allocation; ArrayNum includes the terminator.
+            return unrealString.Data == IntPtr.Zero || unrealString.ArrayNum <= 1
+                ? string.Empty
+                : new string((char*) unrealString.Data, 0, unrealString.ArrayNum - 1);
         }
     }
     
