@@ -1043,13 +1043,13 @@ public class FunctionExporter
             
             builder.AppendLine();
             
-            ForEachParameter((translator, parameter) =>
+            // Destroy every parameter that was initialized above, including out params and the return value,
+            // after their managed copies have been read back.
+            if (HasCustomStructParamSupport || !BlittableFunction)
             {
-                if (!parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.OutParm))
-                {
-                    translator.ExportCleanupMarshallingBuffer(builder, parameter, parameter.SourceName);
-                }
-            });
+                string initializedFunctionIntPtr = HasCustomStructParamSupport ? "Specialization" : nativeFunctionIntPtr;
+                builder.AppendLine($"{ExporterCallbacks.Bind_UFunction}.CallDestroyFunctionParams({initializedFunctionIntPtr}, paramsBuffer);");
+            }
             
             ExportReturnStatement(builder);
         }

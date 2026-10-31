@@ -103,9 +103,22 @@ DECLARE_UNREALSHARP_BINDER(Bind_UFunction)
 			PropIt->InitializeValue_InContainer(Params);
 		}
 	}
+
+	void DestroyFunctionParams(UFunction* NativeFunction, void* Params)
+	{
+		check(NativeFunction && Params);
+		// Match InitializeFunctionParams: Blueprint-local properties can follow the
+		// parameters and must never be accessed through a ParmsSize allocation.
+		uint8 ParamsLeft = NativeFunction->NumParms;
+		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt && ParamsLeft; ++PropIt, --ParamsLeft)
+		{
+			PropIt->DestroyValue_InContainer(Params);
+		}
+	}
 	
 	BIND_UNREALSHARP_FUNCTION(GetNativeFunctionParamsSize)
 	BIND_UNREALSHARP_FUNCTION(CreateNativeFunctionCustomStructSpecialization)
 	BIND_UNREALSHARP_FUNCTION(InitializeFunctionParams)
+	BIND_UNREALSHARP_FUNCTION(DestroyFunctionParams)
 }
 
