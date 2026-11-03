@@ -5,6 +5,9 @@ namespace UnrealSharp.CoreUObject;
 
 public partial record struct FSoftObjectPath
 {
+    internal FTopLevelAssetPath AssetPathValue => AssetPath;
+    internal UnrealSharp.Core.FUtf8String SubPathValue => SubPathString;
+
     public FSoftObjectPath(FTopLevelAssetPath assetPath) : this()
     {
         AssetPath = assetPath;
