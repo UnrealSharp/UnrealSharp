@@ -8,6 +8,10 @@
 #include "UnrealSharpUtils.h"
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
+#if WITH_DEV_AUTOMATION_TESTS && PLATFORM_WINDOWS
+#include "Misc/AutomationTest.h"
+#include "Misc/Guid.h"
+#endif
 
 static TAutoConsoleVariable<int32> CVarSimulateNoDotNetSDK(
 	TEXT("UnrealSharp.SimulateNoDotNetSDK"),
@@ -37,6 +41,64 @@ const TCHAR* UnrealSharp::DotNetUtilities::GetCoreClrLibraryName()
 #endif
 }
 
+namespace
+{
+// A PATH entry can end at the dotnet directory without a trailing separator.
+// Check for the executable itself instead of matching a path substring.
+FString TryGetDotNetDirectory(const FString& Candidate)
+{
+	if (Candidate.IsEmpty())
+	{
+		return FString();
+	}
+
+#if defined(_WIN32)
+	const FString DotNetExecutable = FPaths::Combine(Candidate, TEXT("dotnet.exe"));
+#else
+	const FString DotNetExecutable = FPaths::Combine(Candidate, TEXT("dotnet"));
+#endif
+
+	return FPaths::FileExists(DotNetExecutable) ? Candidate : FString();
+}
+
+FString FindDotNetDirectory(
+	const FString& DotNetRoot,
+	const FString& PathVariable,
+	const FString& ProgramFiles)
+{
+	if (!DotNetRoot.IsEmpty())
+	{
+		const FString Directory = TryGetDotNetDirectory(DotNetRoot);
+		if (!Directory.IsEmpty())
+		{
+			return Directory;
+		}
+	}
+
+	TArray<FString> Paths;
+	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
+	for (const FString& Path : Paths)
+	{
+		const FString Directory = TryGetDotNetDirectory(Path);
+		if (!Directory.IsEmpty())
+		{
+			return Directory;
+		}
+	}
+
+#if defined(_WIN32)
+	if (!ProgramFiles.IsEmpty())
+	{
+		return TryGetDotNetDirectory(FPaths::Combine(ProgramFiles, TEXT("dotnet")));
+	}
+#else
+	(void)ProgramFiles;
+#endif
+
+	return FString();
+}
+}
+
 FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 {
 #if WITH_EDITOR
@@ -46,54 +108,91 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 	}
 #endif
 
-#if defined(__APPLE__)
-	constexpr const TCHAR* DefaultDotNetPath = TEXT("/usr/local/share/dotnet/");
-	if (FPaths::DirectoryExists(DefaultDotNetPath))
+	const FString DotNetRoot = FPlatformMisc::GetEnvironmentVariable(TEXT("DOTNET_ROOT"));
+	const FString DotNetRootDirectory = TryGetDotNetDirectory(DotNetRoot);
+	if (!DotNetRootDirectory.IsEmpty())
 	{
-		return DefaultDotNetPath;
+		return DotNetRootDirectory;
+	}
+
+#if defined(__APPLE__)
+	const FString DefaultDotNetDirectory = TryGetDotNetDirectory(TEXT("/usr/local/share/dotnet/"));
+	if (!DefaultDotNetDirectory.IsEmpty())
+	{
+		return DefaultDotNetDirectory;
 	}
 #endif
 
 	const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
-
-	TArray<FString> Paths;
-	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
-
 #if defined(_WIN32)
-	const FString PathMarker = TEXT("Program Files\\dotnet\\");
+	const FString ProgramFiles = FPlatformMisc::GetEnvironmentVariable(TEXT("ProgramFiles"));
 #else
-	const FString PathMarker = TEXT("dotnet");
+	const FString ProgramFiles;
 #endif
 
-	FString DotNetPathFromEnv;
-	for (const FString& Path : Paths)
-	{
-		if (!Path.Contains(PathMarker))
-		{
-			continue;
-		}
-
-		if (!FPaths::DirectoryExists(Path))
-		{
-			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Found path to DotNet, but the directory doesn't exist: {0}", Path);
-			break;
-		}
-
-		DotNetPathFromEnv = Path;
-		break;
-	}
-
-	return DotNetPathFromEnv;
+	return FindDotNetDirectory(FString(), PathVariable, ProgramFiles);
 }
 
 FString UnrealSharp::DotNetUtilities::GetDotNetExecutablePath()
 {
 #if defined(_WIN32)
-	return GetDotNetDirectory() + TEXT("dotnet.exe");
+	return FPaths::Combine(GetDotNetDirectory(), TEXT("dotnet.exe"));
 #else
-	return GetDotNetDirectory() + TEXT("dotnet");
+	return FPaths::Combine(GetDotNetDirectory(), TEXT("dotnet"));
 #endif
 }
+
+#if WITH_DEV_AUTOMATION_TESTS && PLATFORM_WINDOWS
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDotNetDirectoryResolutionTest, "UnrealSharp.Utilities.DotNetDirectoryResolution", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FDotNetDirectoryResolutionTest::RunTest(const FString& Parameters)
+{
+	(void)Parameters;
+
+	const FString TestRoot = FPaths::Combine(
+		FPaths::ProjectIntermediateDir(),
+		TEXT("Automation"),
+		TEXT("DotNetDirectoryTest"),
+		FGuid::NewGuid().ToString(EGuidFormats::Digits));
+	const FString DotNetRoot = FPaths::Combine(TestRoot, TEXT("custom-root"));
+	const FString PathInstall = FPaths::Combine(TestRoot, TEXT("path-install"));
+	const FString ProgramFiles = FPaths::Combine(TestRoot, TEXT("Program Files"));
+	const FString FallbackInstall = FPaths::Combine(ProgramFiles, TEXT("dotnet"));
+
+	const auto CreateFakeInstall = [](const FString& Directory)
+	{
+		IFileManager::Get().MakeDirectory(*Directory, true);
+		return FFileHelper::SaveStringToFile(TEXT("test executable"), *FPaths::Combine(Directory, TEXT("dotnet.exe")));
+	};
+
+	TestTrue(TEXT("Create fake DOTNET_ROOT installation"), CreateFakeInstall(DotNetRoot));
+	TestTrue(TEXT("Create fake PATH installation"), CreateFakeInstall(PathInstall));
+	TestTrue(TEXT("Create fake Program Files installation"), CreateFakeInstall(FallbackInstall));
+
+	TestEqual(
+		TEXT("DOTNET_ROOT is preferred"),
+		FindDotNetDirectory(DotNetRoot, PathInstall, ProgramFiles),
+		DotNetRoot);
+	TestEqual(
+		TEXT("PATH entries work without a trailing separator or Program Files path"),
+		FindDotNetDirectory(FString(), PathInstall, FString()),
+		PathInstall);
+	TestEqual(
+		TEXT("Program Files is used as a fallback"),
+		FindDotNetDirectory(FString(), FString(), ProgramFiles),
+		FallbackInstall);
+	TestEqual(
+		TEXT("An invalid DOTNET_ROOT falls through to PATH"),
+		FindDotNetDirectory(FPaths::Combine(TestRoot, TEXT("missing-root")), PathInstall, ProgramFiles),
+		PathInstall);
+	TestTrue(
+		TEXT("Directories without dotnet.exe are rejected"),
+		FindDotNetDirectory(FString(), TestRoot, FString()).IsEmpty());
+
+	IFileManager::Get().DeleteDirectory(*TestRoot, false, true);
+	return true;
+}
+#endif
 
 FString UnrealSharp::DotNetUtilities::GetLatestHostFxrPath(const FString& DotNetRoot)
 {
