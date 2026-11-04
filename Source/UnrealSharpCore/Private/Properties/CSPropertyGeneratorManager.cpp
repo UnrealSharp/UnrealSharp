@@ -99,6 +99,7 @@ FCSPropertyGeneratorManager::FCSPropertyGeneratorManager()
 
 	AddPropertyInitializer<FNameProperty>(PropertyInitializers);
 	AddPropertyInitializer<FStrProperty>(PropertyInitializers);
+	AddPropertyInitializer<FUtf8StrProperty>(PropertyInitializers);
 	AddPropertyInitializer<FTextProperty>(PropertyInitializers);
 }
 
