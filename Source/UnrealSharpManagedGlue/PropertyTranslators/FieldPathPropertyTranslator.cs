@@ -8,6 +8,8 @@ public class FieldPathPropertyTranslator : SimpleTypePropertyTranslator
     {
     }
 
+    public override bool IsBlittable => false;
+
     public override bool CanSupportGenericType(UhtProperty property)
     {
         return false;
