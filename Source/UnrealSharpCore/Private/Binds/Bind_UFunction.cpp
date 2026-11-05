@@ -52,10 +52,26 @@ DECLARE_UNREALSHARP_BINDER(Bind_UFunction)
 					{
 						Flags &= ~(CPF_IsPlainOldData);
 					}
+					if(!Capabilities.HasDestructor)
+					{
+						Flags |= CPF_NoDestructor;
+					}
+					else
+					{
+						Flags &= ~(CPF_NoDestructor);
+					}
+					if(Capabilities.HasGetTypeHash)
+					{
+						Flags |= CPF_HasGetValueTypeHash;
+					}
+					else
+					{
+						Flags &= ~(CPF_HasGetValueTypeHash);
+					}
 				}
 				else
 				{
-					Flags &= ~(CPF_ZeroConstructor | CPF_IsPlainOldData);
+					Flags &= ~(CPF_ZeroConstructor | CPF_IsPlainOldData | CPF_NoDestructor | CPF_HasGetValueTypeHash);
 				}
 				CustomStructParam->PropertyFlags = Flags;
 				OutProperty = CastField<FProperty>(CustomStructParam);
