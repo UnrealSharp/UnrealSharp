@@ -6,9 +6,9 @@ public class UnrealSharpEditor : ModuleRules
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        // Match the Automation project's capability check, including custom engine branches.
-        string StagingHandler = System.IO.Path.Combine(EngineDirectory, "Source", "Programs", "AutomationTool", "AutomationUtils", "CustomStagingHandler.cs");
-        PublicDefinitions.Add("UNREALSHARP_WITH_CUSTOM_STAGING=" + (System.IO.File.Exists(StagingHandler) ? "1" : "0"));
+        bool bSupportsCustomStaging = Target.Version.MajorVersion > 5
+            || (Target.Version.MajorVersion == 5 && Target.Version.MinorVersion >= 7);
+        PublicDefinitions.Add("UNREALSHARP_WITH_CUSTOM_STAGING=" + (bSupportsCustomStaging ? "1" : "0"));
 
         PublicDependencyModuleNames.AddRange(
             new string[]
