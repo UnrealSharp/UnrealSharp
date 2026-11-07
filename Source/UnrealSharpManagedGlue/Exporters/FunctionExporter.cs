@@ -978,6 +978,13 @@ public class FunctionExporter
                     !BlittableFunction);
             }
 
+            bool initializedParams = HasCustomStructParamSupport || !BlittableFunction;
+            if (initializedParams)
+            {
+                builder.AppendLine("try");
+                builder.OpenBrace();
+            }
+
             ForEachParameter((translator, parameter) =>
             {
                 if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
@@ -1050,15 +1057,18 @@ public class FunctionExporter
             
             builder.AppendLine();
             
-            ForEachParameter((translator, parameter) =>
-            {
-                if (!parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.OutParm))
-                {
-                    translator.ExportCleanupMarshallingBuffer(builder, parameter, parameter.SourceName);
-                }
-            });
-            
             ExportReturnStatement(builder);
+
+            // Release initialized parameters on both normal and exceptional exits, after copying outputs.
+            if (initializedParams)
+            {
+                builder.CloseBrace();
+                builder.AppendLine("finally");
+                builder.OpenBrace();
+                string initializedFunctionIntPtr = HasCustomStructParamSupport ? "Specialization" : nativeFunctionIntPtr;
+                builder.AppendLine($"{ExporterCallbacks.Bind_UFunction}.CallDestroyFunctionParams({initializedFunctionIntPtr}, paramsBuffer);");
+                builder.CloseBrace();
+            }
         }
         builder.EndUnsafeBlock();
     }

@@ -45,4 +45,5 @@ public enum PropertyType : byte
     String,
     Name,
     Text,
+    Utf8String,
 };

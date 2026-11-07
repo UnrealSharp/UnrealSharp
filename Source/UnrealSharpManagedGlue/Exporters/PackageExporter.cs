@@ -19,6 +19,10 @@ public static class PackageExporter
         }
         
         TaskManager.WaitForTasks();
+        if (GeneratorStatics.Factory.Session.HasErrors)
+        {
+            throw new InvalidOperationException("UnrealSharp export tasks failed.");
+        }
     }
     
     private static void ExportPackage(UhtPackage package)
