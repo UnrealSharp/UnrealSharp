@@ -32,7 +32,7 @@ void FUnrealSharpCoreModule::StartupModule()
 			return;
 		}
 
-		StartupModule();
+		UE_LOGFMT(LogUnrealSharp, Error, "UnrealSharp startup stopped. Fix the errors above and restart the editor.");
 		return;
 	}
 #endif
