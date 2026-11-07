@@ -85,6 +85,7 @@ public static class PropertyTranslatorManager
         
         AddPropertyTranslator(typeof(UhtBoolProperty), new BoolPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStrProperty), new StringPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtUtf8StrProperty), new Utf8StringPropertyTranslator());
         AddPropertyTranslator(typeof(UhtNameProperty), new NamePropertyTranslator());
         AddPropertyTranslator(typeof(UhtTextProperty), new TextPropertyTranslator());
         
