@@ -15,7 +15,15 @@ public static class PropertyTranslatorManager
     private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
     public static SpecialTypeInfo SpecialTypeInfo { get; } = new();
     
-    static PropertyTranslatorManager()
+    public static void Reset()
+    {
+        RegisteredTranslators.Clear();
+        SpecialTypeInfo.Structs.SkippedTypes.Clear();
+        SpecialTypeInfo.Structs.BlittableTypes.Clear();
+        SpecialTypeInfo.Structs.NativelyCopyableTypes.Clear();
+    }
+
+    public static void Initialize()
     {
         string? projectDirectory = GeneratorStatics.Factory.Session.ProjectDirectory;
         string configDirectory = Path.Combine(projectDirectory!, "Config");
