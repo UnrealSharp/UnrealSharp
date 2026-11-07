@@ -5,7 +5,15 @@ namespace UnrealSharp.CoreUObject;
 
 public partial record struct FSoftObjectPath
 {
-    public FSoftObjectPath(string packageName, string assetName)
+    internal FTopLevelAssetPath AssetPathValue => AssetPath;
+    internal UnrealSharp.Core.FUtf8String SubPathValue => SubPathString;
+
+    public FSoftObjectPath(FTopLevelAssetPath assetPath) : this()
+    {
+        AssetPath = assetPath;
+    }
+
+    public FSoftObjectPath(string packageName, string assetName) : this()
     {
         AssetPath = new FTopLevelAssetPath(packageName, assetName);
     }
@@ -18,7 +26,10 @@ public partial record struct FSoftObjectPath
 
     public override string ToString()
     {
-        return $"{AssetPath.PackageName}.{AssetPath.AssetName}";
+        string path = AssetPath.Null ? string.Empty
+            : AssetPath.AssetName.IsNone ? AssetPath.PackageName.ToString()
+            : $"{AssetPath.PackageName}.{AssetPath.AssetName}";
+        return SubPathString.IsEmpty ? path : $"{path}:{SubPathString}";
     }
 
     public override int GetHashCode()

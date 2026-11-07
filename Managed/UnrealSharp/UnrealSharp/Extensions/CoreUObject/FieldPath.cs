@@ -20,27 +20,75 @@ public struct FFieldPathUnsafe
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct FFieldPath : IEquatable<FFieldPath>
+public unsafe struct FFieldPath : IEquatable<FFieldPath>
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     internal FFieldPathUnsafe PathUnsafe;
+    // Managed copies share this immutable snapshot, never the native array allocation.
+    internal readonly FName[]? Path;
 
-    public bool IsValid => Bind_FFieldPath.CallIsValid(ref PathUnsafe).ToManagedBool();
-    public bool IsStale => Bind_FFieldPath.CallIsStale(ref PathUnsafe).ToManagedBool();
+    public bool IsValid
+    {
+        get
+        {
+            fixed (FName* path = Path)
+            {
+                FFieldPathUnsafe view = GetNativeView(path);
+                bool result = Bind_FFieldPath.CallIsValid(ref view).ToManagedBool();
+                UpdateCache(view);
+                return result;
+            }
+        }
+    }
+
+    public bool IsStale
+    {
+        get
+        {
+            fixed (FName* path = Path)
+            {
+                FFieldPathUnsafe view = GetNativeView(path);
+                return Bind_FFieldPath.CallIsStale(ref view).ToManagedBool();
+            }
+        }
+    }
 
     public FFieldPath(FFieldPathUnsafe pathUnsafe)
     {
+        Path = new ReadOnlySpan<FName>((void*)pathUnsafe.Path.Data, pathUnsafe.Path.ArrayNum).ToArray();
         PathUnsafe = pathUnsafe;
+        PathUnsafe.Path = default;
+    }
+
+    internal FFieldPathUnsafe GetNativeView(FName* path)
+    {
+        // The caller pins Path; this borrowed view must not be destroyed by native code.
+        FFieldPathUnsafe view = PathUnsafe;
+        view.Path = new UnmanagedArray
+        {
+            Data = (IntPtr)path,
+            ArrayNum = Path?.Length ?? 0,
+            ArrayMax = Path?.Length ?? 0
+        };
+        return view;
+    }
+
+    private void UpdateCache(FFieldPathUnsafe view)
+    {
+        PathUnsafe = view;
+        PathUnsafe.Path = default;
     }
 
     public override string ToString()
     {
-        unsafe
+        fixed (FName* path = Path)
         {
+            FFieldPathUnsafe view = GetNativeView(path);
             UnmanagedArray buffer = new();
             try
             {
-                Bind_FFieldPath.CallFieldPathToString(ref PathUnsafe, ref buffer);
+                Bind_FFieldPath.CallFieldPathToString(ref view, ref buffer);
+                UpdateCache(view);
                 return new string((char*)buffer.Data);
             }
             finally
@@ -52,7 +100,13 @@ public struct FFieldPath : IEquatable<FFieldPath>
 
     public bool Equals(FFieldPath other)
     {
-        return Bind_FFieldPath.CallFieldPathsEqual(ref PathUnsafe, ref other.PathUnsafe).ToManagedBool();
+        fixed (FName* path = Path)
+        fixed (FName* otherPath = other.Path)
+        {
+            FFieldPathUnsafe view = GetNativeView(path);
+            FFieldPathUnsafe otherView = other.GetNativeView(otherPath);
+            return Bind_FFieldPath.CallFieldPathsEqual(ref view, ref otherView).ToManagedBool();
+        }
     }
 
     public override bool Equals(object? obj)
@@ -72,15 +126,23 @@ public struct FFieldPath : IEquatable<FFieldPath>
 
     public override int GetHashCode()
     {
-        return Bind_FFieldPath.CallGetFieldPathHashCode(ref PathUnsafe);
+        fixed (FName* path = Path)
+        {
+            FFieldPathUnsafe view = GetNativeView(path);
+            return Bind_FFieldPath.CallGetFieldPathHashCode(ref view);
+        }
     }
 }
 
-public static class FieldPathMarshaller
+public static unsafe class FieldPathMarshaller
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, FFieldPath obj)
     {
-        BlittableMarshaller<FFieldPathUnsafe>.ToNative(nativeBuffer, arrayIndex, obj.PathUnsafe);
+        fixed (FName* path = obj.Path)
+        {
+            FFieldPathUnsafe view = obj.GetNativeView(path);
+            Bind_FFieldPath.CallAssign(nativeBuffer, arrayIndex, ref view);
+        }
     }
 
     public static FFieldPath FromNative(IntPtr nativeBuffer, int arrayIndex)

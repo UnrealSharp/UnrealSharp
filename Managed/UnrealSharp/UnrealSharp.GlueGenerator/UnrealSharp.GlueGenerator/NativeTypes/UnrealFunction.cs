@@ -53,8 +53,11 @@ public record UnrealFunction : UnrealFunctionBase
 
     public void ExportWrapperMethod(GeneratorStringBuilder builder, string modifiers)
     {
+        // Interface declarations provide the parameter layout, but the implementation
+        // UFunction belongs to the object's class even for non-event functions.
+        bool resolveOnInstance = IsEvent || Outer is UnrealInterface;
         string instanceFunctionName;
-        if (IsEvent)
+        if (resolveOnInstance)
         {
             instanceFunctionName = $"{FieldName.SourceName}_InstanceFunction";
 
@@ -73,7 +76,7 @@ public record UnrealFunction : UnrealFunctionBase
             $"{Accessibility.AccessibilityToString()}{modifiers}{ReturnType.ManagedTypeWithNullability} {FieldName.SourceName}({string.Join(", ", Properties.Select(p => p.GetParameterDeclaration()))})");
         builder.OpenBrace();
 
-        if (FunctionFlags.HasFlag(EFunctionFlags.Event))
+        if (resolveOnInstance)
         {
             builder.AppendLine($"if ({instanceFunctionName} == IntPtr.Zero)");
             builder.OpenBrace();

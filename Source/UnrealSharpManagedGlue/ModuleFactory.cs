@@ -11,15 +11,9 @@ public static class ModuleFactory
 {
 	const string CompileIncludeFolderVerb = "CompileIncludeFolder";
 	
-	private static readonly Dictionary<string, List<string>> ModuleDependencies;
-
-	static ModuleFactory()
-	{
-		ModuleDependencies = JsonUtilities.DeserializeObjectFromJson<Dictionary<string, List<string>>>(nameof(ModuleDependencies)) ?? new Dictionary<string, List<string>>();
-	}
-
 	public static void SyncModuleProjects()
 	{
+		Dictionary<string, List<string>> ModuleDependencies = JsonUtilities.DeserializeObjectFromJson<Dictionary<string, List<string>>>(nameof(ModuleDependencies)) ?? new Dictionary<string, List<string>>();
 		bool anyProjectChanges = false;
 		bool anyGlueDirty = false;
 
