@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace UnrealSharp.Automation.Utilities;
 
@@ -58,9 +59,9 @@ public static class DotNetUtilities
 			if (!string.IsNullOrEmpty(DotnetRoot))
 			{
 				string Candidate = Path.Combine(DotnetRoot, DotnetExe);
-				if (File.Exists(Candidate) && !IsUnrealBundledDotNet(Candidate))
+				if (TryResolveSdkHost(Candidate, out string? Resolved))
 				{
-					_cachedExecutable = Candidate;
+					_cachedExecutable = Resolved;
 					return _cachedExecutable;
 				}
 			}
@@ -79,12 +80,12 @@ public static class DotNetUtilities
 
 					string Candidate = Path.Combine(PathEntry.Trim(), DotnetExe);
 
-					if (!File.Exists(Candidate) || IsUnrealBundledDotNet(Candidate))
+					if (!TryResolveSdkHost(Candidate, out string? Resolved))
 					{
 						continue;
 					}
 
-					_cachedExecutable = Candidate;
+					_cachedExecutable = Resolved;
 					return _cachedExecutable;
 				}
 			}
@@ -93,9 +94,9 @@ public static class DotNetUtilities
 
 			foreach (string Fallback in Fallbacks)
 			{
-				if (File.Exists(Fallback) && !IsUnrealBundledDotNet(Fallback))
+				if (TryResolveSdkHost(Fallback, out string? Resolved))
 				{
-					_cachedExecutable = Fallback;
+					_cachedExecutable = Resolved;
 					return _cachedExecutable;
 				}
 			}
@@ -186,6 +187,46 @@ public static class DotNetUtilities
 			DotnetVersionInfo LatestHostFxrVersionInfo = ParseLatestDotnetVersionsInDirectory(HostFxrDirectory);
 			return Path.Combine(HostFxrDirectory, LatestHostFxrVersionInfo.VersionName, HostFxrFilename);
 		}
+	}
+
+	// Follows symlinks and skips shims (mise, asdf) that have no sdk/ folder next to them.
+	private static bool TryResolveSdkHost(string candidate, out string? resolved)
+	{
+		resolved = null;
+		if (!File.Exists(candidate) || IsUnrealBundledDotNet(candidate))
+		{
+			return false;
+		}
+
+		string ResolvedPath = candidate;
+		try
+		{
+			FileSystemInfo? Target = new FileInfo(candidate).ResolveLinkTarget(returnFinalTarget: true);
+			if (Target != null)
+			{
+				ResolvedPath = Target.FullName;
+			}
+		}
+		catch (Exception Ex) when (Ex is IOException or UnauthorizedAccessException)
+		{
+			LoggerUtilities.LogUnrealSharpWarning($"Could not resolve the symlink {candidate}, using it as is: {Ex.Message}");
+		}
+
+		string SdkRoot = Path.GetDirectoryName(ResolvedPath)!;
+		if (IsUnrealBundledDotNet(ResolvedPath) || !HasSdkForMajorVersion(SdkRoot))
+		{
+			return false;
+		}
+
+		resolved = ResolvedPath;
+		return true;
+	}
+
+	private static bool HasSdkForMajorVersion(string sdkRoot)
+	{
+		string SdkDirectory = Path.Combine(sdkRoot, "sdk");
+		return Directory.Exists(SdkDirectory)
+			&& Directory.EnumerateDirectories(SdkDirectory).Any(directory => Path.GetFileName(directory).StartsWith($"{DotnetMajorVersion}."));
 	}
 
 	private static bool IsUnrealBundledDotNet(string dotnetPath)
