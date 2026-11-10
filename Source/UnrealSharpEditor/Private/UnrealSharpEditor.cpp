@@ -7,6 +7,7 @@
 #include "CSInstallationUtilities.h"
 #include "CSStyle.h"
 #include "DesktopPlatformModule.h"
+#include "FileHelpers.h"
 #include "IPluginBrowser.h"
 #include "ISettingsModule.h"
 #include "LevelEditor.h"
@@ -462,6 +463,7 @@ void FUnrealSharpEditorModule::OnExploreArchiveDirectory(FString ArchiveDirector
 
 void FUnrealSharpEditorModule::PackageProject()
 {
+#if !UNREALSHARP_WITH_CUSTOM_STAGING
 	FString ArchiveDirectory = SelectArchiveDirectory();
 
 	if (ArchiveDirectory.IsEmpty())
@@ -469,26 +471,93 @@ void FUnrealSharpEditorModule::PackageProject()
 		return;
 	}
 
-	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + TEXT(".exe");
-	if (!FPaths::FileExists(ExecutablePath))
+	if (!FEditorFileUtils::SaveDirtyPackages(true, true, true))
 	{
-		FString DialogText = FString::Printf(TEXT("The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."), FApp::GetProjectName(), *ArchiveDirectory);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-	
-	const UProjectPackagingSettings* PlatformsPackagingSettings = GetDefault<UProjectPackagingSettings>();
-	
-	TMap<FString, FString> Arguments;
-	Arguments.Add(TEXT("ArchiveDirectory"), UnrealSharp::Paths::MakeQuotedPath(FPaths::Combine(ArchiveDirectory, FApp::GetProjectName())));
-	
-	int32 BuildConfigValue = static_cast<int32>(PlatformsPackagingSettings->BuildConfiguration);
-	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
-	Arguments.Add(TEXT("UEBuildConfig"), LexToString(ConfigurationInfo.Configuration));
-	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
-	
-	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
-	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
+
+	const FName PlatformName(FPlatformProperties::IniPlatformName());
+	const UPlatformsMenuSettings* PlatformsSettings = GetDefault<UPlatformsMenuSettings>();
+	UProjectPackagingSettings* PackagingSettings = NewObject<UProjectPackagingSettings>();
+	PackagingSettings->LoadSettingsForPlatform(PlatformName.ToString());
+
+	bool bIsProjectTarget = false;
+	const FTargetInfo* Target = PlatformsSettings->GetBuildTargetInfoForPlatform(PlatformName, bIsProjectTarget);
+	const bool bIsServer = Target && Target->Type == EBuildTargetType::Server;
+	EProjectPackagingBuildConfigurations BuildConfig = PlatformsSettings->GetBuildConfigurationForPlatform(PlatformName);
+	if (BuildConfig == EProjectPackagingBuildConfigurations::PPBC_MAX)
+	{
+		BuildConfig = PackagingSettings->BuildConfiguration;
+	}
+	if (PackagingSettings->ForDistribution)
+	{
+		BuildConfig = EProjectPackagingBuildConfigurations::PPBC_Shipping;
+	}
+	const EBuildConfiguration Configuration = UProjectPackagingSettings::ConfigurationInfo[static_cast<int32>(BuildConfig)].Configuration;
+
+	// Turnkey's package command builder is private. Keep the legacy entry on the
+	// normal BuildCookRun pipeline; the command only adds managed staging.
+	FString Command = TEXT("BuildCookRunUnrealSharp -nop4 -utf8output -nocompileeditor -skipbuildeditor -cook -stage -package -archive");
+	Command += FString::Printf(TEXT(" -platform=%s -archivedirectory=\"%s\" -%sconfig=%s"),
+		FPlatformMisc::GetUBTPlatform(), *ArchiveDirectory, bIsServer ? TEXT("server") : TEXT("client"), LexToString(Configuration));
+	if (Target && bIsProjectTarget)
+	{
+		Command += FString::Printf(TEXT(" -target=\"%s\""), *Target->Name);
+	}
+	if (bIsServer)
+	{
+		Command += TEXT(" -server -noclient");
+	}
+	else if (Target && Target->Type == EBuildTargetType::Client)
+	{
+		Command += TEXT(" -client");
+	}
+	const FString Architecture = PlatformsSettings->GetArchitectureForPlatform(PlatformName);
+	if (!Architecture.IsEmpty())
+	{
+		Command += FString::Printf(TEXT(" -%sarchitecture=%s"), bIsServer ? TEXT("server") : TEXT("client"), *Architecture);
+	}
+
+	auto AddFlag = [&Command](bool bEnabled, const TCHAR* Flag)
+	{
+		if (bEnabled)
+		{
+			Command += Flag;
+		}
+	};
+	// Code/plugin targets need UBT unless packaging explicitly disables building.
+	const bool bBuild = PackagingSettings->Build == EProjectPackagingBuild::Always
+		|| PackagingSettings->Build == EProjectPackagingBuild::IfProjectHasCode
+		|| (PackagingSettings->Build == EProjectPackagingBuild::IfEditorWasBuiltLocally && !FApp::GetEngineIsPromotedBuild());
+	AddFlag(bBuild, TEXT(" -build"));
+	AddFlag(PackagingSettings->FullRebuild, TEXT(" -clean"));
+	AddFlag(FApp::IsEngineInstalled(), TEXT(" -installed"));
+	AddFlag(PackagingSettings->UsePakFile || PackagingSettings->bUseIoStore, TEXT(" -pak"));
+	AddFlag(PackagingSettings->bUseIoStore, TEXT(" -iostore"));
+	AddFlag(PackagingSettings->bCompressed, TEXT(" -compressed"));
+	AddFlag(PackagingSettings->bSkipEditorContent, TEXT(" -SkipCookingEditorContent"));
+	AddFlag(PackagingSettings->IncludePrerequisites, TEXT(" -prereqs"));
+	AddFlag(PackagingSettings->ForDistribution, TEXT(" -distribution"));
+	AddFlag(PackagingSettings->bGenerateChunks, TEXT(" -manifests"));
+	AddFlag(PackagingSettings->IncludeCrashReporter, TEXT(" -CrashReporter"));
+	AddFlag(Configuration == EBuildConfiguration::Shipping && !PackagingSettings->IncludeDebugFiles, TEXT(" -nodebuginfo"));
+	if (!PackagingSettings->ApplocalPrerequisitesDirectory.Path.IsEmpty())
+	{
+		Command += FString::Printf(TEXT(" -applocaldirectory=\"%s\""), *PackagingSettings->ApplocalPrerequisitesDirectory.Path);
+	}
+	else if (PackagingSettings->IncludeAppLocalPrerequisites)
+	{
+		Command += TEXT(" -applocaldirectory=\"$(EngineDir)/Binaries/ThirdParty/AppLocalDependencies\"");
+	}
+	if (PackagingSettings->bBuildHttpChunkInstallData)
+	{
+		Command += FString::Printf(TEXT(" -manifests -createchunkinstall -chunkinstalldirectory=\"%s\" -chunkinstallversion=\"%s\""),
+			*PackagingSettings->HttpChunkInstallDataDirectory.Path, *PackagingSettings->HttpChunkInstallDataVersion);
+	}
+
+	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging Project '{0}'"), FText::FromString(FApp::GetProjectName()));
+	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(Command, BuildActionDisplayName);
+#endif
 }
 
 void FUnrealSharpEditorModule::OpenSolution()
@@ -514,7 +583,7 @@ FString FUnrealSharpEditorModule::SelectArchiveDirectory()
 	FString DestinationFolder;
 	const void* ParentWindowHandle = FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr);
 	
-	const FString Title = FString::Printf(TEXT("Select the root directory for %s"), FApp::GetProjectName());
+	const FString Title = FString::Printf(TEXT("Package project %s..."), FApp::GetProjectName());
 	if (!FDesktopPlatformModule::Get()->OpenDirectoryDialog(ParentWindowHandle, Title, FString(), DestinationFolder))
 	{
 		return FString();
@@ -533,7 +602,9 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpToolbar() const
     	AppendBuildMenu(CSCommands, MenuBuilder);
     	AppendCodeMenu(CSCommands, MenuBuilder);
     	AppendProjectMenu(CSCommands, MenuBuilder);
+#if !UNREALSHARP_WITH_CUSTOM_STAGING
     	AppendPackageMenu(CSCommands, MenuBuilder);
+#endif
     }
 	
 	AppendPluginMenu(CSCommands, MenuBuilder);
@@ -652,7 +723,9 @@ void FUnrealSharpEditorModule::RegisterCommands()
 		UnrealSharpCommands->MapAction(EditorCommands.RegenerateSolution, FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
 		UnrealSharpCommands->MapAction(EditorCommands.OpenSolution, FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnOpenSolution));
 		UnrealSharpCommands->MapAction(EditorCommands.MergeManagedSlnAndNativeSln, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln));
+#if !UNREALSHARP_WITH_CUSTOM_STAGING
 		UnrealSharpCommands->MapAction(EditorCommands.PackageProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
+#endif
 	}
 
 	const FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");

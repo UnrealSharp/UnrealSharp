@@ -6,6 +6,10 @@ public class UnrealSharpEditor : ModuleRules
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
+        bool bSupportsCustomStaging = Target.Version.MajorVersion > 5
+            || (Target.Version.MajorVersion == 5 && Target.Version.MinorVersion >= 7);
+        PublicDefinitions.Add("UNREALSHARP_WITH_CUSTOM_STAGING=" + (bSupportsCustomStaging ? "1" : "0"));
+
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
