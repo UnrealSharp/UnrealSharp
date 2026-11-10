@@ -209,7 +209,7 @@ FString UnrealSharp::DotNetUtilities::GetDotNetDirectory(TArray<FString>* OutPro
 #endif
 
 #if defined(_WIN32)
-	const FString PathMarker = TEXT("Program Files\\dotnet\\");
+	const FString PathMarker = TEXT("Program Files\\dotnet");
 #else
 	const FString PathMarker = TEXT("dotnet");
 #endif
@@ -373,7 +373,7 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 		TArray<FString> PathEntries;
 		FPlatformMisc::GetEnvironmentVariable(TEXT("PATH")).ParseIntoArray(PathEntries, FPlatformMisc::GetPathVarDelimiter());
 		PathEntries.RemoveAll([&](const FString& Entry) { return Entry == SdkDirectory || Entry == DotNetInstallationPath; });
-		PathEntries.Insert(SdkDirectory, 0);
+		PathEntries.Insert(DotNetInstallationPath, 0);
 
 		FPlatformMisc::SetEnvironmentVar(TEXT("PATH"), *FString::Join(PathEntries, FPlatformMisc::GetPathVarDelimiter()));
 	}
@@ -404,7 +404,7 @@ bool UnrealSharp::DotNetUtilities::BuildUserSolution()
 		return true;
 	}
 
-	if (FCSUnrealSharpUtils::IsStandalonePIE() || FApp::IsUnattended())
+	if (FCSUnrealSharpUtils::IsStandalonePIE())
 	{
 		return true;
 	}
