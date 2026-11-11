@@ -16,6 +16,10 @@ public:
 	// End of UObject interface
 	
 	void Initialize();
+
+#if WITH_EDITOR
+	void PrepareForRecompile();
+#endif
 	
 private:
 	void InitializeStructDefaults();
