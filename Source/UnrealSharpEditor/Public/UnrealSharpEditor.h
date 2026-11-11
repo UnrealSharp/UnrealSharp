@@ -19,6 +19,7 @@ class UCSClass;
 class UCSScriptStruct;
 class UCSManager;
 class IAssetTools;
+class IAssetTypeActions;
 class FCSScriptBuilder;
 class FCSSourceCodeNavigation;
 
@@ -79,6 +80,7 @@ public:
 
 private:
     TSharedPtr<FCSSourceCodeNavigation> SourceCodeNavigation;
+    TArray<TSharedRef<IAssetTypeActions>> RegisteredAssetTypeActions;
     
     static void SuggestProjectSetup();
 

@@ -14,6 +14,9 @@
 #include "CSSourceCodeNavigation.h"
 #include "SubobjectDataSubsystem.h"
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
+#include "AssetActions/CSAssetTypeAction_ReadOnly.h"
+#include "Types/CSEnum.h"
+#include "Types/CSScriptStruct.h"
 #include "Features/IPluginsEditorFeature.h"
 #include "CSManager.h"
 #include "Interfaces/IMainFrameModule.h"
@@ -43,7 +46,13 @@ FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 void FUnrealSharpEditorModule::StartupModule()
 {
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
+	RegisteredAssetTypeActions.Add(MakeShared<FCSAssetTypeAction_CSBlueprint>());
+	RegisteredAssetTypeActions.Add(MakeShared<FCSAssetTypeAction_ReadOnly>(UCSEnum::StaticClass(), LOCTEXT("CSharpEnum", "C# Enum")));
+	RegisteredAssetTypeActions.Add(MakeShared<FCSAssetTypeAction_ReadOnly>(UCSScriptStruct::StaticClass(), LOCTEXT("CSharpStruct", "C# Struct")));
+	for (const TSharedRef<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
+	{
+		AssetTools.RegisterAssetTypeActions(Action);
+	}
 	SourceCodeNavigation = MakeShared<FCSSourceCodeNavigation>();
 	FSourceCodeNavigation::AddNavigationHandler(SourceCodeNavigation.Get());
 
@@ -56,17 +65,6 @@ void FUnrealSharpEditorModule::StartupModule()
 		{
 			SuggestProjectSetup();
 		});
-	}
-
-	// Make managed types not available for edit in the editor
-	{
-		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
-		IAssetTools& AssetToolsRef = AssetToolsModule.Get();
-		
-		for (const UPackage* Package : UCSManager::Get().GetManagedPackages())
-		{
-			AssetToolsRef.GetWritableFolderPermissionList()->AddDenyListItem(Package->GetFName(), Package->GetFName());
-		}
 	}
 
 	FCSStyle::Initialize();
@@ -83,6 +81,14 @@ void FUnrealSharpEditorModule::StartupModule()
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
+	if (FAssetToolsModule* AssetToolsModule = FModuleManager::GetModulePtr<FAssetToolsModule>(TEXT("AssetTools")))
+	{
+		for (const TSharedRef<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
+		{
+			AssetToolsModule->Get().UnregisterAssetTypeActions(Action);
+		}
+	}
+	RegisteredAssetTypeActions.Reset();
 	FSourceCodeNavigation::RemoveNavigationHandler(SourceCodeNavigation.Get());
 	SourceCodeNavigation.Reset();
 	UToolMenus::UnRegisterStartupCallback(this);
