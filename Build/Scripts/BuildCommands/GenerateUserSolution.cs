@@ -16,7 +16,7 @@ public class GenerateUserSolution : BuildCommand
     {
         bool ForceGenerate = ParseParam("ForceGenerate");
         
-        string SolutionName = "Managed" + this.GetProjectName();
+        string SolutionName = this.GetProjectNameAsManaged();
         string OutputFolder = this.GetProjectScriptFolder();
         ManagedBuildTarget Target = ManagedBuildTarget.FromCommand(this);
         PrepareSolution(this, Target, this.GetManagedProjectFiles(Target),
@@ -32,7 +32,7 @@ public class GenerateUserSolution : BuildCommand
     internal static string PrepareSolution(BuildCommand command, ManagedBuildTarget target, IEnumerable<FileInfo> projects,
         string outputDirectory, string solutionName, bool forceGenerate = false)
     {
-        string SolutionPath = Path.Combine(outputDirectory, solutionName + ".sln");
+        string SolutionPath = Path.Combine(outputDirectory, solutionName + ".slnx");
         string StampPath = SolutionPath + ".projects.json";
         string[] ProjectPaths = projects.Select(project => project.FullName).Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();

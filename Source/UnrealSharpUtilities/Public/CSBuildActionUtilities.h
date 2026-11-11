@@ -7,4 +7,5 @@ namespace UnrealSharp::BuildAction
 	inline constexpr const TCHAR* BuildEmitLoadOrder = TEXT("BuildEmitLoadOrder");
 	inline constexpr const TCHAR* BuildUserSolution = TEXT("BuildUserSolution");
 	inline constexpr const TCHAR* PackageProject = TEXT("PackageProject");
+	inline constexpr const TCHAR* MergeSolution = TEXT("MergeSolution");
 }

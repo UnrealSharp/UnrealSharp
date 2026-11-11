@@ -71,7 +71,7 @@ const FString& UnrealSharp::Paths::GetPluginsDirectory()
 
 FString UnrealSharp::Paths::GetPathToManagedSolution()
 {
-    static FString SolutionPath = GetScriptFolderDirectory() / Project::GetUserManagedProjectName() + TEXT(".sln");
+    static FString SolutionPath = GetScriptFolderDirectory() / Project::GetUserManagedProjectName() + TEXT(".slnx");
     return SolutionPath;
 }
 
