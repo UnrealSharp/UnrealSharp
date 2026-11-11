@@ -11,6 +11,7 @@
 #include "ISettingsModule.h"
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
+#include "CSSourceCodeNavigation.h"
 #include "SubobjectDataSubsystem.h"
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
 #include "Features/IPluginsEditorFeature.h"
@@ -43,6 +44,8 @@ void FUnrealSharpEditorModule::StartupModule()
 {
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
+	SourceCodeNavigation = MakeShared<FCSSourceCodeNavigation>();
+	FSourceCodeNavigation::AddNavigationHandler(SourceCodeNavigation.Get());
 
 	TArray<FString> ProjectPaths;
 	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths);
@@ -80,6 +83,8 @@ void FUnrealSharpEditorModule::StartupModule()
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
+	FSourceCodeNavigation::RemoveNavigationHandler(SourceCodeNavigation.Get());
+	SourceCodeNavigation.Reset();
 	UToolMenus::UnRegisterStartupCallback(this);
 	UToolMenus::UnregisterOwner(this);
     UnregisterPluginTemplates();

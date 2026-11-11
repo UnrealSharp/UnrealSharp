@@ -20,6 +20,7 @@ class UCSScriptStruct;
 class UCSManager;
 class IAssetTools;
 class FCSScriptBuilder;
+class FCSSourceCodeNavigation;
 
 struct FCSManagedEditorCallbacks
 {
@@ -77,6 +78,7 @@ public:
     UNREALSHARPEDITOR_API FCSOnBuildingToolbar& OnBuildingToolbarEvent() { return OnBuildingToolbar; }
 
 private:
+    TSharedPtr<FCSSourceCodeNavigation> SourceCodeNavigation;
     
     static void SuggestProjectSetup();
 
