@@ -22,6 +22,7 @@ class IAssetTools;
 class IAssetTypeActions;
 class FCSScriptBuilder;
 class FCSSourceCodeNavigation;
+class FCSSubobjectEditorCustomization;
 
 struct FCSManagedEditorCallbacks
 {
@@ -79,7 +80,10 @@ public:
     UNREALSHARPEDITOR_API FCSOnBuildingToolbar& OnBuildingToolbarEvent() { return OnBuildingToolbar; }
 
 private:
+    void RegisterSubobjectEditorCustomization();
+
     TSharedPtr<FCSSourceCodeNavigation> SourceCodeNavigation;
+    TSharedPtr<FCSSubobjectEditorCustomization> SubobjectEditorCustomization;
     TArray<TSharedRef<IAssetTypeActions>> RegisteredAssetTypeActions;
     
     static void SuggestProjectSetup();
