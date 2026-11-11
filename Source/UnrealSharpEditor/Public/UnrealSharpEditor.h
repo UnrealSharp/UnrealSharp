@@ -33,6 +33,7 @@ struct FCSManagedEditorCallbacks
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
     using FLoadSignature = void(__stdcall*)(const TCHAR*, void*);
+    using FFindClassSource = bool(__stdcall*)(const TCHAR*, const TCHAR*, void*, int32*, int32*, void*);
 
     CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileDirtyProjects);
     CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileChangedFile);
@@ -40,6 +41,7 @@ struct FCSManagedEditorCallbacks
     CS_ASSERT_INTEROP_SAFE_FUNCTION(FForceManagedGC);
     CS_ASSERT_INTEROP_SAFE_FUNCTION(FOpenSolution);
     CS_ASSERT_INTEROP_SAFE_FUNCTION(FLoadSignature);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FFindClassSource);
 
     FRecompileDirtyProjects RecompileDirtyProjects = nullptr;
     FRecompileChangedFile RecompileChangedFile = nullptr;
@@ -50,6 +52,7 @@ struct FCSManagedEditorCallbacks
     
     FLoadSignature LoadSolutionAsync = nullptr;
     FLoadSignature LoadProject = nullptr;
+    FFindClassSource FindClassSource = nullptr;
 };
 
 CS_ASSERT_INTEROP_SAFE_TYPE(FCSManagedEditorCallbacks);
