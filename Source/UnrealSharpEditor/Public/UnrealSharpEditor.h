@@ -23,6 +23,7 @@ class IAssetTypeActions;
 class FCSScriptBuilder;
 class FCSSourceCodeNavigation;
 class FCSSubobjectEditorCustomization;
+class FCSBlueprintEditorCustomization;
 
 struct FCSManagedEditorCallbacks
 {
@@ -84,6 +85,7 @@ private:
 
     TSharedPtr<FCSSourceCodeNavigation> SourceCodeNavigation;
     TSharedPtr<FCSSubobjectEditorCustomization> SubobjectEditorCustomization;
+    TSharedPtr<FCSBlueprintEditorCustomization> BlueprintEditorCustomization;
     TArray<TSharedRef<IAssetTypeActions>> RegisteredAssetTypeActions;
     
     static void SuggestProjectSetup();

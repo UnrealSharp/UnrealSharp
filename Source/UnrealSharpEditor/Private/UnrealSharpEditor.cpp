@@ -13,6 +13,7 @@
 #include "SourceCodeNavigation.h"
 #include "CSSourceCodeNavigation.h"
 #include "CSSubobjectEditorCustomization.h"
+#include "CSBlueprintEditorCustomization.h"
 #include "BlueprintEditorModule.h"
 #include "Editor.h"
 #include "Misc/CoreDelegates.h"
@@ -115,6 +116,7 @@ void FUnrealSharpEditorModule::ShutdownModule()
 		}
 	}
 	SubobjectEditorCustomization.Reset();
+	BlueprintEditorCustomization.Reset();
 	if (FAssetToolsModule* AssetToolsModule = FModuleManager::GetModulePtr<FAssetToolsModule>(TEXT("AssetTools")))
 	{
 		for (const TSharedRef<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
@@ -144,6 +146,7 @@ void FUnrealSharpEditorModule::RegisterSubobjectEditorCustomization()
 #else
 	BlueprintEditorModule.AddCustomization(SubobjectEditorCustomization);
 #endif
+	BlueprintEditorCustomization = MakeShared<FCSBlueprintEditorCustomization>();
 }
 
 void FUnrealSharpEditorModule::InitializeManagedEditorCallbacks(FCSManagedEditorCallbacks Callbacks)
