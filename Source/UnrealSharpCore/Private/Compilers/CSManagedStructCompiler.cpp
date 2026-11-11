@@ -19,6 +19,10 @@ void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr
 	UCSScriptStruct* Struct = static_cast<UCSScriptStruct*>(TypeToRecompile);
 	TSharedPtr<FCSStructReflectionData> StructReflectionData = ManagedTypeDefinition->GetReflectionData<FCSStructReflectionData>();
 	
+#if WITH_EDITOR
+	Struct->PrepareForRecompile();
+#endif
+
 	PurgeStruct(Struct);
 	
 	FCSPropertyFactory::CreateAndAssignProperties(Struct, StructReflectionData->Properties);
