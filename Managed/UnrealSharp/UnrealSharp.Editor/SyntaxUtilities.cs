@@ -73,14 +73,14 @@ public static class SyntaxUtilities
         string fullTypeName = string.IsNullOrEmpty(typeNamespace) ? typeName : $"{typeNamespace}.{typeName}";
 
         Type? runtimeType = FindLoadedType(assemblyName, fullTypeName);
-        if (runtimeType == null)
+        IntPtr nativeField = runtimeType == null ? IntPtr.Zero : NativeReflectionHelper.GetNativeField(runtimeType);
+        if (nativeField == IntPtr.Zero)
         {
             Bind_FUnrealSharpEditorModule.CallNotifyNewType();
         }
         else
         {
-            Bind_FUnrealSharpEditorModule.CallDirtyUnrealType(NativeReflectionHelper.GetNativeField(runtimeType),
-                flags);
+            Bind_FUnrealSharpEditorModule.CallDirtyUnrealType(nativeField, flags);
         }
     }
     

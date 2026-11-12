@@ -6,6 +6,7 @@
 #include "CSStyle.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "DirectoryWatcherModule.h"
+#include "BlueprintActionDatabase.h"
 #include "IDirectoryWatcher.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Types/CSEnum.h"
@@ -28,6 +29,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Manager.OnNewClassEvent().AddUObject(this, &UCSHotReloadSubsystem::OnClassRebuilt);
 	Manager.OnNewEnumEvent().AddUObject(this, &UCSHotReloadSubsystem::OnEnumRebuilt);
 	Manager.OnNewInterfaceEvent().AddUObject(this, &UCSHotReloadSubsystem::OnInterfaceRebuilt);
+	FCSAssemblyEvents::OnManagedTypeRemoved.AddUObject(this, &UCSHotReloadSubsystem::OnManagedTypeRemoved);
 	
 	HotReloadTickHandle = FTickerDelegate::CreateUObject(this, &UCSHotReloadSubsystem::Tick);
 	HotReloadTickDelegate = FTSTicker::GetCoreTicker().AddTicker(HotReloadTickHandle);
@@ -154,7 +156,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	FCSHotReloadUtilities::RebuildDependentBlueprints(ReloadedTypes);
 	
-	if (bDetectedNewManagedType)
+	if (bDetectedNewManagedType || bDetectedRemovedManagedType)
 	{
 		FCSHotReloadUtilities::RefreshPlacementMode();
 	}
@@ -163,13 +165,17 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	{
 		FCSHotReloadUtilities::RefreshBlueprintActionDatabase(ReloadedTypes);
 		FCSHotReloadUtilities::RefreshStructs(ReloadedTypes);
-		
+	}
+
+	if (ReloadedTypes.Num() > 0 || bDetectedRemovedManagedType)
+	{
 		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 	}
 	
 	CurrentHotReloadStatus = EHotReloadStatus::Inactive;
 	bDetectedNewManagedType = false;
+	bDetectedRemovedManagedType = false;
 	ReloadedTypes.Reset();
 	
 	UE_LOG(LogUnrealSharpEditor, Display, TEXT("C# Hot Reload completed in %.2f seconds."), FPlatformTime::Seconds() - StartTime);
@@ -193,6 +199,18 @@ void UCSHotReloadSubsystem::OnEnumRebuilt(UCSEnum* NewEnum)
 void UCSHotReloadSubsystem::OnInterfaceRebuilt(UCSInterface* NewInterface)
 {
 	AddReloadedType(NewInterface);
+}
+
+void UCSHotReloadSubsystem::OnManagedTypeRemoved(UField* RemovedType)
+{
+	FBlueprintActionDatabase& ActionDatabase = FBlueprintActionDatabase::Get();
+	ActionDatabase.ClearAssetActions(RemovedType);
+	if (UCSClass* Class = Cast<UCSClass>(RemovedType))
+	{
+		// RefreshClassActions registers generated-class actions under the Blueprint.
+		ActionDatabase.ClearAssetActions(Class->GetOwningBlueprint());
+	}
+	bDetectedRemovedManagedType = true;
 }
 
 void UCSHotReloadSubsystem::AppendPendingFileChange(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)

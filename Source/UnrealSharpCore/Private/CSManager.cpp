@@ -44,6 +44,16 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 		return;
 	}
 
+#if WITH_EDITOR
+	// Unloading an assembly already disposes its handles. Its retired class may
+	// itself be unreachable now, so do not resolve an assembly through that class.
+	if (!Handle.IsValid() || Handle->IsNull())
+	{
+		ManagedInterfaceWrapperHandles.RemoveByHash(ObjectID.Get(), ObjectID);
+		return;
+	}
+#endif
+
 	UCSManagedAssembly* Assembly = FindOwningAssembly(Object->GetClass());
 	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetAssemblyHandle();
 	

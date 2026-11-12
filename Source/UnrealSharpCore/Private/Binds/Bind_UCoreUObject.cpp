@@ -12,8 +12,20 @@ DECLARE_UNREALSHARP_BINDER(Bind_UCoreUObject)
 		ensure(Assembly);
 
 		FCSFieldName FieldName(InTypeName, FCSNamespace(InNamespace), InAssemblyName, InFieldType);
-		TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindOrAddManagedTypeDefinition(FieldName);
-		UField* Field = ManagedTypeDefinition->GetDefinition();
+		TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindManagedTypeDefinition(FieldName);
+		UField* Field = ManagedTypeDefinition.IsValid()
+			? ManagedTypeDefinition->GetDefinition()
+			: FCSUtilities::FindField<UField>(FieldName);
+
+		if (!IsValid(Field))
+		{
+			// A CLR type can remain after its reflection attribute was removed.
+			return nullptr;
+		}
+		if (!ManagedTypeDefinition.IsValid())
+		{
+			Assembly->FindOrAddManagedTypeDefinition(FieldName);
+		}
 
 	#if WITH_EDITOR
 		if (UCSClass* Class = Cast<UCSClass>(Field))

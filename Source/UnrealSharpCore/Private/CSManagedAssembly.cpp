@@ -13,6 +13,9 @@
 
 FCSAssemblyEvents::FCSAssemblyEvent FCSAssemblyEvents::OnAssemblyLoaded;
 FCSAssemblyEvents::FCSAssemblyEvent FCSAssemblyEvents::OnAssemblyUnloaded;
+#if WITH_EDITOR
+FCSAssemblyEvents::FCSManagedTypeEvent FCSAssemblyEvents::OnManagedTypeRemoved;
+#endif
 
 void UCSManagedAssembly::Initialize(const FStringView InAssemblyPath, bool bInIsCollectible)
 {
@@ -52,6 +55,17 @@ bool UCSManagedAssembly::LoadAssembly()
 
 	bIsLoading = true;
 
+#if WITH_EDITOR
+	// Native-field definitions are resolved on demand, rather than registered by the assembly.
+	for (const auto& Pair : ManagedTypeRegistry)
+	{
+		if (Pair.Value.IsValid() && Pair.Value->GetReflectionData().IsValid())
+		{
+			TypesPendingRemoval.Add(Pair.Key);
+		}
+	}
+#endif
+
 	FGCHandle NewAssemblyGCHandle = GetManagedPluginCallbacks().LoadPlugin(*AssemblyFilePath, bIsCollectible);
 
 	if (NewAssemblyGCHandle.IsNull())
@@ -60,6 +74,18 @@ bool UCSManagedAssembly::LoadAssembly()
 	}
 
 	AssemblyHandle = MakeShared<FGCHandle>(NewAssemblyGCHandle);
+
+#if WITH_EDITOR
+	for (const FCSFieldName& FieldName : TypesPendingRemoval)
+	{
+		TSharedPtr<FCSManagedTypeDefinition> RemovedType;
+		if (ManagedTypeRegistry.RemoveAndCopyValue(FieldName, RemovedType))
+		{
+			FCSAssemblyEvents::OnManagedTypeRemoved.Broadcast(RemovedType->Retire());
+		}
+	}
+	TypesPendingRemoval.Reset();
+#endif
 
 	for (const TSharedPtr<FCSManagedTypeDefinition>& QueuedType : PendingCompilationTypes)
 	{
@@ -206,6 +232,9 @@ void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* In
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
 
 	const FCSFieldName FieldName(InFieldName, FCSNamespace(InNamespace), GetFName(), FieldType);
+#if WITH_EDITOR
+	TypesPendingRemoval.Remove(FieldName);
+#endif
 	TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition = ManagedTypeRegistry.FindOrAdd(FieldName);
 	
 #if WITH_EDITOR

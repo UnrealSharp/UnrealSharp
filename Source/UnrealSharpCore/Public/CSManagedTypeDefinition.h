@@ -46,6 +46,7 @@ struct FCSManagedTypeDefinition final : TSharedFromThis<FCSManagedTypeDefinition
 	
 #if WITH_EDITOR
 	UNREALSHARPCORE_API TSharedPtr<FGCHandle> GetTypeGCHandle();
+	UField* Retire();
 #else
 	UNREALSHARPCORE_API TSharedPtr<FGCHandle> GetTypeGCHandle() const { return TypeGCHandle; }
 #endif
@@ -77,6 +78,12 @@ private:
 	// The Unreal reflection type generated for this managed definition.
 	// This may be a UClass, UScriptStruct, UEnum, UInterface, UFunction (Delegate), et.c depending on ReflectionData.
 	TStrongObjectPtr<UField> DefinitionField;
+
+#if WITH_EDITOR
+	// A field can outlive its C# type while instances or assets still reference it.
+	TWeakObjectPtr<UField> RetiredDefinitionField;
+	bool bIsRetired = false;
+#endif
 
 	// Compiler responsible for creating and updating the native Unreal type from the managed reflection data.
 	UCSManagedTypeCompiler* Compiler;

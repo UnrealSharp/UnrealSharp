@@ -21,6 +21,10 @@ struct FCSAssemblyEvents
 	DECLARE_MULTICAST_DELEGATE_OneParam(FCSAssemblyEvent, UCSManagedAssembly*);
 	UNREALSHARPCORE_API static FCSAssemblyEvent OnAssemblyLoaded;
 	UNREALSHARPCORE_API static FCSAssemblyEvent OnAssemblyUnloaded;
+#if WITH_EDITOR
+	DECLARE_MULTICAST_DELEGATE_OneParam(FCSManagedTypeEvent, UField*);
+	UNREALSHARPCORE_API static FCSManagedTypeEvent OnManagedTypeRemoved;
+#endif
 };
 
 UCLASS(Transient)
@@ -81,6 +85,10 @@ private:
 
 	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>> ManagedTypeRegistry;
 	TArray<TSharedPtr<FCSManagedTypeDefinition>> PendingCompilationTypes;
+
+#if WITH_EDITOR
+	TSet<FCSFieldName> TypesPendingRemoval;
+#endif
 	
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedTypeHandles;
 	TArray<TSharedPtr<FGCHandle>> ManagedHandles;

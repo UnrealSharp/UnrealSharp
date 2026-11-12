@@ -77,6 +77,7 @@ private:
 	void OnClassRebuilt(UCSClass* NewClass);
 	void OnEnumRebuilt(UCSEnum* NewEnum);
 	void OnInterfaceRebuilt(UCSInterface* NewInterface);
+	void OnManagedTypeRemoved(UField* RemovedType);
 	
 	void AppendPendingFileChange(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
 	
@@ -108,4 +109,5 @@ private:
 
 	TSet<FCSObjectID> ReloadedTypes;
 	bool bDetectedNewManagedType = false;
+	bool bDetectedRemovedManagedType = false;
 };

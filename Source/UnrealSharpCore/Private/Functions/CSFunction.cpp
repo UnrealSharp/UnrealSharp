@@ -49,6 +49,10 @@ bool UCSFunctionBase::UpdateMethodHandle()
 	
 	TSharedPtr<FCSManagedTypeDefinition> ClassInfo = ManagedClass->GetManagedTypeDefinition();
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeGCHandle();
+	if (!TypeHandle.IsValid() || TypeHandle->IsNull())
+	{
+		return false;
+	}
 	
 	MethodHandle = Assembly->GetManagedMethod(TypeHandle, FString::Printf(TEXT("Invoke_%s"), *GetName()));
 	return MethodHandle.IsValid();
@@ -91,8 +95,16 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	int32 ReturnCode;
 	{
 		UCSManager::FCSCurrentWorldContext CurrentWorldContext(WorldContext);
+		const FGCHandle ObjectHandle = UCSManager::Get().FindManagedObject(ObjectToInvokeOn);
+#if WITH_EDITOR
+		// An inherited method can still exist after the object's own managed class was retired.
+		if (ObjectHandle.IsNull())
+		{
+			return;
+		}
+#endif
 		ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
-			UCSManager::Get().FindManagedObject(ObjectToInvokeOn).GetPointer(),
+			ObjectHandle.GetPointer(),
 			ManagedFunction->MethodHandle->GetPointer(),
 			Stack.Locals,
 			RESULT_PARAM,
