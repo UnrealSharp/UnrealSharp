@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "CoreTypes.h"
+#include "CSInteropTypeTraits.h"
+#include "CSManagedGCHandleIntPtr.h"
 
 #if !defined(_WIN32)
 #define __stdcall
@@ -8,7 +10,6 @@
 
 struct FScopedGCHandle;
 struct FInvokeManagedMethodData;
-struct FGCHandleIntPtr;
 struct FGCHandle;
 
 struct FCSManagedCallbacks
@@ -22,6 +23,16 @@ struct FCSManagedCallbacks
 	using ManagedCallbacks_InitializeStructure = void(__stdcall*)(FGCHandleIntPtr, void*);
 	using ManagedCallbacks_Dispose = void(__stdcall*)(FGCHandleIntPtr, FGCHandleIntPtr);
 	using ManagedCallbacks_FreeHandle = void(__stdcall*)(FGCHandleIntPtr);
+
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_CreateNewManagedObject);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_CreateNewManagedObjectWrapper);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_InvokeManagedMethod);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_InvokeDelegate);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_GetManagedMethod);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_GetManagedTypeHandle);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_InitializeStructure);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_Dispose);
+	CS_ASSERT_INTEROP_SAFE_FUNCTION(ManagedCallbacks_FreeHandle);
 		
 	ManagedCallbacks_CreateNewManagedObject CreateNewManagedObject;
 	ManagedCallbacks_CreateNewManagedObjectWrapper CreateNewManagedObjectWrapper;

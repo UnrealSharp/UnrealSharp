@@ -3,15 +3,8 @@
 #include "CSManagedCallbacksCache.h"
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
+#include "CSManagedGCHandleIntPtr.h"
 #include "CSManagedGCHandle.generated.h"
-
-struct FGCHandleIntPtr
-{
-    bool operator==(const FGCHandleIntPtr& Other) const = default;
-    uint8* ManagedHandlePtr = nullptr;
-};
-
-static_assert(sizeof(FGCHandleIntPtr) == sizeof(void*));
 
 struct FGCHandle
 {
