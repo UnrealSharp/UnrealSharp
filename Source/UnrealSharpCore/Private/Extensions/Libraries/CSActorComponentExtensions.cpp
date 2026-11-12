@@ -1,4 +1,5 @@
 ﻿#include "Extensions/Libraries/CSActorComponentExtensions.h"
+#include "Components/ActorComponent.h"
 
 void UCSActorComponentExtensions::AddReplicatedSubObject(UActorComponent* ActorComponent, UObject* SubObject, ELifetimeCondition NetCondition)
 {

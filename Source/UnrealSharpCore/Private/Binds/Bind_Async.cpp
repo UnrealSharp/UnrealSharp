@@ -1,4 +1,6 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Async/Async.h"
+#include "Async/TaskGraphInterfaces.h"
 #include "CSManagedDelegate.h"
 #include "CSManagedGCHandle.h"
 

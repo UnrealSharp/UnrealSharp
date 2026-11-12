@@ -1,4 +1,5 @@
 #include "Factories/CSPropertyFactory.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "INotifyFieldValueChanged.h"
 #include "Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "Properties/CSPropertyGeneratorManager.h"

@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Math/RandomStream.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FRandomStream)
 {

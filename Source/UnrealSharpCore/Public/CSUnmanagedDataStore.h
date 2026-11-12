@@ -2,7 +2,10 @@
 
 #pragma once
 
+#include "Misc/TVariant.h"
+
 #include <array>
+#include <cstddef>
 
 #include "CoreMinimal.h"
 #include "CSUnmanagedDataStore.generated.h"

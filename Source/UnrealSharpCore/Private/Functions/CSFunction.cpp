@@ -1,4 +1,5 @@
 #include "Functions/CSFunction.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
 #include "CSUnrealSharpSettings.h"

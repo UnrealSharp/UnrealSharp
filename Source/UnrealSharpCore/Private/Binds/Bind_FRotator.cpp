@@ -1,4 +1,6 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Math/Rotator.h"
+#include "Math/Matrix.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FRotator)
 {

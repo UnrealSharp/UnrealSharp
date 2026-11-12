@@ -1,4 +1,7 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
+#include "Subsystems/LocalPlayerSubsystem.h"
 #include "CSManager.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_ULocalPlayer)

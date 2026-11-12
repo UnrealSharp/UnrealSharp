@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Math/Vector.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FVector)
 {

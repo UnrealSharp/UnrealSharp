@@ -10,7 +10,18 @@ namespace UnrealSharpManagedGlue.Utilities;
 public static class ClassUtilities
 {
     public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null, bool includeSuper = false)
-        => FindTypeInHierarchy(classObj, c => c.Functions, functionName, customCompare, includeSuper);
+    {
+        if (customCompare != null || NameCollisionScope.Current is not { } scope)
+        {
+            return FindTypeInHierarchy(classObj, c => c.Functions, functionName, customCompare, includeSuper);
+        }
+        for (UhtClass? current = classObj; current != null; current = includeSuper ? current.SuperClass : null)
+        {
+            UhtFunction? function = scope.FindFunction(current, functionName);
+            if (function != null) return function;
+        }
+        return null;
+    }
 
     public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null, bool includeSuper = false)
         => FindTypeInHierarchy(classObj, c => c.Properties, propertyName, customCompare, includeSuper);
@@ -89,21 +100,41 @@ public static class ClassUtilities
         Dictionary<string, GetterSetterPair> getterSetterPairs, 
         Dictionary<string, GetterSetterPair> getSetOverrides, 
         List<ExtensionMethod> extensionMethods, 
-        List<UhtFunction> autocastFunctions)
+        List<UhtFunction> autocastFunctions,
+        Dictionary<UhtFunction, UhtFunction>? reflectedImplementations = null)
     {
         List<UhtFunction> exportedFunctions = new();
 
-        bool HasFunction(List<UhtFunction> functionsToCheck, UhtFunction functionToTest)
+        UhtFunction? FindFunction(List<UhtFunction> functionsToCheck, UhtFunction functionToTest)
         {
+            // Prefer the actual interface member, even when its reflected helper
+            // appears earlier in the class's function list.
+            UhtFunction? interfaceFunction = functionsToCheck.FirstOrDefault(function =>
+                function.SourceName == functionToTest.SourceName
+                && function.HasSameSignature(functionToTest));
+            if (interfaceFunction != null)
+            {
+                return interfaceFunction;
+            }
+
+            UhtFunction? implementationFunction = functionsToCheck.FirstOrDefault(function =>
+                function.SourceName == functionToTest.CppImplName
+                && function.HasSameSignature(functionToTest));
+            if (implementationFunction != null)
+            {
+                return implementationFunction;
+            }
+
+            // Preserve the previous duplicate handling for other name matches.
             foreach (UhtFunction function in functionsToCheck)
             {
                 if (function.SourceName == functionToTest.SourceName || function.CppImplName == functionToTest.CppImplName)
                 {
-                    return true;
+                    return function;
                 }
             }
 
-            return false;
+            return null;
         }
 
         foreach (UhtFunction function in classObj.Functions)
@@ -154,8 +185,23 @@ public static class ClassUtilities
             UhtClass interfaceClass = declaration.GetInterfaceAlternateClass();
             foreach (UhtFunction function in interfaceClass.Functions)
             {
-                if (function.MakeGetterSetterPair(getSetOverrides) || HasFunction(exportedFunctions, function) || !function.CanExportFunction())
+                if (function.MakeGetterSetterPair(getSetOverrides, classObj) || !function.CanExportFunction())
                 {
+                    continue;
+                }
+
+                UhtFunction? implementation = FindFunction(exportedFunctions, function);
+                if (implementation != null)
+                {
+                    // A separately reflected Foo_Implementation does not satisfy the
+                    // C# interface's Foo member. Export the event as well as its helper.
+                    if (function.IsBlueprintNativeEvent()
+                        && implementation.SourceName == function.CppImplName
+                        && implementation.SourceName != function.SourceName
+                        && implementation.HasSameSignature(function))
+                    {
+                        exportedOverrides.Add(function);
+                    }
                     continue;
                 }
 
@@ -166,6 +212,28 @@ public static class ClassUtilities
                 else
                 {
                     functions.Add(function);
+                }
+            }
+        }
+
+        if (reflectedImplementations != null)
+        {
+            // Link helpers after collecting all events, including events declared
+            // by the class itself, so declaration order cannot affect reuse.
+            foreach (UhtFunction function in exportedOverrides)
+            {
+                if (!function.IsBlueprintNativeEvent())
+                {
+                    continue;
+                }
+
+                UhtFunction? implementation = functions.FirstOrDefault(candidate =>
+                    candidate.SourceName == function.CppImplName
+                    && candidate.SourceName != function.SourceName
+                    && candidate.HasSameSignature(function));
+                if (implementation != null)
+                {
+                    reflectedImplementations[function] = implementation;
                 }
             }
         }

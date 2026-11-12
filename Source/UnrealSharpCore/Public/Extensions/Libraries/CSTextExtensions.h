@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Kismet/BlueprintFunctionLibrary.h"
+
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "CSTextExtensions.generated.h"

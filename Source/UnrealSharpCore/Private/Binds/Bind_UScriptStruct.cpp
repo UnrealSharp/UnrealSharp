@@ -1,4 +1,7 @@
 ﻿#include "CSBindsRegistry.h"
+#include <array>
+#include <cstddef>
+#include <memory>
 #include "CSManager.h"
 #include "Types/CSScriptStruct.h"
 

@@ -1,5 +1,6 @@
 #include "CSBindsRegistry.h"
 #include "UnrealSharpBinds.h"
+#include "HAL/IConsoleManager.h"
 #include "Logging/StructuredLog.h"
 
 void DumpBoundFunctionsInternal(const FName& BinderName)

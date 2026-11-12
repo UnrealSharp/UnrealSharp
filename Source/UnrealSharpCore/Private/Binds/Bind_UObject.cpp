@@ -1,5 +1,6 @@
 ﻿#include "CSBindsRegistry.h"
 #include "CSManager.h"
+#include "Engine/World.h"
 #include "UObject/UObjectGlobals.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UObject)

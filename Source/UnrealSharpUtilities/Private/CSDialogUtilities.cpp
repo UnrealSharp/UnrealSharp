@@ -1,5 +1,7 @@
 #include "CSDialogUtilities.h"
 
+#include "HAL/PlatformMisc.h"
+#include "Misc/MessageDialog.h"
 #include "UnrealSharpUtilities.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/Notifications/NotificationManager.h"

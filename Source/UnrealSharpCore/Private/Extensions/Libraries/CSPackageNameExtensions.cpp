@@ -1,4 +1,5 @@
 ﻿#include "Extensions/Libraries/CSPackageNameExtensions.h"
+#include "Misc/PackageName.h"
 
 void UCSPackageNameExtensions::RegisterMountPoint(const FString& RootPath, const FString& ContentPath)
 {

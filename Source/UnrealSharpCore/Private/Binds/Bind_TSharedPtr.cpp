@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Templates/SharedPointer.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_TSharedPtr)
 {

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Input/Events.h"
+
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSInputEventExtensions.generated.h"

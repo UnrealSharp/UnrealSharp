@@ -2,6 +2,10 @@
 
 #include "UnrealSharpUtilities.h"
 #include "Logging/StructuredLog.h"
+#include "Misc/PackageName.h"
+#include "Misc/SecureHash.h"
+#include "UObject/MetaData.h"
+#include "UObject/Package.h"
 
 FName FCSUnrealSharpUtils::GetNamespace(const UObject* Object)
 {

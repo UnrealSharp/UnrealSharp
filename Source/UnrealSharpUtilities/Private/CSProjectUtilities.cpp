@@ -5,6 +5,14 @@
 #include "UnrealSharpUtilities.h"
 #include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
+#include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
+#include "HAL/FileManager.h"
+#include "Misc/App.h"
+#include "Misc/FileHelper.h"
+#include "ProfilingDebugging/CpuProfilerTrace.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FCSLoadOrderManifest>& OutManifests)
 {

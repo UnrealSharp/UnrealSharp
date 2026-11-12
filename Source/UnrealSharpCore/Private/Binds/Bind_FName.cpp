@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Containers/StringView.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FName)
 {

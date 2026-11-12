@@ -1,4 +1,5 @@
 #include "Utilities/CSAssemblyUtilities.h"
+#include "HAL/IConsoleManager.h"
 #include "CSManagedAssembly.h"
 #include "CSManager.h"
 

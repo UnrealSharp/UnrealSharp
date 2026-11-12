@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "UObject/Class.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UStruct)
 {

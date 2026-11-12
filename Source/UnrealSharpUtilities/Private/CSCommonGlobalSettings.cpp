@@ -1,6 +1,7 @@
 #include "CSCommonGlobalSettings.h"
 
 #include "CSGlobalSettingsUtilities.h"
+#include "Dom/JsonValue.h"
 
 FString UnrealSharp::GlobalSettings::Common::GetScriptDirectoryName()
 {

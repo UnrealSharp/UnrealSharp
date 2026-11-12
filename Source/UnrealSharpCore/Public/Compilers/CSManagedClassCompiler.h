@@ -1,5 +1,10 @@
 ﻿#pragma once
 
+#include "Subsystems/Subsystem.h"
+#include "Templates/SubclassOf.h"
+#include "UObject/ObjectKey.h"
+#include "Engine/BlueprintGeneratedClass.h"
+
 #include "CSManagedTypeCompiler.h"
 #include "ReflectionData/CSTypeReferenceReflectionData.h"
 #include "CSManagedClassCompiler.generated.h"

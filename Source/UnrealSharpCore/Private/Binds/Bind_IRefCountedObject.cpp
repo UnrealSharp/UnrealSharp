@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Templates/RefCounting.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_IRefCountedObject)
 {

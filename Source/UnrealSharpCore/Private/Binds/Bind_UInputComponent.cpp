@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Components/InputComponent.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UInputComponent)
 {

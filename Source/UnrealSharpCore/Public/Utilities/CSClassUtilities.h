@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "Engine/Blueprint.h"
+#include "UObject/Package.h"
+
 #include "Engine/DeveloperSettings.h"
 #include "Types/CSClass.h"
 #include "Types/CSInterface.h"

@@ -1,5 +1,10 @@
 ﻿#pragma once
 
+#include "CoreMinimal.h"
+#include "UObject/Object.h"
+#include "UObject/Package.h"
+#include "Serialization/AsyncLoadingEvents.h"
+
 #include "CSManagedTypeCompiler.generated.h"
 
 struct FCSTypeReferenceReflectionData;

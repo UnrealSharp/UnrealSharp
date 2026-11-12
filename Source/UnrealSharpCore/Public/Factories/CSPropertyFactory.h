@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Engine/BlueprintGeneratedClass.h"
+
 #include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 #include "ReflectionData/CSPropertyReflectionData.h"
