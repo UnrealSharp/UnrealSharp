@@ -39,7 +39,7 @@ Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/U
 
 ## Prerequisites
 
-- Unreal Engine 5.6 – 5.8
+- Unreal Engine 5.6 – 5.8, or 5.9 Preview on Windows
 - .NET 10.0.5 or newer
 - A C++ project (strongly recommended, pure Blueprint projects work, but are harder to provide support for)
 
