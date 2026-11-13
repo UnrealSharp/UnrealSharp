@@ -242,4 +242,18 @@ public static class SolutionManager
         States.TryGetValue(projectId, out GenState? state);
         return state;
     }
+
+    public static Compilation? GetCompilationByAssemblyName(string assemblyName)
+    {
+        foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
+        {
+            Compilation? compilation = GetProjectState(project.Id)?.InitialCompilation;
+            if (compilation?.AssemblyName == assemblyName)
+            {
+                return compilation;
+            }
+        }
+
+        return null;
+    }
 }

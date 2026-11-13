@@ -9,5 +9,8 @@ public:
 	virtual void OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<class IToolkitHost> EditWithinLevelEditor = TSharedPtr<IToolkitHost>()) override;
 	virtual bool SupportsOpenedMethod(const EAssetTypeActivationOpenedMethod OpenedMethod) const override;
 	virtual FText GetName() const override;
+	virtual bool CanRename(const FAssetData& Asset, FText* OutErrorMsg) const override { return false; }
+	virtual bool CanDuplicate(const FAssetData& Asset, FText* OutErrorMsg) const override { return false; }
+	virtual bool CanLocalize() const override { return false; }
 	// End of IAssetTypeActions interface
 };
