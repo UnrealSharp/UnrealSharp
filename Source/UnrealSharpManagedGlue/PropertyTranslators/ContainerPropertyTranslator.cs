@@ -48,6 +48,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
     public override string GetManagedType(UhtProperty property) => GetWrapperInterface(property);
     public override string GetMarshaller(UhtProperty property) => throw new System.NotImplementedException();
     public override string GetNullValue(UhtProperty property) => "null";
+    public override bool CanExportDefaultValue(UhtFunction function, UhtProperty property, string value) => false;
     public override string ConvertCppDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter) => throw new System.NotImplementedException();
 
     public override string ExportMarshallerDelegates(UhtProperty property)

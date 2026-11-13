@@ -142,6 +142,7 @@ public static class PropertyTranslatorManager
             "UnrealSharp.TOptional",
             "UnrealSharp.TOptional"));
         
+        AddPropertyTranslator(typeof(UhtStructProperty), new SoftObjectPathPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
         
