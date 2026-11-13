@@ -250,7 +250,7 @@ public static class NameMapper
     {
         foreach (UhtClass classInterface in classObj.GetInterfaces())
         {
-            if (classInterface.AlternateObject is not UhtClass interfaceClass)
+            if (classInterface.GetInterfaceAlternateClass() is not { } interfaceClass)
             {
                 continue;
             }
