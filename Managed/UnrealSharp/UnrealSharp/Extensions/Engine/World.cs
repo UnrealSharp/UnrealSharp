@@ -52,7 +52,7 @@ public partial class UWorld
     /// <summary>
     /// Returns the net mode this world is running under
     /// </summary>
-    public ENetMode NetMode => (ENetMode)(int)Bind_UWorld.CallGetNetMode(NativeObject);
+    public global::UnrealSharp.ENetMode NetMode => (global::UnrealSharp.ENetMode)(int)Bind_UWorld.CallGetNetMode(NativeObject);
 
     /// <summary>
     /// Returns the type of this world
@@ -98,17 +98,17 @@ public partial class UWorld
     /// <summary>
     /// Returns true if we are running as a listen server or dedicated server
     /// </summary>
-    public bool IsServer => NetMode == ENetMode.ListenServer || NetMode == ENetMode.DedicatedServer;
+    public bool IsServer => NetMode == global::UnrealSharp.ENetMode.ListenServer || NetMode == global::UnrealSharp.ENetMode.DedicatedServer;
     
     /// <summary>
     /// Returns true if we are running as a client
     /// </summary>
-    public bool IsClient => NetMode == ENetMode.Client;
+    public bool IsClient => NetMode == global::UnrealSharp.ENetMode.Client;
     
     /// <summary>
     /// Returns true if we are running as a standalone game. No multiplayer involved.
     /// </summary>
-	public bool IsStandalone => NetMode == ENetMode.Standalone;
+	public bool IsStandalone => NetMode == global::UnrealSharp.ENetMode.Standalone;
     
     /// <summary>
     /// Jumps the server to new level.  If bAbsolute is true and we are using seemless traveling, we

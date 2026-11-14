@@ -12,7 +12,8 @@
             },
             {
                 "Name": "FVector",
-                "ManagedType": "UnrealSharp.CoreUObject.FVector"
+                "ManagedType": "UnrealSharp.CoreUObject.FVector",
+                "Attributes": { "DefaultValueFields": "X,Y,Z" }
             },
             {
                 "Name": "FVector2D",
@@ -52,7 +53,8 @@
             },
             {
                 "Name": "FRotator",
-                "ManagedType": "UnrealSharp.CoreUObject.FRotator"
+                "ManagedType": "UnrealSharp.CoreUObject.FRotator",
+                "Attributes": { "DefaultValueFields": "Pitch,Yaw,Roll" }
             },
             {
                 "Name": "FMatrix44f",
@@ -63,7 +65,9 @@
                 "ManagedType": "UnrealSharp.CoreUObject.FTransform",
 				"Attributes": 
 				{
-					"UserSpecifiedLayout": "true"
+					"UserSpecifiedLayout": "true",
+                    "DefaultValueMember.Translation": "Location",
+                    "DefaultValueMember.Scale3D": "Scale"
 				}
             },
             {

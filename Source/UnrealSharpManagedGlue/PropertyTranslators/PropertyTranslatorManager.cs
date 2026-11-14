@@ -136,12 +136,9 @@ public static class PropertyTranslatorManager
             "System.Collections.Generic.IReadOnlySet", 
             "System.Collections.Generic.ISet"));
         
-        AddPropertyTranslator(typeof(UhtOptionalProperty), new ContainerPropertyTranslator("OptionalMarshaller",
-            "OptionalMarshaller",
-            "OptionalMarshaller",
-            "UnrealSharp.TOptional",
-            "UnrealSharp.TOptional"));
+        AddPropertyTranslator(typeof(UhtOptionalProperty), new OptionalPropertyTranslator());
         
+        AddPropertyTranslator(typeof(UhtStructProperty), new SoftObjectPathPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
         
@@ -153,6 +150,14 @@ public static class PropertyTranslatorManager
         InclusionLists.BanProperty("AActor", "bReplicates");
         InclusionLists.BanProperty("UActorComponent", "bReplicates");
         InclusionLists.BanFunction("UActorComponent", "SetIsReplicated");
+
+        // Provided by the managed Actor and ActorComponent extensions.
+        InclusionLists.BanFunction("AActor", "AddReplicatedSubObject");
+        InclusionLists.BanFunction("AActor", "RemoveReplicatedSubObject");
+        InclusionLists.BanFunction("AActor", "IsReplicatedSubObjectRegistered");
+        InclusionLists.BanFunction("UActorComponent", "AddReplicatedSubObject");
+        InclusionLists.BanFunction("UActorComponent", "RemoveReplicatedSubObject");
+        InclusionLists.BanFunction("UActorComponent", "IsReplicatedSubObjectRegistered");
 
         // Doesn't have any fields
         InclusionLists.BanArithmetic("FSubsystemCollectionBaseRef");
