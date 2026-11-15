@@ -33,6 +33,7 @@ public abstract class PropertyTranslator
     
     public virtual bool SupportsSetter => true;
     public virtual bool ExportDefaultParameter => true;
+    public virtual bool CanExportDefaultValue(UhtFunction function, UhtProperty property, string value) => true;
     public virtual bool CacheProperty => false;
 
     // Should this property be declared as a parameter in the function signature? 

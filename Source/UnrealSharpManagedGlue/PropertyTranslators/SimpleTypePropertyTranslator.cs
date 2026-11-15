@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
+using System;
 using EpicGames.UHT.Types;
 using UnrealSharpManagedGlue.SourceGeneration;
 using UnrealSharpManagedGlue.Utilities;
@@ -26,6 +23,8 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 
     public override string ConvertCppDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
     {
+	    if (parameter is UhtBoolProperty && StructDefaultValue.TryScalar(parameter, defaultValue, out string boolean))
+	        return boolean;
 	    return defaultValue == "None" ? GetNullValue(parameter) : defaultValue;
     }
     
@@ -70,86 +69,21 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
         return property.IsGenericType() ? "DOT" : ManagedType;
     }
 
+    public override bool CanExportDefaultValue(UhtFunction function, UhtProperty property, string value)
+    {
+        if (property is UhtStructProperty structure)
+            return StructDefaultValue.TryTranslate(structure, value, out _);
+        if (property is UhtNumericProperty or UhtBoolProperty or UhtEnumProperty)
+            return StructDefaultValue.TryScalar(property, value, out _);
+        return true;
+    }
+
     protected void ExportDefaultStructParameter(GeneratorStringBuilder builder, string variableName, string cppDefaultValue,
         UhtProperty paramProperty, PropertyTranslator translator)
     {
-	    UhtStructProperty structProperty = (UhtStructProperty)paramProperty;
-	    string foundCSharpType = translator.GetManagedType(paramProperty);
-
-	    // FSoftClassPath uses a top-level asset path instead of a field initializer list.
-	    if (structProperty.ScriptStruct.SourceName == "FSoftClassPath" && cppDefaultValue.StartsWith("/", StringComparison.Ordinal))
-	    {
-		    int separator = cppDefaultValue.LastIndexOf('.');
-		    string packageName = JsonSerializer.Serialize(cppDefaultValue.Substring(0, separator));
-		    string assetName = JsonSerializer.Serialize(cppDefaultValue.Substring(separator + 1));
-		    builder.AppendLine($"{foundCSharpType} {variableName} = new {foundCSharpType}(" +
-			    $"new global::UnrealSharp.CoreUObject.FTopLevelAssetPath(new FName({packageName}), new FName({assetName})));");
-		    return;
-	    }
-
-	    UnrealDefaultValueParser.Value value = UnrealDefaultValueParser.Parse(cppDefaultValue);
-	    if (value.Fields!.Count == 0)
-	    {
-		    return;
-	    }
-
-		builder.AppendLine($"{foundCSharpType} {variableName} = new {foundCSharpType}");
-		ExportDefaultStructFields(builder, structProperty, value);
-		builder.Append(";");
-    }
-
-    private static void ExportDefaultStructFields(GeneratorStringBuilder builder, UhtStructProperty structProperty,
-	    UnrealDefaultValueParser.Value value)
-    {
-	    string structName = structProperty.ScriptStruct.GetStructName();
-	    List<UnrealDefaultValueParser.Field> fieldInitializers = value.Fields?.ToList()
-		    ?? throw new FormatException($"Expected struct fields in '{value.Text}'.");
-
-		builder.OpenBrace();
-
-		if (structName == "Color")
-		{
-			(fieldInitializers[0], fieldInitializers[2]) = (fieldInitializers[2], fieldInitializers[0]);
-		}
-
-		int fieldCount = fieldInitializers.Count;
-		for (int i = 0; i < fieldCount; i++)
-		{
-			UnrealDefaultValueParser.Field initializer = fieldInitializers[i];
-			UhtProperty property = initializer.Name == null
-				? (UhtProperty) structProperty.ScriptStruct.Children[i]
-				: structProperty.ScriptStruct.Properties.First(x =>
-					string.Equals(x.SourceName, initializer.Name, StringComparison.OrdinalIgnoreCase));
-			PropertyTranslator propertyTranslator = property.GetTranslator()!;
-
-			string managedType = propertyTranslator.GetManagedType(property);
-			bool isFloat = managedType is "float" or "double";
-
-			string scriptName = property.SourceName;
-			if (structName == "FTransform")
-			{
-				scriptName = scriptName switch
-				{
-					"Translation" => "Location",
-					"Scale3D" => "Scale",
-					_ => scriptName,
-				};
-			}
-
-			if (property is UhtStructProperty nestedStruct)
-			{
-				builder.AppendLine($"{scriptName} = new {managedType}");
-				ExportDefaultStructFields(builder, nestedStruct, initializer.Value);
-				builder.Append(",");
-			}
-			else
-			{
-				string fieldInitializer = initializer.Value.Text;
-				builder.AppendLine(isFloat ? $"{scriptName}={fieldInitializer}f," : $"{scriptName}={fieldInitializer},");
-			}
-		}
-
-		builder.CloseBrace();
+        if (!StructDefaultValue.TryTranslate((UhtStructProperty)paramProperty, cppDefaultValue, out string expression))
+            throw new InvalidOperationException("Unsupported struct default passed the default-value preflight.");
+        builder.AppendLine($"{translator.GetManagedType(paramProperty)} {variableName} = {expression};");
     }
 
     public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)

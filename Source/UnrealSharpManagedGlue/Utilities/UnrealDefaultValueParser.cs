@@ -36,6 +36,8 @@ internal static class UnrealDefaultValueParser
                     throw new FormatException($"Unexpected ')' in '{text}'.");
                 }
                 ++position;
+                if (position == contents.Length)
+                    throw new FormatException($"Missing value after ',' in '{text}'.");
             }
         }
         return new Value(text, fields);
@@ -58,8 +60,9 @@ internal static class UnrealDefaultValueParser
             }
         }
 
-        return value.Length == 0 ? null
-            : new Field(name, value.StartsWith("(") ? Parse(value) : new Value(value));
+        if (value.Length == 0)
+            throw new FormatException($"Missing value in '{text}'.");
+        return new Field(name, value.StartsWith("(") ? Parse(value) : new Value(value));
     }
 
     // Corresponds to the SubCount/quoted-text scan in UScriptStruct::ImportText (Class.cpp).
