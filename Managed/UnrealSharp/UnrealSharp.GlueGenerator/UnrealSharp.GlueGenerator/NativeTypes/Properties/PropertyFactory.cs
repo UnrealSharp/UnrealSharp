@@ -24,6 +24,7 @@ public static class PropertyFactory
 
             ["Boolean"] = (m, t, o, syntaxNode) => new BoolProperty(m, t, o, syntaxNode),
             ["String"] = (m, t, o, syntaxNode) => new StringProperty(m, t, o, syntaxNode),
+            ["FUtf8String"] = (m, t, o, syntaxNode) => new Utf8StringProperty(m, t, o, syntaxNode),
 
             ["TSubclassOf"] = (m, t, o, syntaxNode) => new ClassProperty(m, t, o, syntaxNode),
             ["TSoftObjectPtr"] = (m, t, o, syntaxNode) => new SoftObjectProperty(m, t, o, syntaxNode),

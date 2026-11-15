@@ -64,10 +64,10 @@ public struct TSoftClassPtr<T> where T : UObject
 
     public TSoftClassPtr(TSubclassOf<T> obj)
     {
-        Bind_TPersistentObjectPtr.CallFromObject(ref SoftObjectPtr.Data, obj.NativeClass);
+        SoftObjectPtr = FPersistentObjectPtr.FromObject(obj.NativeClass);
     }
     
-    internal TSoftClassPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> data)
+    internal TSoftClassPtr(FSoftObjectPath data)
     {
         SoftObjectPtr = new FPersistentObjectPtr(data);
     }
@@ -78,7 +78,7 @@ public struct TSoftClassPtr<T> where T : UObject
     /// <returns> The class. </returns>
     public TSubclassOf<T> LoadSynchronous()
     {
-        IntPtr handle = Bind_FSoftObjectPtr.CallLoadSynchronous(ref SoftObjectPtr.Data);
+        IntPtr handle = UnrealSharp.Core.Interop.Bind_UCSManager.CallFindManagedObject(SoftObjectPtr.GetNativePointer(true));
         UClass? loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle);
         
         if (loadedClass == null)
@@ -97,7 +97,7 @@ public struct TSoftClassPtr<T> where T : UObject
     {
         if (typeof(T).IsAssignableFrom(typeof(T2)) || typeof(T2).IsAssignableFrom(typeof(T)))
         {
-            return Class.IsValid ? new TSoftClassPtr<T2>(Class) : new TSoftClassPtr<T2>(SoftObjectPtr.Data);
+            return Class.IsValid ? new TSoftClassPtr<T2>(Class) : new TSoftClassPtr<T2>(SoftObjectPtr.Path);
         }
 
         throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");
@@ -105,7 +105,7 @@ public struct TSoftClassPtr<T> where T : UObject
 
     private TSubclassOf<T> GetClass()
     {
-        IntPtr nativeClass = Bind_TPersistentObjectPtr.CallGetNativePointer(ref SoftObjectPtr.Data);
+        IntPtr nativeClass = SoftObjectPtr.GetNativePointer();
         return new TSubclassOf<T>(nativeClass);
     }
     
@@ -196,12 +196,12 @@ public static class SoftClassMarshaller<T> where T : UObject
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSoftClassPtr<T> obj)
     {
-        BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.Data);
+        FPersistentObjectPtr.WritePathToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.Path);
     }
     
     public static TSoftClassPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        FPersistentObjectPtrData<FSoftObjectPathUnsafe> softObjectPath = BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.FromNative(nativeBuffer, arrayIndex);
+        FSoftObjectPath softObjectPath = FPersistentObjectPtr.ReadPathFromNative(nativeBuffer, arrayIndex);
         return new TSoftClassPtr<T>(softObjectPath);
     }
 }

@@ -36,6 +36,7 @@ public class GenerateUserSolution : BuildCommand
         string StampPath = SolutionPath + ".projects.json";
         string[] ProjectPaths = projects.Select(project => project.FullName).Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
+        CsProjectUtilities.UpdateUnrealSharpImports(command, ProjectPaths);
         string Stamp = JsonSerializer.Serialize(new { Platform = target.Platform.ToString(), target.Type, target.Configuration, ProjectPaths });
 
         if (!forceGenerate && File.Exists(SolutionPath) && File.Exists(StampPath) && File.ReadAllText(StampPath) == Stamp)

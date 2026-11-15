@@ -86,7 +86,14 @@ public static class ModuleUtilities
 	private static readonly Dictionary<string, ModuleInfo> BySourceName = new(StringComparer.OrdinalIgnoreCase);
 	private static readonly Dictionary<string, List<ModuleInfo>> ModuleExtensions = new();
 
-	static ModuleUtilities()
+	public static void Reset()
+	{
+		PackageToModuleInfo.Clear();
+		BySourceName.Clear();
+		ModuleExtensions.Clear();
+	}
+
+	public static void Initialize()
 	{
 		Build();
 	}

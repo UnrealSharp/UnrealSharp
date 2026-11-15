@@ -99,6 +99,7 @@ FCSPropertyGeneratorManager::FCSPropertyGeneratorManager()
 
 	AddPropertyInitializer<FNameProperty>(PropertyInitializers);
 	AddPropertyInitializer<FStrProperty>(PropertyInitializers);
+	AddPropertyInitializer<FUtf8StrProperty>(PropertyInitializers);
 	AddPropertyInitializer<FTextProperty>(PropertyInitializers);
 }
 
@@ -115,12 +116,7 @@ void FCSPropertyGeneratorManager::Initialize()
 
 void FCSPropertyGeneratorManager::Shutdown()
 {
-	if (Instance == nullptr)
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Property generator is not initialized"));
-		return;
-	}
-
+	// Created lazily, so it may never have been initialized.
 	Instance.Reset();
 }
 

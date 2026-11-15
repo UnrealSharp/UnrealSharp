@@ -24,6 +24,13 @@ public static class TaskManager
 	
 	public static void WaitForTasks()
 	{
-		Task.WaitAll(Tasks.ToArray());
+		try
+		{
+			Task.WaitAll(Tasks.ToArray());
+		}
+		finally
+		{
+			Tasks.Clear();
+		}
 	}
 }

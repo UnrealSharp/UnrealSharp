@@ -11,8 +11,8 @@ public record struct FName : IComparable<FName>
 {
 #if WITH_EDITOR
     private uint ComparisonIndex;
-    private uint DisplayIndex;
     private uint Number;
+    private uint DisplayIndex;
 #else
     private uint ComparisonIndex;
     private uint Number;

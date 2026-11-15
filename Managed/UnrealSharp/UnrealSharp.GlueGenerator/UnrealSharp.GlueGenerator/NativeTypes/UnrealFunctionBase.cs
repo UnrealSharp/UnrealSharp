@@ -340,6 +340,9 @@ public abstract record UnrealFunctionBase : UnrealStruct
         builder.BeginUnsafeBlock();
 
         builder.AllocateParameterBuffer(SizeVariableName);
+        builder.AppendLine($"Bind_UFunction.CallInitializeFunctionParams({FunctionNativePtr}, {SourceGenUtilities.ParamsBuffer});");
+        builder.AppendLine("try");
+        builder.OpenBrace();
 
         foreach (UnrealProperty parameter in Properties)
         {
@@ -357,7 +360,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         nativeCall(SourceGenUtilities.ParamsBuffer, returnBuffer);
 
-        foreach (UnrealProperty parameter in Properties.Where(p => p.ReferenceKind == RefKind.Out))
+        foreach (UnrealProperty parameter in Properties.Where(p => p.ReferenceKind is RefKind.Out or RefKind.Ref))
         {
             builder.AppendLine();
             parameter.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, $"{parameter.FieldName.SourceName} = ");
@@ -369,6 +372,12 @@ public abstract record UnrealFunctionBase : UnrealStruct
             ReturnType.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, assignment);
             builder.AppendLine("return returnValue;");
         }
+
+        builder.CloseBrace();
+        builder.AppendLine("finally");
+        builder.OpenBrace();
+        builder.AppendLine($"Bind_UFunction.CallDestroyFunctionParams({FunctionNativePtr}, {SourceGenUtilities.ParamsBuffer});");
+        builder.CloseBrace();
 
         builder.EndUnsafeBlock();
     }

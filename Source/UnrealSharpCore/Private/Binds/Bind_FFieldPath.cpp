@@ -2,6 +2,11 @@
 
 DECLARE_UNREALSHARP_BINDER(Bind_FFieldPath)
 {
+	void Assign(FFieldPath* Destination, int32 Index, const FFieldPath& Source)
+	{
+		Destination[Index] = Source;
+	}
+
 	bool IsValid(const TFieldPath<FField>& FieldPath)
 	{
 		return FieldPath != nullptr;
@@ -27,6 +32,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_FFieldPath)
 		return static_cast<int32>(GetTypeHash(FieldPath));
 	}
 	
+	BIND_UNREALSHARP_FUNCTION(Assign)
 	BIND_UNREALSHARP_FUNCTION(IsValid)
 	BIND_UNREALSHARP_FUNCTION(IsStale)
 	BIND_UNREALSHARP_FUNCTION(FieldPathToString)

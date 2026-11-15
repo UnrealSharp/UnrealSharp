@@ -26,6 +26,17 @@ public static class GeneratorStatics
 	
 	public static TargetType TargetType { get; private set; }
 	public static UnrealTargetConfiguration TargetConfiguration;
+
+	public static void Reset()
+	{
+		_factory = null;
+		PluginModuleInfo = null!;
+		BlueprintFunctionLibrary = null!;
+		PluginDirectory = "";
+		ManagedPath = "";
+		TargetType = default;
+		TargetConfiguration = default;
+	}
 	
 	public static void Initialize(IUhtExportFactory factory)
 	{
@@ -41,6 +52,7 @@ public static class GeneratorStatics
 		
 		BlueprintFunctionLibrary = (Factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary") as UhtClass)!;
 		
+		ModuleUtilities.Initialize();
 		PluginModuleInfo = ModuleUtilities.GetModuleInfo(factory.PluginModule!.Name);
 
 		PathUtilities.InitPaths(factory.Session.EngineDirectory!);

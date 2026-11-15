@@ -8,6 +8,8 @@ public class SoftObjectPropertyTranslator : ObjectContainerPropertyTranslator
     {
     }
 
+    public override bool IsBlittable => false;
+
     protected override UhtClass GetMetaClass(UhtObjectPropertyBase property)
     {
         UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty) property;

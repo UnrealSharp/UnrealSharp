@@ -65,22 +65,57 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	}
 	else
 	{
+		// Non-Blueprint frames must come from ProcessEvent or our direct invoke path.
 		OutParameters = Stack.OutParms;
+		// ProcessEvent already prepares plain values. Nontrivial out parameters
+		// need independent initialized values before managed code assigns to them.
+		constexpr EPropertyFlags PlainValueFlags = CPF_IsPlainOldData | CPF_NoDestructor;
+		for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
+		{
+			FProperty* Property = OutParameter->Property;
+			if (Property->HasAnyPropertyFlags(CPF_ReturnParm | CPF_ConstParm) || Property->HasAllPropertyFlags(PlainValueFlags))
+			{
+				continue;
+			}
+
+			// Raw object references also need no independent lifetime, even when not POD.
+			if (Property->IsA<FObjectProperty>() && Property->HasAnyPropertyFlags(CPF_NoDestructor)
+				&& !Property->HasAnyPropertyFlags(CPF_TObjectPtr))
+			{
+				continue;
+			}
+
+			uint8* LocalValue = Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
+			if (OutParameter->PropAddr != LocalValue)
+			{
+				Property->InitializeValue(LocalValue);
+				// Pure out parameters are assigned without reading their previous value.
+				if (Property->HasAnyPropertyFlags(CPF_ReferenceParm))
+				{
+					Property->CopyCompleteValue(LocalValue, OutParameter->PropAddr);
+				}
+			}
+		}
 	}
 	
 	InvokeManagedMethod(ObjectToInvokeOn, Stack, RESULT_PARAM);
 	
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{
-		if (OutParameter->Property->HasAnyPropertyFlags(CPF_ReturnParm))
+		if (OutParameter->Property->HasAnyPropertyFlags(CPF_ReturnParm | CPF_ConstParm))
 		{
 			continue;
 		}
 		
-		const uint8* ValueAddress = OutParameter->Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
+		uint8* ValueAddress = OutParameter->Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
 		if (OutParameter->PropAddr != ValueAddress)
 		{
 			OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
+			if (!IsCalledFromBlueprint)
+			{
+				// ProcessEvent does not destroy local out parameters.
+				OutParameter->Property->DestroyValue(ValueAddress);
+			}
 		}
 	}
 	

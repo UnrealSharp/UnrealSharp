@@ -3,11 +3,51 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using AutomationTool;
 
 namespace UnrealSharp.Automation.Utilities;
 
 public static class CsProjectUtilities
 {
+    public static void UpdateUnrealSharpImports(BuildCommand command, IEnumerable<string> projectPaths)
+    {
+        string? SharedPropsPath = null;
+        StringComparison Comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+        foreach (string ProjectPath in projectPaths)
+        {
+            XmlDocument Document = new XmlDocument { PreserveWhitespace = true };
+            Document.Load(ProjectPath);
+
+            // Only update the single literal import written by GenerateProject.
+            XmlElement[] Imports = Document.DocumentElement!.ChildNodes.OfType<XmlElement>()
+                .Where(element => element.LocalName == "Import")
+                .Where(element => Path.GetFileName(element.GetAttribute("Project").Replace('\\', '/')) == "UnrealSharp.Shared.props")
+                .ToArray();
+            if (Imports.Length != 1 || Imports[0].HasAttribute("Condition"))
+            {
+                continue;
+            }
+
+            string ImportPath = Imports[0].GetAttribute("Project");
+            if (ImportPath.Contains("$(") || ImportPath.Contains("@(") || ImportPath.Contains("%("))
+            {
+                continue;
+            }
+
+            SharedPropsPath ??= command.GetUnrealSharpSharedPropsPath();
+            string ProjectDirectory = Path.GetDirectoryName(Path.GetFullPath(ProjectPath))!;
+            string ExistingPath = Path.GetFullPath(ImportPath.Replace('\\', Path.DirectorySeparatorChar), ProjectDirectory);
+            if (string.Equals(ExistingPath, SharedPropsPath, Comparison))
+            {
+                continue;
+            }
+
+            Imports[0].SetAttribute("Project", GetRelativePath(ProjectDirectory, SharedPropsPath));
+            Document.Save(ProjectPath);
+        }
+    }
+
     public static string GetRelativePath(string basePath, string targetPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(basePath);
