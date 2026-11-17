@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.CodeAnalysis;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
 
@@ -20,10 +21,51 @@ public unsafe struct FManagedUnrealSharpEditorCallbacks()
     
     public delegate* unmanaged<char*, IntPtr, void> LoadSolution = &ManagedUnrealSharpEditorCallbacks.LoadSolution;
     public delegate* unmanaged<char*, IntPtr, void> LoadProject = &ManagedUnrealSharpEditorCallbacks.LoadProject;
+
+    public delegate* unmanaged<char*, char*, IntPtr, int*, int*, IntPtr, NativeBool> FindClassSource = &ManagedUnrealSharpEditorCallbacks.FindClassSource;
 }
 
 public static class ManagedUnrealSharpEditorCallbacks
 {
+    [UnmanagedCallersOnly]
+    public static unsafe NativeBool FindClassSource(char* assemblyName, char* typeName, IntPtr filePathBuffer,
+        int* line, int* column, IntPtr exceptionBuffer)
+    {
+        try
+        {
+            string assembly = new(assemblyName);
+            string name = new(typeName);
+            Compilation? compilation = SolutionManager.GetCompilationByAssemblyName(assembly);
+            if (compilation is null)
+            {
+                throw new InvalidOperationException($"The C# solution has not loaded source for assembly '{assembly}'. Wait for solution loading to finish and try again.");
+            }
+
+            Location? location = SourceCodeNavigation.FindClassDeclaration(compilation, name);
+            if (location is null)
+            {
+                throw new InvalidOperationException($"Could not find the source declaration of '{name}' in '{assembly}'.");
+            }
+
+            FileLinePositionSpan span = location.GetLineSpan();
+            string path = Path.GetFullPath(span.Path);
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"C# source file not found: {path}");
+            }
+
+            StringMarshaller.ToNative(filePathBuffer, 0, path);
+            *line = span.StartLinePosition.Line + 1;
+            *column = span.StartLinePosition.Character + 1;
+            return NativeBool.True;
+        }
+        catch (Exception exception)
+        {
+            StringMarshaller.ToNative(exceptionBuffer, 0, exception.Message);
+            return NativeBool.False;
+        }
+    }
+
     [UnmanagedCallersOnly]
     public static unsafe NativeBool RecompileDirtyProjects(IntPtr exceptionBuffer, UnmanagedArray* pendingModifiedAssembliesBuffer)
     {
