@@ -9,4 +9,8 @@ UCLASS()
 class UCSDelegateFunction : public UFunction, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()
+
+public:
+	// Delegate signatures are package-owned; UFunction is Within=Class in UE 5.6.
+	DECLARE_WITHIN(UObject)
 };

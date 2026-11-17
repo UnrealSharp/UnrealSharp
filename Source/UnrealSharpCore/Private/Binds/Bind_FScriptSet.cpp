@@ -34,6 +34,12 @@ DECLARE_UNREALSHARP_BINDER(Bind_FScriptSet)
 		return ScriptSet->Empty(Slack, Property->SetLayout);
 	}
 
+	void EmptyElements(FScriptSet* ScriptSet, FSetProperty* Property)
+	{
+		FScriptSetHelper Helper(Property, ScriptSet);
+		Helper.EmptyElements();
+	}
+
 	void RemoveAt(int Index, FScriptSet* ScriptSet, FSetProperty* Property)
 	{
 		return ScriptSet->RemoveAt(Index, Property->SetLayout);
@@ -64,6 +70,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_FScriptSet)
 	BIND_UNREALSHARP_FUNCTION(GetMaxIndex)
 	BIND_UNREALSHARP_FUNCTION(GetData)
 	BIND_UNREALSHARP_FUNCTION(Empty)
+	BIND_UNREALSHARP_FUNCTION(EmptyElements)
 	BIND_UNREALSHARP_FUNCTION(RemoveAt)
 	BIND_UNREALSHARP_FUNCTION(AddUninitialized)
 	BIND_UNREALSHARP_FUNCTION(Add)
