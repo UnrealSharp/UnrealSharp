@@ -8,7 +8,8 @@
 #include "IDirectoryWatcher.h"
 #include "CSHotReloadSubsystem.generated.h"
 
-enum EHotReloadStatus : uint8
+UENUM(BlueprintType)
+enum class EHotReloadStatus : uint8
 {
 	// Not Hot Reloading
 	Inactive,
@@ -18,7 +19,7 @@ enum EHotReloadStatus : uint8
 	FailedToCompile
 };
 
-UCLASS()
+UCLASS(BlueprintType)
 class UCSHotReloadSubsystem : public UEditorSubsystem
 {
 	GENERATED_BODY()
@@ -40,10 +41,22 @@ public:
 		return GEditor->GetEditorSubsystem<UCSHotReloadSubsystem>();
 	}
 
-	UNREALSHARPEDITOR_API bool IsHotReloading() const { return CurrentHotReloadStatus == Active; }
+	UFUNCTION(BlueprintPure, Category = "UnrealSharp | Hot Reload")
+	UNREALSHARPEDITOR_API bool IsHotReloading() const { return CurrentHotReloadStatus == EHotReloadStatus::Active; }
+
+	UFUNCTION(BlueprintPure, Category = "UnrealSharp | Hot Reload")
 	UNREALSHARPEDITOR_API bool HasPendingHotReloadChanges() const;
 	
+	/** Reloads pending changes when ready and outside PIE/SIE. */
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp | Hot Reload")
 	UNREALSHARPEDITOR_API void PerformHotReload();
+
+	UFUNCTION(BlueprintPure, Category = "UnrealSharp | Hot Reload")
+	UNREALSHARPEDITOR_API EHotReloadStatus GetHotReloadStatus() const { return CurrentHotReloadStatus; }
+
+	/** Hot reload is paused while the managed solution is loading or glue is being generated. */
+	UFUNCTION(BlueprintPure, Category = "UnrealSharp | Hot Reload")
+	UNREALSHARPEDITOR_API bool IsHotReloadPaused() const { return bIsHotReloadPaused; }
 	
 	void PauseHotReload(const FString& Reason = FString());
 	void ResumeHotReload();
@@ -86,7 +99,7 @@ private:
 
 	FUnrealSharpEditorModule* UnrealSharpEditorModule = nullptr;
 
-	EHotReloadStatus CurrentHotReloadStatus = Inactive;
+	EHotReloadStatus CurrentHotReloadStatus = EHotReloadStatus::Inactive;
 	bool bIsHotReloadPaused = false;
 
 	TArray<FString> WatchingDirectories;

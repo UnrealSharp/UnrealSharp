@@ -16,6 +16,7 @@ UnrealSharp is a free, open-source plugin for writing Unreal Engine 5 games in C
 
 - [Ballistic Brews (Steam Page)](https://store.steampowered.com/app/4095000/Ballistic_Brews/)
 - [Forged: Reconquest (Steam Page)](https://store.steampowered.com/app/3509080/Forged_Reconquest/)
+- [Unsound (Steam Page)](https://store.steampowered.com/app/5249750/Unsound/)
 - [Prompt Crisis (Steam Page)](https://store.steampowered.com/app/5203720/Prompt_Crisis/)
 
 Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/UnrealSharp/issues) or submit a PR to add your project here!
@@ -32,7 +33,7 @@ Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/U
 |---|---|
 | Windows | Supported |
 | macOS | Supported |
-| Linux | Planned |
+| Linux | Experimental (editor, x86-64) |
 | iOS | Planned |
 | Android | Planned |
 
@@ -41,6 +42,13 @@ Making a game with UnrealSharp? [Open an issue](https://github.com/UnrealSharp/U
 - Unreal Engine 5.6 – 5.8
 - .NET 10.0.5 or newer
 - A C++ project (strongly recommended, pure Blueprint projects work, but are harder to provide support for)
+
+### Linux notes
+
+Linux support is experimental. It has been tested with the UE 5.8 prebuilt (installed) engine, the engine's bundled clang toolchain and .NET 10 on x86-64; packaged Linux builds have not been tested yet.
+
+- Install the .NET 10 SDK, for example with `dotnet-install.sh` into `~/.dotnet` or from your distribution's packages. The editor looks for it in `DOTNET_ROOT` first (e.g. `DOTNET_ROOT=~/.dotnet ./UnrealEditor MyGame.uproject`), then follows the `dotnet` executable on `PATH` to the real SDK directory, so `/usr/bin/dotnet` symlinks work. Version-manager shims (mise, asdf) are skipped because they have no `sdk/` folder next to them.
+- Opening the C# solution from the editor uses `xdg-open`, so associate `.sln` files with your IDE (e.g. Rider).
 
 ## Getting started
 

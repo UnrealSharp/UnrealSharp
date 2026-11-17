@@ -7,15 +7,6 @@
 #include "Properties/CSPropertyGeneratorManager.h"
 #include "Modules/ModuleManager.h"
 
-#if defined(__APPLE__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpragma-once-outside-header"
-#endif
-#pragma once
-#if defined(__APPLE__)
-#pragma clang diagnostic pop
-#endif
-
 #define LOCTEXT_NAMESPACE "FUnrealSharpCoreModule"
 
 DEFINE_LOG_CATEGORY(LogUnrealSharp);
@@ -23,7 +14,7 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 void FUnrealSharpCoreModule::StartupModule()
 {
 #if WITH_EDITOR
-	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
+	while (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
 	{
 		if (UnrealSharp::Dialogs::IsHeadless())
 		{
@@ -32,8 +23,10 @@ void FUnrealSharpCoreModule::StartupModule()
 			return;
 		}
 
-		StartupModule();
-		return;
+		if (IsEngineExitRequested())
+		{
+			return;
+		}
 	}
 #endif
 	

@@ -1,5 +1,6 @@
 ﻿#include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
 #include "Types/CSBlueprint.h"
+#include "CSSourceCodeNavigation.h"
 
 UClass* FCSAssetTypeAction_CSBlueprint::GetSupportedClass() const
 {
@@ -8,17 +9,18 @@ UClass* FCSAssetTypeAction_CSBlueprint::GetSupportedClass() const
 
 void FCSAssetTypeAction_CSBlueprint::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<class IToolkitHost> EditWithinLevelEditor)
 {
-	UCSBlueprint* Blueprint = Cast<UCSBlueprint>(InObjects[0]);
-
-	// TODO: Add support for opening the file in an external editor.
-	// Currently Rider doesn't support opening files from the command line as it opens the file in every instance of Rider, even if I have specified the solution to open it in.
-	// A ticket has been created to try to get it fixed.
+	for (UObject* Object : InObjects)
+	{
+		if (const UCSBlueprint* Blueprint = Cast<UCSBlueprint>(Object))
+		{
+			FCSSourceCodeNavigation::OpenClass(Blueprint->GeneratedClass);
+		}
+	}
 }
 
 bool FCSAssetTypeAction_CSBlueprint::SupportsOpenedMethod(const EAssetTypeActivationOpenedMethod OpenedMethod) const
 {
-	// Always return false for now. Same issue as above.
-	return false;
+	return OpenedMethod == EAssetTypeActivationOpenedMethod::Edit;
 }
 
 FText FCSAssetTypeAction_CSBlueprint::GetName() const

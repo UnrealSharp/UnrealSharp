@@ -7,6 +7,7 @@ namespace UnrealSharp.Interop;
 [NativeCallbacks]
 public static unsafe partial class Bind_FFieldPath
 {
+    public static delegate* unmanaged<IntPtr, int, ref FFieldPathUnsafe, void> Assign;
     public static delegate* unmanaged<ref FFieldPathUnsafe, NativeBool> IsValid;
     public static delegate* unmanaged<ref FFieldPathUnsafe, NativeBool> IsStale;
     public static delegate* unmanaged<ref FFieldPathUnsafe, ref UnmanagedArray, void> FieldPathToString;

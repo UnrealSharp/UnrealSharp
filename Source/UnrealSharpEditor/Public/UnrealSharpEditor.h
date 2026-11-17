@@ -4,6 +4,7 @@
 #include "CSEditorCommands.h"
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
+#include "CSInteropTypeTraits.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -18,7 +19,11 @@ class UCSClass;
 class UCSScriptStruct;
 class UCSManager;
 class IAssetTools;
+class IAssetTypeActions;
 class FCSScriptBuilder;
+class FCSSourceCodeNavigation;
+class FCSSubobjectEditorCustomization;
+class FCSBlueprintEditorCustomization;
 
 struct FCSManagedEditorCallbacks
 {
@@ -32,6 +37,15 @@ struct FCSManagedEditorCallbacks
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
     using FLoadSignature = void(__stdcall*)(const TCHAR*, void*);
+    using FFindClassSource = bool(__stdcall*)(const TCHAR*, const TCHAR*, void*, int32*, int32*, void*);
+
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileDirtyProjects);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRecompileChangedFile);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FRemoveSourceFile);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FForceManagedGC);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FOpenSolution);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FLoadSignature);
+    CS_ASSERT_INTEROP_SAFE_FUNCTION(FFindClassSource);
 
     FRecompileDirtyProjects RecompileDirtyProjects = nullptr;
     FRecompileChangedFile RecompileChangedFile = nullptr;
@@ -42,7 +56,10 @@ struct FCSManagedEditorCallbacks
     
     FLoadSignature LoadSolutionAsync = nullptr;
     FLoadSignature LoadProject = nullptr;
+    FFindClassSource FindClassSource = nullptr;
 };
+
+CS_ASSERT_INTEROP_SAFE_TYPE(FCSManagedEditorCallbacks);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSOnBuildingToolbar, FMenuBuilder&);
@@ -64,6 +81,12 @@ public:
     UNREALSHARPEDITOR_API FCSOnBuildingToolbar& OnBuildingToolbarEvent() { return OnBuildingToolbar; }
 
 private:
+    void RegisterSubobjectEditorCustomization();
+
+    TSharedPtr<FCSSourceCodeNavigation> SourceCodeNavigation;
+    TSharedPtr<FCSSubobjectEditorCustomization> SubobjectEditorCustomization;
+    TSharedPtr<FCSBlueprintEditorCustomization> BlueprintEditorCustomization;
+    TArray<TSharedRef<IAssetTypeActions>> RegisteredAssetTypeActions;
     
     static void SuggestProjectSetup();
 

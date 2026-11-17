@@ -55,7 +55,7 @@ public struct TSoftObjectPtr<T> : IEquatable<TSoftObjectPtr<T>> where T : UObjec
         this = assetManager.GetSoftObjectReferenceFromPrimaryAssetId<T>(primaryAssetId);
     }
 
-    internal TSoftObjectPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> persistentObjectPtr)
+    internal TSoftObjectPtr(FSoftObjectPath persistentObjectPtr)
     {
         SoftObjectPtr = new FPersistentObjectPtr(persistentObjectPtr);
     }
@@ -76,7 +76,7 @@ public struct TSoftObjectPtr<T> : IEquatable<TSoftObjectPtr<T>> where T : UObjec
     /// <returns>The loaded object, or null if loading fails.</returns>
     public T? LoadSynchronous()
     {
-        IntPtr handle = Bind_FSoftObjectPtr.CallLoadSynchronous(ref SoftObjectPtr.Data);
+        IntPtr handle = UnrealSharp.Core.Interop.Bind_UCSManager.CallFindManagedObject(SoftObjectPtr.GetNativePointer(true));
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
 
@@ -176,12 +176,12 @@ public static class SoftObjectMarshaller<T> where T : UObject
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSoftObjectPtr<T> obj)
     {
-        BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.Data);
+        FPersistentObjectPtr.WritePathToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.Path);
     }
 
     public static TSoftObjectPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        FPersistentObjectPtrData<FSoftObjectPathUnsafe> softObjectPath = BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.FromNative(nativeBuffer, arrayIndex);
+        FSoftObjectPath softObjectPath = FPersistentObjectPtr.ReadPathFromNative(nativeBuffer, arrayIndex);
         return new TSoftObjectPtr<T>(softObjectPath);
     }
 }
