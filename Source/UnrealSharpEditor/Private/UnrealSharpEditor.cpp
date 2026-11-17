@@ -11,8 +11,17 @@
 #include "ISettingsModule.h"
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
+#include "CSSourceCodeNavigation.h"
+#include "CSSubobjectEditorCustomization.h"
+#include "CSBlueprintEditorCustomization.h"
+#include "BlueprintEditorModule.h"
+#include "Editor.h"
+#include "Misc/CoreDelegates.h"
 #include "SubobjectDataSubsystem.h"
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
+#include "AssetActions/CSAssetTypeAction_ReadOnly.h"
+#include "Types/CSEnum.h"
+#include "Types/CSScriptStruct.h"
 #include "Features/IPluginsEditorFeature.h"
 #include "CSManager.h"
 #include "Interfaces/IMainFrameModule.h"
@@ -42,7 +51,28 @@ FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 void FUnrealSharpEditorModule::StartupModule()
 {
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
+	RegisteredAssetTypeActions.Add(MakeShared<FCSAssetTypeAction_CSBlueprint>());
+	RegisteredAssetTypeActions.Add(MakeShared<FCSAssetTypeAction_ReadOnly>(UCSEnum::StaticClass(), LOCTEXT("CSharpEnum", "C# Enum")));
+	RegisteredAssetTypeActions.Add(MakeShared<FCSAssetTypeAction_ReadOnly>(UCSScriptStruct::StaticClass(), LOCTEXT("CSharpStruct", "C# Struct")));
+	for (const TSharedRef<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
+	{
+		AssetTools.RegisterAssetTypeActions(Action);
+	}
+	SourceCodeNavigation = MakeShared<FCSSourceCodeNavigation>();
+	FSourceCodeNavigation::AddNavigationHandler(SourceCodeNavigation.Get());
+	// Runtime glue can load this module before GEditor exists. Kismet requires an initialized editor.
+	if (GEditor)
+	{
+		RegisterSubobjectEditorCustomization();
+	}
+	else
+	{
+#if UE_VERSION_OLDER_THAN(5, 8, 0)
+		FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUnrealSharpEditorModule::RegisterSubobjectEditorCustomization);
+#else
+		FCoreDelegates::GetOnPostEngineInit().AddRaw(this, &FUnrealSharpEditorModule::RegisterSubobjectEditorCustomization);
+#endif
+	}
 
 	TArray<FString> ProjectPaths;
 	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths);
@@ -53,17 +83,6 @@ void FUnrealSharpEditorModule::StartupModule()
 		{
 			SuggestProjectSetup();
 		});
-	}
-
-	// Make managed types not available for edit in the editor
-	{
-		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
-		IAssetTools& AssetToolsRef = AssetToolsModule.Get();
-		
-		for (const UPackage* Package : UCSManager::Get().GetManagedPackages())
-		{
-			AssetToolsRef.GetWritableFolderPermissionList()->AddDenyListItem(Package->GetFName(), Package->GetFName());
-		}
 	}
 
 	FCSStyle::Initialize();
@@ -80,9 +99,54 @@ void FUnrealSharpEditorModule::StartupModule()
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
+#if UE_VERSION_OLDER_THAN(5, 8, 0)
+	FCoreDelegates::OnPostEngineInit.RemoveAll(this);
+#else
+	FCoreDelegates::GetOnPostEngineInit().RemoveAll(this);
+#endif
+	if (SubobjectEditorCustomization.IsValid())
+	{
+		if (FBlueprintEditorModule* BlueprintEditorModule = FModuleManager::GetModulePtr<FBlueprintEditorModule>(TEXT("Kismet")))
+		{
+#if UE_VERSION_OLDER_THAN(5, 7, 0)
+			BlueprintEditorModule->SetSubobjectEditorUICustomization(nullptr);
+#else
+			BlueprintEditorModule->RemoveCustomization(SubobjectEditorCustomization);
+#endif
+		}
+	}
+	SubobjectEditorCustomization.Reset();
+	BlueprintEditorCustomization.Reset();
+	if (FAssetToolsModule* AssetToolsModule = FModuleManager::GetModulePtr<FAssetToolsModule>(TEXT("AssetTools")))
+	{
+		for (const TSharedRef<IAssetTypeActions>& Action : RegisteredAssetTypeActions)
+		{
+			AssetToolsModule->Get().UnregisterAssetTypeActions(Action);
+		}
+	}
+	RegisteredAssetTypeActions.Reset();
+	FSourceCodeNavigation::RemoveNavigationHandler(SourceCodeNavigation.Get());
+	SourceCodeNavigation.Reset();
 	UToolMenus::UnRegisterStartupCallback(this);
 	UToolMenus::UnregisterOwner(this);
     UnregisterPluginTemplates();
+}
+
+void FUnrealSharpEditorModule::RegisterSubobjectEditorCustomization()
+{
+	if (!GIsEditor || !GEditor || IsRunningCommandlet() || SubobjectEditorCustomization.IsValid())
+	{
+		return;
+	}
+
+	SubobjectEditorCustomization = MakeShared<FCSSubobjectEditorCustomization>();
+	FBlueprintEditorModule& BlueprintEditorModule = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>(TEXT("Kismet"));
+#if UE_VERSION_OLDER_THAN(5, 7, 0)
+	BlueprintEditorModule.SetSubobjectEditorUICustomization(SubobjectEditorCustomization);
+#else
+	BlueprintEditorModule.AddCustomization(SubobjectEditorCustomization);
+#endif
+	BlueprintEditorCustomization = MakeShared<FCSBlueprintEditorCustomization>();
 }
 
 void FUnrealSharpEditorModule::InitializeManagedEditorCallbacks(FCSManagedEditorCallbacks Callbacks)
@@ -469,7 +533,13 @@ void FUnrealSharpEditorModule::PackageProject()
 		return;
 	}
 
-	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + TEXT(".exe");
+#if PLATFORM_LINUX
+	const TCHAR* LauncherExtension = TEXT(".sh");
+#else
+	const TCHAR* LauncherExtension = TEXT(".exe");
+#endif
+
+	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + LauncherExtension;
 	if (!FPaths::FileExists(ExecutablePath))
 	{
 		FString DialogText = FString::Printf(TEXT("The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."), FApp::GetProjectName(), *ArchiveDirectory);
@@ -486,6 +556,14 @@ void FUnrealSharpEditorModule::PackageProject()
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), LexToString(ConfigurationInfo.Configuration));
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
+	const FString TargetPlatform = FPlatformMisc::GetUBTPlatform();
+	Arguments.Add(TEXT("TargetPlatform"), TargetPlatform);
+
+	// LinuxArm64 is arm64-only; elsewhere keep the automation tool's default architecture.
+	if (TargetPlatform == TEXT("LinuxArm64"))
+	{
+		Arguments.Add(TEXT("TargetArchitecture"), TEXT("arm64"));
+	}
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
