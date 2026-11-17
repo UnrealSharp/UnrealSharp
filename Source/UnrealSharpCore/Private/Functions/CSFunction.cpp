@@ -1,36 +1,18 @@
 #include "Functions/CSFunction.h"
+#include "Functions/CSFunction_Params.h"
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
 #include "CSUnrealSharpSettings.h"
 #include "Types/CSClass.h"
-#include "Types/CSSkeletonClass.h"
 #include "Engine/World.h"
 
 #include "Blueprint/BlueprintExceptionInfo.h"
 
 void UCSFunctionBase::Bind()
 {
-	UClass* ClassToFindFunction = GetOwnerClass();
-
-#if WITH_EDITOR
-	// Redirect to the generated class if we're trying to bind a function in a skeleton class.
-	// Since NativeFunctionLookupTable is not copied over when duplicating for reinstancing due to not being a UPROPERTY.
-	if (UCSSkeletonClass* OwnerClass = Cast<UCSSkeletonClass>(GetOuter()))
-	{
-		ClassToFindFunction = OwnerClass->GetGeneratedClass();
-	}
-#endif
-
-	for (FNativeFunctionLookup& Function : ClassToFindFunction->NativeFunctionLookupTable)
-	{
-		if (Function.Name != GetFName())
-		{
-			continue;
-		}
-		
-		SetNativeFunc(Function.Pointer);
-		return;
-	}
+	// Reinstanced classes do not retain NativeFunctionLookupTable. Bind the same
+	// managed thunk selected by the function factory, including on duplicated functions.
+	SetNativeFunc(NumParms == 0 ? &UCSFunctionBase::InvokeManagedMethod : &UCSFunction_Params::InvokeManagedMethod_Params);
 }
 
 bool UCSFunctionBase::UpdateMethodHandle()
