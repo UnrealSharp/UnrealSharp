@@ -6,6 +6,8 @@
         <IsPackable>false</IsPackable>
         <IsPublishable>false</IsPublishable>
         <UseDefaultOutputPath>true</UseDefaultOutputPath>
+        <!-- Directory.Build.props is imported before this project's properties. -->
+        <OutputPath>bin\$(Configuration)\</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>
