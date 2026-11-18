@@ -1,4 +1,5 @@
 #include "Factories/PropertyGenerators/CSSimplePropertyGenerator.h"
+#include "UObject/Utf8StrProperty.h"
 #include "UObject/UnrealType.h"
 #include "Runtime/Launch/Resources/Version.h"
 
