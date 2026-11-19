@@ -6,8 +6,13 @@ namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslator
 {
-    public SinglecastDelegatePropertyTranslator() : base(EPropertyUsageFlags.Parameter)
+    public SinglecastDelegatePropertyTranslator() : base(EPropertyUsageFlags.Property | EPropertyUsageFlags.Parameter)
     {
+    }
+
+    private string GetBackingField(UhtProperty property)
+    {
+        return $"{property.SourceName}_BackingField";
     }
     
     public override bool CanExport(UhtProperty property)
@@ -20,6 +25,35 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     public override string GetManagedType(UhtProperty property)
     {
         return $"TDelegate<{GetFullDelegateName(((UhtDelegateProperty) property).Function)}>";
+    }
+
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
+    {
+        base.ExportPropertyVariables(builder, property, propertyEngineName);
+        builder.AppendLine($"private {GetManagedType(property)}? {GetBackingField(property)} = null;");
+    }
+
+    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
+    {
+        string backingField = GetBackingField(property);
+
+        builder.AppendLine($"if (value == {backingField})");
+        builder.OpenBrace();
+        builder.AppendLine("return;");
+        builder.CloseBrace();
+
+        ExportToNative(builder, property, propertyManagedName, "NativeObject", $"{propertyManagedName}_Offset", "value", false);
+        builder.AppendLine($"{backingField} = null;");
+    }
+
+    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
+    {
+        string backingField = GetBackingField(property);
+        string propertyFieldName = GetNativePropertyField(propertyManagedName);
+        string fullDelegateName = GetFullDelegateName(((UhtDelegateProperty) property).Function);
+
+        builder.AppendLine($"{backingField} ??= SingleDelegateMarshaller<{fullDelegateName}>.FromNative(NativeObject + {propertyManagedName}_Offset, 0, {propertyFieldName});");
+        builder.AppendLine($"return {backingField};");
     }
 
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
