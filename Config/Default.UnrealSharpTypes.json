@@ -113,6 +113,14 @@
                 "HasDestructor": false
             },
             {
+                "Name": "FPointerEvent",
+                "HasDestructor": true
+            },
+            {
+                "Name": "FEventReply",
+                "HasDestructor": true
+            },
+            {
                 "Name": "FKey",
                 "HasDestructor": false
             }
