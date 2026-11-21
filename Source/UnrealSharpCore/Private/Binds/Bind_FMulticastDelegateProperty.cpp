@@ -38,13 +38,26 @@ DECLARE_UNREALSHARP_BINDER(Bind_FMulticastDelegateProperty)
 		DelegateProperty->AddDelegate(NewScriptDelegate, nullptr, Delegate);
 	}
 
-	bool IsBound(FMulticastScriptDelegate* Delegate)
+	bool IsBound(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate)
 	{
+		Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
+		if (!Delegate)
+		{
+			return false;
+		}
+
 		return Delegate->IsBound();
 	}
 
-	void ToString(FMulticastScriptDelegate* Delegate, FString* OutString)
+	void ToString(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, FString* OutString)
 	{
+		Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
+		if (!Delegate)
+		{
+			OutString->Reset();
+			return;
+		}
+
 		*OutString = Delegate->ToString<UObject>();
 	}
 
@@ -62,6 +75,11 @@ DECLARE_UNREALSHARP_BINDER(Bind_FMulticastDelegateProperty)
 	void BroadcastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, void* Parameters)
 	{
 		Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
+		if (!Delegate)
+		{
+			return;
+		}
+
 #if ENGINE_MINOR_VERSION >= 8
 		Delegate->ProcessDelegate<UObject>(Parameters);
 #else
@@ -73,6 +91,11 @@ DECLARE_UNREALSHARP_BINDER(Bind_FMulticastDelegateProperty)
 	{
 		FScriptDelegate NewScriptDelegate = MakeScriptDelegate(Target, FunctionName);
 		Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
+		if (!Delegate)
+		{
+			return false;
+		}
+
 		return Delegate->Contains(NewScriptDelegate);
 	}
 

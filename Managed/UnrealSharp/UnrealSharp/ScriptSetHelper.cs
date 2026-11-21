@@ -342,19 +342,16 @@ internal unsafe struct FScriptSetHelper
             return;
         }
 
-        // TODDODODO
-        int stride = 0;
-        IntPtr elementPtr = GetElementPtrWithoutCheck(index);
-
-        for (int i = 0; i < count; ++i)
+        int maxIndex = GetMaxIndex();
+        for (int i = index; count > 0 && i < maxIndex; ++i)
         {
-            if (IsValidIndex(index))
+            if (!IsValidIndex(i))
             {
-                _elementProp.DestroyValue_Container(elementPtr);
-                --count;
+                continue;
             }
-            
-            elementPtr += stride;
+
+            _elementProp.DestroyValue_Container(GetElementPtrWithoutCheck(i));
+            --count;
         }
     }
 

@@ -52,8 +52,11 @@ public:
     {
         CallGetterInternal(Container, OutValue);
 
-        // After get invocation we want to write the result into the native buffer as well
-        static_cast<const FProperty*>(this)->SetValue_InContainer(const_cast<void*>(Container), OutValue);
+        void* NativeValue = this->template ContainerPtrToValuePtr<void>(const_cast<void*>(Container));
+        if (NativeValue != OutValue)
+        {
+            this->CopyCompleteValue(NativeValue, OutValue);
+        }
     }
 
 #if ENGINE_MINOR_VERSION >= 8
@@ -231,7 +234,7 @@ private:
 #endif
 
         UObject* AsObject = static_cast<UObject*>(const_cast<void*>(Container));
-        FFrame NewStack(AsObject, GetterFunc, OutValue, nullptr, GetterFunc->ChildProperties);
+        FFrame NewStack(AsObject, Function, OutValue, nullptr, Function->ChildProperties);
         
         Function->Invoke(AsObject, NewStack, OutValue);
     }

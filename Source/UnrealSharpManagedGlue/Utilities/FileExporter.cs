@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
+using UnrealSharp.Automation.Utilities;
 using UnrealSharpManagedGlue.PropertyTranslators;
 using UnrealSharpManagedGlue.SourceGeneration;
 
@@ -105,7 +106,30 @@ public static class FileExporter
 		foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
 		{
 			CleanOldFilesInDirectories(plugin.GlueOutputDirectory);
+			RemoveRelocatedEngineGlue(plugin);
 		}
+	}
+
+	private static void RemoveRelocatedEngineGlue(ModuleInfo module)
+	{
+		if (!module.EmitsToProjectDirectory)
+		{
+			return;
+		}
+
+		string engineGlueDirectory = PathUtilities.GetUhtGeneratedModuleOutputPath(module.ModuleRoot, GeneratorStatics.TargetType, module.ModuleName);
+		if (string.Equals(Path.GetFullPath(engineGlueDirectory), Path.GetFullPath(module.GlueOutputDirectory), StringComparison.OrdinalIgnoreCase))
+		{
+			return;
+		}
+
+		if (!Directory.Exists(engineGlueDirectory))
+		{
+			return;
+		}
+
+		Directory.Delete(engineGlueDirectory, true);
+		HasModifiedEngineGlue = true;
 	}
 
 	public static void CleanGeneratedFolder(string path)

@@ -31,11 +31,27 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 	{
 		*OutName = IsValid(Object) ? Object->GetFName() : NAME_None;
 	}
-	
+
+	bool IsInvokeTargetValid(const UObject* NativeObject, const UFunction* NativeFunction)
+	{
+		if (NativeObject)
+		{
+			return true;
+		}
+
+		UE_LOG(LogUnrealSharp, Error, TEXT("Tried to call '%s' on a destroyed object"), *GetNameSafe(NativeFunction));
+		return false;
+	}
+
 	void InvokeNativeFunctionOutParms(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(InvokeNativeFunctionOutParms);
-		
+
+		if (!IsInvokeTargetValid(NativeObject, NativeFunction))
+		{
+			return;
+		}
+
 		if (!NativeFunction->HasAnyFunctionFlags(FUNC_Native) && NativeFunction->HasAnyFunctionFlags(FUNC_Event))
 		{
 			NativeObject->ProcessEvent(NativeFunction, Params);
@@ -92,6 +108,12 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 	void InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(InvokeNativeFunction);
+
+		if (!IsInvokeTargetValid(NativeObject, NativeFunction))
+		{
+			return;
+		}
+
 	    EvaluateInvokePath(NativeObject, NativeFunction, Params, ReturnValueAddress);
 	}
 
@@ -105,7 +127,12 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 	void InvokeNativeNetFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(InvokeNativeNetFunction);
-		
+
+		if (!IsInvokeTargetValid(NativeObject, NativeFunction))
+		{
+			return;
+		}
+
 		int32 FunctionCallspace = NativeObject->GetFunctionCallspace(NativeFunction, nullptr);
 
 		if (FunctionCallspace & FunctionCallspace::Remote)
