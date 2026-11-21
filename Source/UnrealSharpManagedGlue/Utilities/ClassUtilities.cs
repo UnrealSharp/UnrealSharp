@@ -50,7 +50,13 @@ public static class ClassUtilities
 
     public static UhtClass GetInterfaceAlternateClass(this UhtClass thisInterface)
     {
+#if UE_5_9_OR_LATER
+        return thisInterface.ClassType == UhtClassType.NativeInterface
+            ? thisInterface.InterfaceClass
+            : thisInterface.NativeInterfaceClass;
+#else
         return (UhtClass)thisInterface.AlternateObject!;
+#endif
     }
 
     public static bool HasAnyFlags(this UhtClass classObj, EClassFlags flags)

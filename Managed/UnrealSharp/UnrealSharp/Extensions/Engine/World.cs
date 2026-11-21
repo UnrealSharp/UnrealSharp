@@ -98,17 +98,17 @@ public partial class UWorld
     /// <summary>
     /// Returns true if we are running as a listen server or dedicated server
     /// </summary>
-    public bool IsServer => NetMode == ENetMode.ListenServer || NetMode == ENetMode.DedicatedServer;
+    public bool IsServer => NetMode == ENetMode.NM_ListenServer || NetMode == ENetMode.NM_DedicatedServer;
     
     /// <summary>
     /// Returns true if we are running as a client
     /// </summary>
-    public bool IsClient => NetMode == ENetMode.Client;
+    public bool IsClient => NetMode == ENetMode.NM_Client;
     
     /// <summary>
     /// Returns true if we are running as a standalone game. No multiplayer involved.
     /// </summary>
-	public bool IsStandalone => NetMode == ENetMode.Standalone;
+	public bool IsStandalone => NetMode == ENetMode.NM_Standalone;
     
     /// <summary>
     /// Jumps the server to new level.  If bAbsolute is true and we are using seemless traveling, we

@@ -41,7 +41,7 @@ public static class InterfaceExporter
         List<ExtensionMethod> exportedExtensionMethods = new();
         List<UhtFunction> autoCastFunctions = new();
 
-        if (interfaceObj.AlternateObject is UhtClass alternateObject)
+        if (interfaceObj.GetInterfaceAlternateClass() is { } alternateObject)
         {
             alternateObject.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides, exportedExtensionMethods, autoCastFunctions);
         }
