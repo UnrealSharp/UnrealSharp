@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "UObject/UnrealType.h"
+
 #include "CoreMinimal.h"
 
 struct FCSPropertyReflectionData;

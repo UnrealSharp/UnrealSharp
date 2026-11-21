@@ -1,4 +1,6 @@
 ﻿#include "Factories/CSFunctionFactory.h"
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "UnrealSharpCore.h"
 #include "Compilers/CSManagedClassCompiler.h"
 #include "Factories/CSPropertyFactory.h"

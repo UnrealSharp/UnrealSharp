@@ -1,4 +1,5 @@
 #include "Extensions/Subsystems/CSWorldSubsystem.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Extensions/Subsystems/SubsystemUtils.h"
 
 bool UCSWorldSubsystem::K2_ShouldCreateSubsystem_Implementation(UObject* SubsystemOuter) const

@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Engine/Engine.h"
 #include "CSManager.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UCSManager)

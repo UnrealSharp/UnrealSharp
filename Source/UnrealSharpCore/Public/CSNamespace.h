@@ -1,5 +1,7 @@
 #pragma once
 
+#include "UObject/UObjectGlobals.h"
+
 #include "ReflectionData/CSReflectionDataBase.h"
 
 struct UNREALSHARPCORE_API FCSNamespace : FCSReflectionDataBase

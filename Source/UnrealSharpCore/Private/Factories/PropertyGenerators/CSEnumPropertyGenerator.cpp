@@ -1,4 +1,6 @@
 #include "Factories/PropertyGenerators/CSEnumPropertyGenerator.h"
+#include "Engine/EngineTypes.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "CSManager.h"
 #include "Types/CSEnum.h"
 #include "ReflectionData/CSFieldType.h"

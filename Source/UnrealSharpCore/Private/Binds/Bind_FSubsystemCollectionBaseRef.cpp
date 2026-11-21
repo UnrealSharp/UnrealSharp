@@ -1,4 +1,5 @@
 ﻿#include "CSBindsRegistry.h"
+#include "Subsystems/SubsystemCollection.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FSubsystemCollectionBaseRef)
 {

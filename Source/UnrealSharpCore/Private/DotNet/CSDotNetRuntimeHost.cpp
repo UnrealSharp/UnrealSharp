@@ -1,4 +1,5 @@
 #include "DotNet/CSDotNetRuntimeHost.h"
+#include "Misc/CommandLine.h"
 
 #include "CSBindsRegistry.h"
 #include "UnrealSharpCore.h"

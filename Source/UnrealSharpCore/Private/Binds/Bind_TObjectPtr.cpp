@@ -1,4 +1,6 @@
 #include "CSBindsRegistry.h"
+#include "UObject/ObjectPtr.h"
+#include "UObject/Object.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_TObjectPtr)
 {

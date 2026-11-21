@@ -1,5 +1,9 @@
 #pragma once
 
+#include "CoreMinimal.h"
+
+class FJsonValue;
+
 namespace UnrealSharp::GlobalSettings
 {
 	UNREALSHARPUTILITIES_API TSharedPtr<FJsonValue> GetElement(const FString& ElementName);

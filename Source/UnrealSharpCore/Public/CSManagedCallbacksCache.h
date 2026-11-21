@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "CoreTypes.h"
 #include "CSInteropTypeTraits.h"
 #include "CSManagedGCHandleIntPtr.h"
 

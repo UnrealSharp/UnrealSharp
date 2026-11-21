@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Subsystems/SubsystemCollection.h"
+
 #include "CoreMinimal.h"
 #include "SubsystemCollectionBaseRef.generated.h"
 

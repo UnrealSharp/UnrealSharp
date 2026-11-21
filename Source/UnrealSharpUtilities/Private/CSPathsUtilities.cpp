@@ -6,6 +6,7 @@
 #include "CSProjectUtilities.h"
 #include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
+#include "Misc/Paths.h"
 
 FString UnrealSharp::Paths::GetPluginDirectory()
 {
