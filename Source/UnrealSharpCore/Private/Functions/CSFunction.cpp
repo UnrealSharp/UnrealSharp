@@ -57,6 +57,12 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	{
 		UWorld* World = Stack.Object->GetWorld();
 		WorldContext = World ? World : Stack.Object;
+
+		UObject* CurrentWorldContext = UCSManager::Get().GetCurrentWorldContext();
+		if (!World && CurrentWorldContext)
+		{
+			WorldContext = CurrentWorldContext;
+		}
 	}
 
 	UCSFunctionBase* ManagedFunction = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
