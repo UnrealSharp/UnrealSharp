@@ -6,12 +6,24 @@
 #include "CSPathsUtilities.h"
 #include "CSProcessUtilities.h"
 #include "CSUnrealSharpUtilitiesSettings.h"
+#include "CoreGlobals.h"
+#include "HAL/PlatformMisc.h"
 #include "IUATHelperModule.h"
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MonitoredProcess.h"
+#include "Misc/Guid.h"
 #include "Styling/SlateStyleRegistry.h"
 
 #define LOCTEXT_NAMESPACE "UnrealSharpBuildUtilities"
+
+namespace UATEnvVarNames
+{
+	// Matches AutomationTool.EnvVarNames in AutomationUtils/CommandEnvironment.cs.
+	constexpr const TCHAR* LogFolder = TEXT("uebp_LogFolder");
+	constexpr const TCHAR* FinalLogFolder = TEXT("uebp_FinalLogFolder");
+	constexpr const TCHAR* DisableStartupMutex = TEXT("uebp_UATMutexNoWait");
+	constexpr const TCHAR* IsChildInstance = TEXT("uebp_UATChildInstance");
+}
 
 bool UnrealSharp::Build::InvokeUnrealSharpAutomation(const FString& BuildAction, const TMap<FString, FString>* ActionArgs, const FCSCommandError& OnError)
 {
@@ -86,6 +98,19 @@ void UnrealSharp::Build::BuildArguments(const FString& BuildAction, const TMap<F
 	
 	OutArgs.Reset();
 	OutArgs += BuildAction;
+	const FString ParentLogFolder = FPlatformMisc::GetEnvironmentVariable(UATEnvVarNames::LogFolder);
+	if (IsRunningCommandlet() && !ParentLogFolder.IsEmpty())
+	{
+		// Follow CommandUtils.RunUAT's child-instance/log isolation in AutomationUtils/ProcessUtils.cs.
+		// UAT parses NAME=VALUE arguments before its startup mutex check (Program.cs),
+		// so these overrides affect only the child process. Reuse the parent's compiled tools.
+		const FString ChildLogFolder = FPaths::Combine(ParentLogFolder, TEXT("UnrealSharp"), FGuid::NewGuid().ToString(EGuidFormats::Digits));
+		OutArgs += FString::Printf(TEXT(" -nocompileuat -nocompile %s=1 %s=1"),
+			UATEnvVarNames::DisableStartupMutex, UATEnvVarNames::IsChildInstance);
+		OutArgs += FString::Printf(TEXT(" %s=\"%s\" %s=\"%s\""),
+			UATEnvVarNames::LogFolder, *ChildLogFolder,
+			UATEnvVarNames::FinalLogFolder, *ChildLogFolder);
+	}
 	if (FPaths::IsUnderDirectory(PluginFolder, ProjectFolder))
 	{
 		// Use the same discovery and build-record root as -ScriptsForProject.
