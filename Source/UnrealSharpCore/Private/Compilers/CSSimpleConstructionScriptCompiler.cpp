@@ -75,22 +75,21 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 
 		AllNodes.Add(FCSNodeInfo(ComponentNode, DefaultComponentData));
 
-		bool bWasRootNode = ComponentNode->IsRootNode();
-		bool bIsRootNodeNow = IsRootNode(DefaultComponentData, ComponentNode);
+		if (IsRootNode(DefaultComponentData, ComponentNode))
+		{
+			const bool bIsUnderAParentNode = !ComponentNode->IsRootNode();
+			const bool bHasAParentName = !ComponentNode->ParentComponentOrVariableName.IsNone();
+			if (bIsUnderAParentNode || bHasAParentName)
+			{
+				DetachNodeFromOldParent(ComponentNode, CurrentSCS);
+				CurrentSCS->AddNode(ComponentNode);
+			}
 
-		if (bWasRootNode && !bIsRootNodeNow)
-		{
-			// Node used to be root but no longer is, remove it from root
-			CurrentSCS->RemoveNode(ComponentNode, false);
-		}
-		else if (bWasRootNode && bIsRootNodeNow)
-		{
 			if (!ActorRootComponentInfo.IsValid() && ComponentNode->ComponentClass->IsChildOf<USceneComponent>())
 			{
 				ActorRootComponentInfo = FCSRootNodeInfo(ComponentNode, CurrentSCS);
 			}
-			
-			// Still a root node, nothing else to do. No attachment needed.
+
 			continue;
 		}
 
@@ -121,9 +120,11 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		}
 	}
 
+	const bool bRootIsLocalNode = !ActorRootComponentInfo.IsNative && !ActorRootComponentInfo.IsInOtherSCS;
+
 	for (const FCSAttachmentNode& AttachmentNode : AttachmentNodes)
 	{
-		if (AttachmentNode.Node->IsRootNode())
+		if (bRootIsLocalNode && AttachmentNode.Node->GetVariableName() == ActorRootComponentInfo.Name)
 		{
 			// Node was promoted to root in TryFindOrPromoteRootComponent, skip it
 			continue;
@@ -393,11 +394,6 @@ USCS_Node* FCSSimpleConstructionScriptCompiler::GetParentNode(FName ParentCompon
 
 bool FCSSimpleConstructionScriptCompiler::IsRootNode(const TSharedPtr<FCSDefaultComponentType>& DefaultComponentData, const USCS_Node* Node)
 {
-	if (Node->IsRootNode())
-	{
-		return true;
-	}
-	
 	if (DefaultComponentData->IsRootComponent)
 	{
 		// Root components and components with no valid attachment are just root nodes.

@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.Core;
@@ -30,17 +31,35 @@ public sealed class FileAdditionalText : AdditionalText
 public sealed class GenState
 {
     public GeneratorDriver? Driver;
-    public List<ISourceGenerator>? Generators;
-    public ImmutableArray<AdditionalText> AdditionalTexts;
-    public CSharpParseOptions ParseOptions = null!;
-    public AnalyzerConfigOptionsProvider AnalyzerOptions = null!;
-    public int AnalyzerRefCount;
-    public int AdditionalDocCount;
 
     public Compilation? InitialCompilation;
     public Dictionary<string, SyntaxTree>? TreesByPath;
+    public HashSet<string> DirtyPaths = new(StringComparer.OrdinalIgnoreCase);
 
-    public int MetadataRefCount;
+    public Compilation? LoadedCompilation;
+    public EmitBaseline? LoadedBaseline;
+    public Dictionary<string, SyntaxTree> LoadedTreesByPath = new(StringComparer.OrdinalIgnoreCase);
+    public HashSet<string> ChangedSinceLoad = new(StringComparer.OrdinalIgnoreCase);
+
+    public void MarkLoaded(Compilation compilation, EmitBaseline baseline)
+    {
+        LoadedCompilation = compilation;
+        LoadedBaseline = baseline;
+
+        foreach (string path in ChangedSinceLoad)
+        {
+            if (TreesByPath!.TryGetValue(path, out SyntaxTree? tree))
+            {
+                LoadedTreesByPath[path] = tree;
+            }
+            else
+            {
+                LoadedTreesByPath.Remove(path);
+            }
+        }
+
+        ChangedSinceLoad.Clear();
+    }
 }
 
 public static class SolutionManager
@@ -112,9 +131,6 @@ public static class SolutionManager
                 }
             }
 
-            state.Generators = generators;
-            state.InitialCompilation = compilation;
-
             List<AdditionalText> additional = new List<AdditionalText>(project.AdditionalDocuments.Count());
             foreach (TextDocument textDocument in project.AdditionalDocuments)
             {
@@ -123,27 +139,13 @@ public static class SolutionManager
                 additional.Add(new FileAdditionalText(textDocument.FilePath));
             }
 
-            state.AdditionalTexts = ImmutableArray.CreateRange(additional);
-
-            state.Driver = CSharpGeneratorDriver.Create(
-                state.Generators,
-                state.AdditionalTexts,
+            GeneratorDriver driver = CSharpGeneratorDriver.Create(
+                generators,
+                additional,
                 (CSharpParseOptions)project.ParseOptions!,
                 project.AnalyzerOptions.AnalyzerConfigOptionsProvider);
 
-            state.MetadataRefCount = project.MetadataReferences.Count;
-            state.AnalyzerRefCount = project.AnalyzerReferences.Count;
-            state.AdditionalDocCount = project.AdditionalDocuments.Count();
-
-            state.Driver = state.Driver!
-                .WithUpdatedParseOptions((CSharpParseOptions)project.ParseOptions!)
-                .WithUpdatedAnalyzerConfigOptions(project.AnalyzerOptions.AnalyzerConfigOptionsProvider);
-
-            state.Driver = state.Driver!.RunGeneratorsAndUpdateCompilation(
-                state.InitialCompilation!,
-                out Compilation updatedCompilation,
-                out _);
-
+            state.Driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out Compilation updatedCompilation, out _);
             state.InitialCompilation = updatedCompilation;
 
             HashSet<string> projectDocumentPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -176,9 +178,6 @@ public static class SolutionManager
 
             state.InitialCompilation = state.InitialCompilation.RemoveSyntaxTrees(generatedFilesToRemove);
             state.TreesByPath = new Dictionary<string, SyntaxTree>(project.Documents.Count(), StringComparer.OrdinalIgnoreCase);
-            
-            state.ParseOptions = (CSharpParseOptions)project.ParseOptions!;
-            state.AnalyzerOptions = project.AnalyzerOptions.AnalyzerConfigOptionsProvider;
 
             foreach (Document document in project.Documents)
             {
@@ -190,6 +189,7 @@ public static class SolutionManager
                 }
                 
                 state.TreesByPath[document.FilePath!] = tree;
+                state.LoadedTreesByPath[document.FilePath!] = tree;
             }
 
             LogUnrealSharpEditor.Log($"Project '{project.Name}' loaded for incremental generation.");

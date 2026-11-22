@@ -20,6 +20,11 @@
 
 #define LOCTEXT_NAMESPACE "UCSHotReloadSubsystem"
 
+namespace UCSHotReloadSubsystem_Private
+{
+	constexpr double FileChangeSettleSeconds = 0.1;
+}
+
 void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -86,16 +91,12 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 	return bHasPendingChanges;
 }
 
-void UCSHotReloadSubsystem::PerformHotReload()
+void UCSHotReloadSubsystem::PerformHotReload(const FCSHotReloadOptions& Options)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSHotReloadSubsystem::PerformHotReload)
-	
-	if (FPlayWorldCommandCallbacks::IsInPIE() || FPlayWorldCommandCallbacks::IsInSIE())
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Cannot perform C# hot reload while in PIE or SIE.");
-		return;
-	}
-	
+
+	const bool bIsInPlaySession = FPlayWorldCommandCallbacks::IsInPIE() || FPlayWorldCommandCallbacks::IsInSIE();
+
 	if (!HasPendingHotReloadChanges())
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "No pending C# changes to hot reload.");
@@ -120,23 +121,48 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	double StartTime = FPlatformTime::Seconds();
 
 	FScopedSlowTask Progress(4, LOCTEXT("HotReload", "Reloading C#..."));
-	if (!UnrealSharp::Dialogs::IsHeadless())
+	if (!UnrealSharp::Dialogs::IsHeadless() && !bIsInPlaySession)
 	{
 		Progress.MakeDialog(false, true);
 	}
-	
+
 	TArray<UCSManagedAssembly*> AssembliesSortedByDependencies;
 	FCSAssemblyUtilities::SortAssembliesByDependencyOrder(PendingModifiedAssemblies, AssembliesSortedByDependencies);
 
 	FString ExceptionMessage;
-	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
+	bool bPatchedInPlace = false;
+	const bool bAllowFullReload = !bIsInPlaySession;
+	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, bAllowFullReload, bPatchedInPlace, ExceptionMessage))
 	{
 		CurrentHotReloadStatus = EHotReloadStatus::FailedToCompile;
-		UnrealSharp::Dialogs::ShowError(FText::FromString(ExceptionMessage), LOCTEXT("CompilationFailedTitle", "C# Compilation Failed"));
+		if (Options.OutError)
+		{
+			*Options.OutError = ExceptionMessage;
+		}
+
+		if (Options.bShowErrorDialog)
+		{
+			UnrealSharp::Dialogs::ShowError(FText::FromString(ExceptionMessage), LOCTEXT("CompilationFailedTitle", "C# Compilation Failed"));
+		}
+
 		return;
 	}
-	
+
+	if (bIsInPlaySession && !bPatchedInPlace)
+	{
+		CurrentHotReloadStatus = EHotReloadStatus::Inactive;
+		UE_LOGFMT(LogUnrealSharpEditor, Display, "These C# changes can't be patched while playing, they need a full reload once PIE stops.");
+		return;
+	}
+
 	PendingModifiedAssemblies.Reset();
+
+	if (bPatchedInPlace)
+	{
+		CurrentHotReloadStatus = EHotReloadStatus::Inactive;
+		UE_LOG(LogUnrealSharpEditor, Display, TEXT("C# hot patch done in %.2f seconds."), FPlatformTime::Seconds() - StartTime);
+		return;
+	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Reloading Assemblies..."));
 	
@@ -171,8 +197,18 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	CurrentHotReloadStatus = EHotReloadStatus::Inactive;
 	bDetectedNewManagedType = false;
 	ReloadedTypes.Reset();
-	
+
 	UE_LOG(LogUnrealSharpEditor, Display, TEXT("C# Hot Reload completed in %.2f seconds."), FPlatformTime::Seconds() - StartTime);
+}
+
+void UCSHotReloadSubsystem::K2_PerformHotReload(bool bShowErrorDialog, FString& OutError)
+{
+	OutError.Reset();
+
+	FCSHotReloadOptions Options;
+	Options.bShowErrorDialog = bShowErrorDialog;
+	Options.OutError = &OutError;
+	PerformHotReload(Options);
 }
 
 void UCSHotReloadSubsystem::OnStructRebuilt(UCSScriptStruct* NewStruct)
@@ -199,6 +235,7 @@ void UCSHotReloadSubsystem::AppendPendingFileChange(const TArray<FFileChangeData
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSHotReloadSubsystem::AppendPendingFileChange)
 	
+	LastFileChangeTime = FPlatformTime::Seconds();
 	TArray<FFileChangeData>& PendingChangesForProject = PendingFileChanges.FindOrAdd(ProjectName);
 	
 	for (const FFileChangeData& ChangeData : ChangedFiles)
@@ -246,6 +283,12 @@ void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)
 
 bool UCSHotReloadSubsystem::Tick(float DeltaTime)
 {
+	const double SecondsSinceLastChange = FPlatformTime::Seconds() - LastFileChangeTime;
+	if (SecondsSinceLastChange >= UCSHotReloadSubsystem_Private::FileChangeSettleSeconds)
+	{
+		ProcessPendingFileChanges();
+	}
+	
 	if (FCSHotReloadUtilities::ShouldHotReloadOnEditorFocus(this))
 	{
 		PerformHotReload();
@@ -271,7 +314,7 @@ void UCSHotReloadSubsystem::AddDirectoryToWatch(const FString& Directory, FName 
 	FDelegateHandle Handle;
 	DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(
 		Directory,
-		IDirectoryWatcher::FDirectoryChanged::CreateUObject(this, &UCSHotReloadSubsystem::HandleScriptFileChanges, ProjectName),
+		IDirectoryWatcher::FDirectoryChanged::CreateUObject(this, &UCSHotReloadSubsystem::AppendPendingFileChange, ProjectName),
 		Handle);
 
 	WatchingDirectories.Add(Directory);
@@ -308,8 +351,13 @@ void UCSHotReloadSubsystem::ResumeHotReload()
 		PauseNotification->ExpireAndFadeout();
 		PauseNotification.Reset();
 	}
-	
-	for (const TPair<FName, TArray<FFileChangeData>>& Pair : PendingFileChanges)
+}
+
+void UCSHotReloadSubsystem::ProcessPendingFileChanges()
+{
+	TMap<FName, TArray<FFileChangeData>> FileChanges = MoveTemp(PendingFileChanges);
+
+	for (const TPair<FName, TArray<FFileChangeData>>& Pair : FileChanges)
 	{
 		HandleScriptFileChanges(Pair.Value, Pair.Key);
 	}
@@ -318,23 +366,18 @@ void UCSHotReloadSubsystem::ResumeHotReload()
 void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSHotReloadSubsystem::HandleScriptFileChanges)
-	
-	if (IsHotReloading())
-	{
-		return;
-	}
-	
+
 	TArray<FFileChangeData> CSharpFiles;
 	FCSHotReloadUtilities::GetChangedCSharpFiles(ChangedFiles, CSharpFiles);
-	
+
 	if (CSharpFiles.IsEmpty())
 	{
 		return;
 	}
-	
-	if (bIsHotReloadPaused)
+
+	if (bIsHotReloadPaused || IsHotReloading())
 	{
-		AppendPendingFileChange(ChangedFiles, ProjectName);
+		AppendPendingFileChange(CSharpFiles, ProjectName);
 		return;
 	}
 	

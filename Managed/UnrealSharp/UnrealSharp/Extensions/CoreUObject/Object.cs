@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Engine;
@@ -682,7 +683,7 @@ public partial class UObject
 
 public static class UObjectExtensions
 {
-    public static bool IsValid(this UObject? obj)
+    public static bool IsValid([NotNullWhen(true)] this UObject? obj)
     {
         return obj != null && !obj.IsDestroyed;
     }

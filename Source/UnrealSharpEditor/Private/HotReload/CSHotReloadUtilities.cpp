@@ -83,7 +83,7 @@ bool FCSHotReloadUtilities::ApplyDirtiedFiles(const FString& ProjectName, const 
 	return true;
 }
 
-bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssembly*>& Assemblies, FString& OutExceptionMessage)
+bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssembly*>& Assemblies, bool bAllowFullReload, bool& bOutPatchedInPlace, FString& OutExceptionMessage)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSHotReloadUtilities::RecompileDirtyProjects)
 	
@@ -102,7 +102,8 @@ bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssemb
 		AssemblyNames.Add(Assembly->GetName());
 	}
 	
-	return UnrealSharpEditorModule.GetManagedEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, &AssemblyNames);
+	const FCSManagedEditorCallbacks& Callbacks = UnrealSharpEditorModule.GetManagedEditorCallbacks();
+	return Callbacks.RecompileDirtyProjects(&OutExceptionMessage, &AssemblyNames, bAllowFullReload, &bOutPatchedInPlace);
 }
 
 void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<FCSObjectID>& RebuiltTypes)

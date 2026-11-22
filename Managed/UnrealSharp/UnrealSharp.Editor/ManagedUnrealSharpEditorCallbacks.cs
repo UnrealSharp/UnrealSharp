@@ -10,7 +10,7 @@ namespace UnrealSharp.Editor;
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct FManagedUnrealSharpEditorCallbacks()
 {
-    public delegate* unmanaged<IntPtr, UnmanagedArray*, NativeBool> RecompileDirtyProjects = &ManagedUnrealSharpEditorCallbacks.RecompileDirtyProjects;
+    public delegate* unmanaged<IntPtr, UnmanagedArray*, NativeBool, NativeBool*, NativeBool> RecompileDirtyProjects = &ManagedUnrealSharpEditorCallbacks.RecompileDirtyProjects;
     
     public delegate* unmanaged<char*, char*, IntPtr, void> RecompileChangedFile = &ManagedUnrealSharpEditorCallbacks.RecompileChangedFile;
     public delegate* unmanaged<char*, char*, void> RemoveSourceFile = &ManagedUnrealSharpEditorCallbacks.RemoveSourceFile;
@@ -67,7 +67,8 @@ public static class ManagedUnrealSharpEditorCallbacks
     }
 
     [UnmanagedCallersOnly]
-    public static unsafe NativeBool RecompileDirtyProjects(IntPtr exceptionBuffer, UnmanagedArray* pendingModifiedAssembliesBuffer)
+    public static unsafe NativeBool RecompileDirtyProjects(IntPtr exceptionBuffer, UnmanagedArray* pendingModifiedAssembliesBuffer,
+        NativeBool allowFullReload, NativeBool* outPatchedInPlace)
     {
         try
         {
@@ -79,7 +80,9 @@ public static class ManagedUnrealSharpEditorCallbacks
 
             List<string> modifiedAssemblyNames = pendingModifiedAssembliesBuffer->ToListWithMarshaller(StringMarshaller.FromNative);
             
-            IncrementalCompilationManager.RecompileDirtyProjects(modifiedAssemblyNames);
+            bool fullReloadAllowed = allowFullReload.ToManagedBool();
+            bool patchedInPlace = IncrementalCompilationManager.RecompileDirtyProjects(modifiedAssemblyNames, fullReloadAllowed);
+            *outPatchedInPlace = patchedInPlace.ToNativeBool();
         }
         catch (InvalidOperationException exception)
         {
@@ -172,7 +175,7 @@ public static class ManagedUnrealSharpEditorCallbacks
         {
             string projectNameStr = new string(projectName);
             string filePathStr = new string(filePath);
-            IncrementalCompilationManager.RecompileChangedFile(projectNameStr, filePathStr);
+            IncrementalCompilationManager.MarkSourceFileDirty(projectNameStr, filePathStr);
         }
         catch (Exception exception)
         {
@@ -185,6 +188,6 @@ public static class ManagedUnrealSharpEditorCallbacks
     {
         string projectNameStr = new string(projectName);
         string filePathStr = new string(filePath);
-        IncrementalCompilationManager.RemoveSourceFile(projectNameStr, filePathStr);
+        IncrementalCompilationManager.MarkSourceFileDirty(projectNameStr, filePathStr);
     }
 }

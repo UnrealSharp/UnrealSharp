@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.Editor.Utilities;
@@ -14,13 +13,14 @@ namespace UnrealSharp.Editor;
 
 public static class IncrementalCompilationManager
 {
+    private readonly record struct CompiledProject(Project Project, GenState State, Compilation Compilation, byte[] Image);
+
     private static bool NeedsProjectStateRefresh(GenState? state)
     {
         return state == null
                || state.Driver == null
                || state.InitialCompilation == null
-               || state.TreesByPath == null
-               || state.Generators == null;
+               || state.TreesByPath == null;
     }
 
     private static bool IsSkippablePath(string path)
@@ -30,7 +30,7 @@ public static class IncrementalCompilationManager
                || normalized.Contains("/bin/", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static void RemoveSourceFile(string projectName, string filepath)
+    public static void MarkSourceFileDirty(string projectName, string filepath)
     {
         Project? foundProject = SolutionManager.GetProjectByName(projectName);
 
@@ -51,6 +51,11 @@ public static class IncrementalCompilationManager
             return;
         }
 
+        state.DirtyPaths.Add(fullPath);
+    }
+
+    private static void RemoveSyntaxTree(GenState state, string fullPath)
+    {
         if (!state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingTree))
         {
             return;
@@ -60,52 +65,17 @@ public static class IncrementalCompilationManager
         state.TreesByPath.Remove(fullPath);
     }
 
-    public static void RecompileChangedFile(string projectName, string filepath)
+    private static void ApplySourceFile(Project project, GenState state, string fullPath)
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        Project? foundProject = SolutionManager.GetProjectByName(projectName);
+        SourceText newText = SourceText.From(File.ReadAllText(fullPath), Encoding.UTF8);
 
-        if (foundProject is null)
-        {
-            throw new Exception($"Project '{projectName}' not found in solution.");
-        }
-
-        GenState? state = SolutionManager.GetProjectState(foundProject.Id);
-        if (state == null)
-        {
-            throw new Exception($"Project '{projectName}' not initialized for incremental generation.");
-        }
-
-        string fullPath = Path.GetFullPath(filepath);
-        if (IsSkippablePath(fullPath))
-        {
-            return;
-        }
-
-        string fileContent = File.ReadAllText(fullPath);
-        SourceText newText = SourceText.From(fileContent, Encoding.UTF8);
-
-        CSharpParseOptions parseOptions = (CSharpParseOptions)foundProject.ParseOptions!;
+        CSharpParseOptions parseOptions = (CSharpParseOptions)project.ParseOptions!;
         SyntaxTree newTree = CSharpSyntaxTree.ParseText(newText, parseOptions, path: fullPath);
 
-        if (newTree.GetDiagnostics().Any())
+        string errors = FormatErrors(newTree.GetDiagnostics());
+        if (errors.Length > 0)
         {
-            StringBuilder builder = new StringBuilder();
-
-            foreach (Diagnostic diagnostic in newTree.GetDiagnostics())
-            {
-                if (diagnostic.Severity != DiagnosticSeverity.Error)
-                {
-                    continue;
-                }
-
-                builder.AppendLine(diagnostic.ToString());
-            }
-
-            if (builder.Length > 0)
-            {
-                throw new Exception(builder.ToString());
-            }
+            throw new Exception(errors);
         }
 
         if (state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingTree))
@@ -117,15 +87,46 @@ public static class IncrementalCompilationManager
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
 
-        SyntaxUtilities.LookForChangesInUnrealTypes(newTree, existingTree, foundProject);
-
         state.TreesByPath[fullPath] = newTree;
-
-        stopwatch.Stop();
-        LogUnrealSharpEditor.Log($"Processed dirty file '{Path.GetFileName(filepath)}' in project '{projectName}' in {stopwatch.Elapsed.TotalMilliseconds:F2}ms.");
     }
 
-    public static void RecompileDirtyProjects(List<string> modifiedAssemblyNames)
+    private static void ApplyDirtyPathsFromDisk(Project project, GenState state)
+    {
+        StringBuilder errors = new StringBuilder();
+
+        foreach (string fullPath in state.DirtyPaths.ToList())
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            try
+            {
+                if (File.Exists(fullPath))
+                {
+                    ApplySourceFile(project, state, fullPath);
+                }
+                else
+                {
+                    RemoveSyntaxTree(state, fullPath);
+                }
+
+                state.DirtyPaths.Remove(fullPath);
+                state.ChangedSinceLoad.Add(fullPath);
+                string fileName = Path.GetFileName(fullPath);
+                LogUnrealSharpEditor.Log($"Picked up changes to {fileName} in {stopwatch.Elapsed.TotalMilliseconds:F2} ms.");
+            }
+            catch (Exception exception)
+            {
+                errors.AppendLine(exception.Message);
+            }
+        }
+
+        if (errors.Length > 0)
+        {
+            throw new Exception(errors.ToString());
+        }
+    }
+
+    public static bool RecompileDirtyProjects(List<string> modifiedAssemblyNames, bool allowFullReload)
     {
         List<Project> projects = ProjectUtilities.GetProjectsFromNames(modifiedAssemblyNames, SolutionManager.CurrentProjects);
 
@@ -136,6 +137,8 @@ public static class IncrementalCompilationManager
             throw new InvalidOperationException("Modified assemblies could not be resolved to Roslyn projects: "
                                                 + string.Join(", ", missingAssemblyNames));
         }
+
+        List<CompiledProject> compiledProjects = new List<CompiledProject>(projects.Count);
 
         for (int i = projects.Count - 1; i >= 0; i--)
         {
@@ -159,81 +162,26 @@ public static class IncrementalCompilationManager
                 throw new Exception($"Project '{project.Name}' not initialized for incremental generation.");
             }
 
-            CSharpParseOptions parseOptions = (CSharpParseOptions)project.ParseOptions!;
-            AnalyzerConfigOptionsProvider analyzerOptions = project.AnalyzerOptions.AnalyzerConfigOptionsProvider;
+            ApplyDirtyPathsFromDisk(project, state);
 
-            bool firstTime = state.Driver == null;
-            bool analyzersChanged = state.AnalyzerRefCount != project.AnalyzerReferences.Count;
-            bool additionalChanged = state.AdditionalDocCount != project.AdditionalDocuments.Count();
-            bool optionsChanged = !ReferenceEquals(state.ParseOptions, parseOptions) ||
-                                  !ReferenceEquals(state.AnalyzerOptions, analyzerOptions);
-            bool refsChanged = state.MetadataRefCount != project.MetadataReferences.Count;
-
-            if (firstTime || analyzersChanged)
-            {
-                state.AnalyzerRefCount = project.AnalyzerReferences.Count;
-            }
-
-            if (firstTime || state.AdditionalTexts.IsDefault || additionalChanged)
-            {
-                List<AdditionalText> additionalTexts = new List<AdditionalText>();
-                foreach (TextDocument textDocument in project.AdditionalDocuments)
-                {
-                    Document document = (Document)textDocument;
-
-                    if (document.FilePath is not null)
-                    {
-                        additionalTexts.Add(new FileAdditionalText(document.FilePath));
-                    }
-                }
-
-                state.AdditionalTexts = ImmutableArray.CreateRange(additionalTexts);
-                state.AdditionalDocCount = project.AdditionalDocuments.Count();
-            }
-
-            if (optionsChanged && state.Driver is not null)
-            {
-                state.Driver = state.Driver
-                    .WithUpdatedParseOptions(parseOptions)
-                    .WithUpdatedAnalyzerConfigOptions(analyzerOptions);
-            }
-
-            if (refsChanged)
-            {
-                state.MetadataRefCount = project.MetadataReferences.Count;
-            }
-
-            GeneratorDriver driver = state.Driver!.RunGeneratorsAndUpdateCompilation(
+            state.Driver = state.Driver!.RunGeneratorsAndUpdateCompilation(
                 state.InitialCompilation!,
                 out Compilation updatedCompilation,
-                out ImmutableArray<Diagnostic> genDiagnosticsInner);
+                out ImmutableArray<Diagnostic> generatorDiagnostics);
 
-            state.Driver = driver;
-
-            if (genDiagnosticsInner.Any())
+            string generatorErrors = FormatErrors(generatorDiagnostics);
+            if (generatorErrors.Length > 0)
             {
-                StringBuilder stringBuilder = new StringBuilder();
-                foreach (Diagnostic diagnostic in genDiagnosticsInner)
-                {
-                    if (diagnostic.Severity != DiagnosticSeverity.Error)
-                    {
-                        continue;
-                    }
-
-                    stringBuilder.AppendLine(diagnostic.ToString());
-                }
-
-                if (stringBuilder.Length > 0) throw new Exception("Source generator failed:\n" + stringBuilder);
+                throw new Exception("Source generator failed:\n" + generatorErrors);
             }
-
-            state.ParseOptions = parseOptions;
-            state.AnalyzerOptions = analyzerOptions;
 
             UpdateDependentProjectsWithNewCompilation(updatedCompilation, project);
 
             stopwatch.Stop();
             LogUnrealSharpEditor.Log($"Project '{project.Name}' generated source in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
-            EmitResultsToDisk(project, updatedCompilation);
+
+            byte[] image = EmitResultsToDisk(project, updatedCompilation);
+            compiledProjects.Add(new CompiledProject(project, state, updatedCompilation, image));
         }
 
         List<string> assemblies = new List<string>(SolutionManager.UnrealSharpWorkspace.CurrentSolution.Projects.Count());
@@ -244,9 +192,60 @@ public static class IncrementalCompilationManager
         }
 
         string outputDir = Path.GetDirectoryName(assemblies[0])!;
-        
+
         LoadOrderOptions loadOrderOptions = new LoadOrderOptions() { Collectible = true, Priority = 0 };
         AssemblyUtilities.EmitLoadOrder(assemblies, outputDir, loadOrderOptions, "UserCode");
+
+        bool patchedAll = true;
+        foreach ((Project project, GenState state, Compilation compilation, _) in compiledProjects)
+        {
+            if (LoadedAssemblyPatcher.TryPatchLoadedAssembly(project, state, compilation))
+            {
+                continue;
+            }
+
+            patchedAll = false;
+            break;
+        }
+
+        if (patchedAll)
+        {
+            return true;
+        }
+
+        if (!allowFullReload)
+        {
+            return false;
+        }
+
+        foreach (CompiledProject compiledProject in compiledProjects)
+        {
+            PrepareFullReload(compiledProject);
+        }
+
+        return false;
+    }
+
+    private static void PrepareFullReload(CompiledProject compiledProject)
+    {
+        GenState state = compiledProject.State;
+
+        foreach (string path in state.ChangedSinceLoad)
+        {
+            if (!state.TreesByPath!.TryGetValue(path, out SyntaxTree? newTree))
+            {
+                continue;
+            }
+
+            state.LoadedTreesByPath.TryGetValue(path, out SyntaxTree? loadedTree);
+            SyntaxUtilities.LookForChangesInUnrealTypes(newTree, loadedTree, compiledProject.Project);
+        }
+
+        ModuleMetadata metadata = ModuleMetadata.CreateFromImage(compiledProject.Image);
+        Compilation compilation = compiledProject.Compilation;
+        const bool HasPortablePdb = true;
+        EmitBaseline baseline = EmitBaseline.CreateInitialBaseline(compilation, metadata, _ => default, _ => default, HasPortablePdb);
+        state.MarkLoaded(compilation, baseline);
     }
 
     private static void UpdateDependentProjectsWithNewCompilation(Compilation newCompilation, Project producedProject)
@@ -319,60 +318,38 @@ public static class IncrementalCompilationManager
         return GetOutputPath(project, extension);
     }
 
-    private static void EmitResultsToDisk(Project project, Compilation updatedCompilation)
+    private static byte[] EmitResultsToDisk(Project project, Compilation updatedCompilation)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
 
-        string assemblyPath = GetAssemblyOutputPath(project);
-        string symbolsPath = GetOutputPath(project, ".pdb");
-        string assemblyTempPath = assemblyPath + ".tmp";
-        string symbolsTempPath = symbolsPath + ".tmp";
-
+        using MemoryStream assemblyStream = new MemoryStream();
+        using MemoryStream symbolsStream = new MemoryStream();
         EmitOptions emitOptions = new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb);
-        EmitResult emitResult;
-
-        using (FileStream assemblyStream = File.Create(assemblyTempPath))
-        using (FileStream symbolsStream = File.Create(symbolsTempPath))
-        {
-            emitResult = updatedCompilation.Emit(assemblyStream, symbolsStream, options: emitOptions);
-        }
+        EmitResult emitResult = updatedCompilation.Emit(assemblyStream, symbolsStream, options: emitOptions);
 
         if (!emitResult.Success)
         {
-            StringBuilder stringBuilder = new StringBuilder(256);
-
-            foreach (Diagnostic diagnostic in emitResult.Diagnostics)
-            {
-                if (diagnostic.Severity != DiagnosticSeverity.Error)
-                {
-                    continue;
-                }
-
-                if (stringBuilder.Length > 0)
-                {
-                    stringBuilder.Append(Environment.NewLine);
-                }
-
-                stringBuilder.Append(diagnostic);
-            }
-
-            if (File.Exists(assemblyTempPath))
-            {
-                File.Delete(assemblyTempPath);
-            }
-
-            if (File.Exists(symbolsTempPath))
-            {
-                File.Delete(symbolsTempPath);
-            }
-
-            throw new InvalidOperationException(stringBuilder.ToString());
+            throw new InvalidOperationException(FormatErrors(emitResult.Diagnostics));
         }
 
-        File.Move(assemblyTempPath, assemblyPath, true);
-        File.Move(symbolsTempPath, symbolsPath, true);
+        byte[] image = assemblyStream.ToArray();
+        WriteFileAtomically(GetAssemblyOutputPath(project), image);
+        WriteFileAtomically(GetOutputPath(project, ".pdb"), symbolsStream.ToArray());
 
         stopwatch.Stop();
         LogUnrealSharpEditor.Log($"Project '{project.Name}' produced an assembly in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
+        return image;
+    }
+
+    private static void WriteFileAtomically(string path, byte[] bytes)
+    {
+        string tempPath = path + ".tmp";
+        File.WriteAllBytes(tempPath, bytes);
+        File.Move(tempPath, path, true);
+    }
+
+    public static string FormatErrors(IEnumerable<Diagnostic> diagnostics)
+    {
+        return string.Join(Environment.NewLine, diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
     }
 }
