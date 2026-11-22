@@ -143,6 +143,46 @@ public partial record struct FVector
         return new FVector(value.X / length, value.Y / length, value.Z / length);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public FVector GetSafeNormal(double tolerance = 1e-8)
+    {
+        double lengthSquared = LengthSquared();
+        if (lengthSquared < tolerance)
+        {
+            return Zero;
+        }
+
+        return this * (1.0 / Math.Sqrt(lengthSquared));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public FVector GetSafeNormal2D(double tolerance = 1e-8)
+    {
+        return new FVector(X, Y, 0).GetSafeNormal(tolerance);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public double Length2D()
+    {
+        return double.Hypot(X, Y);
+    }
+
+    public static double Distance2D(FVector value1, FVector value2)
+    {
+        return double.Hypot(value1.X - value2.X, value1.Y - value2.Y);
+    }
+
+    public static double AngleDegrees(FVector from, FVector to)
+    {
+        return double.RadiansToDegrees(Math.Atan2(Cross(from, to).Length(), Dot(from, to)));
+    }
+
+    public FVector RotateAngleAxis(double degrees, FVector axis)
+    {
+        FQuat rotation = FQuat.CreateFromAxisAngle(axis.GetSafeNormal(), double.DegreesToRadians(degrees));
+        return Transform(this, rotation);
+    }
+
     /// <summary>
     /// Computes the cross product of two vectors.
     /// </summary>

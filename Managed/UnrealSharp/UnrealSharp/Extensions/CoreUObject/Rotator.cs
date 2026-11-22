@@ -141,6 +141,21 @@ public partial record struct FRotator
         return rotator * scale;
     }
     
+    public static double NormalizeAxis(double angle)
+    {
+        return Math.IEEERemainder(angle, 360.0);
+    }
+
+    public FRotator GetNormalized()
+    {
+        return new FRotator(NormalizeAxis(Pitch), NormalizeAxis(Yaw), NormalizeAxis(Roll));
+    }
+
+    public static FRotator Lerp(FRotator from, FRotator to, double alpha)
+    {
+        return from + (to - from).GetNormalized() * alpha;
+    }
+
     public static implicit operator FRotator(FQuat quat) => new FRotator(quat);
     public static implicit operator FRotator(FMatrix matrix) => new FRotator(matrix);
     public static implicit operator FRotator(FVector vector) => new FRotator(vector);
