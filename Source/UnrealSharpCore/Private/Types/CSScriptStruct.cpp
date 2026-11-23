@@ -2,9 +2,16 @@
 
 #if WITH_EDITOR
 #include "Kismet2/StructureEditorUtils.h"
+#include "Misc/EngineVersionComparison.h"
 #include "UObject/FieldIterator.h"
 #include "UObject/UObjectIterator.h"
 #include "UObject/UnrealType.h"
+
+#if !UE_VERSION_OLDER_THAN(5, 8, 0)
+PRAGMA_DISABLE_INTERNAL_WARNINGS
+#include "StructUtils/StructReinstancer.h"
+PRAGMA_ENABLE_INTERNAL_WARNINGS
+#endif
 
 UClass* UCSScriptStruct::SnapshotEditorDataClass = nullptr;
 
@@ -41,6 +48,18 @@ void UCSScriptStruct::PrepareForRecompile()
 		bPendingPostChange = true;
 	}
 
+#if !UE_VERSION_OLDER_THAN(5, 8, 0)
+	// From UE 5.8, instanced structs, instanced struct containers and property bags are migrated by the struct's
+	// compiler instead of a listener. Register the snapshot that still describes their memory.
+	PRAGMA_DISABLE_INTERNAL_WARNINGS
+	UE::StructUtils::FStructReinstancer* Reinstancer = UE::StructUtils::FStructReinstancer::GetInstance();
+	if (Reinstancer)
+	{
+		Reinstancer->AddStruct(this, Duplicate);
+	}
+	PRAGMA_ENABLE_INTERNAL_WARNINGS
+#endif
+
 	TSet<UStruct*> Owners;
 	for (TAllFieldsIterator<FStructProperty> It(RF_NoFlags); It; ++It)
 	{
@@ -56,10 +75,32 @@ void UCSScriptStruct::PrepareForRecompile()
 	{
 		Owner->CollectBytecodeAndPropertyReferencedObjects();
 	}
+
+#if !UE_VERSION_OLDER_THAN(5, 8, 0)
+	// Save the objects holding such values now that properties use the snapshot, as CompileStruct does.
+	if (Reinstancer)
+	{
+		PRAGMA_DISABLE_INTERNAL_WARNINGS
+		Reinstancer->CollectObjects();
+		PRAGMA_ENABLE_INTERNAL_WARNINGS
+	}
+#endif
 }
 
 void UCSScriptStruct::FinishRecompile()
 {
+#if !UE_VERSION_OLDER_THAN(5, 8, 0)
+	// Load the saved objects back with the rebuilt struct before listeners are told it changed.
+	PRAGMA_DISABLE_INTERNAL_WARNINGS
+	UE::StructUtils::FStructReinstancer* Reinstancer = UE::StructUtils::FStructReinstancer::GetInstance();
+	if (Reinstancer && Reinstancer->IsReinstanting(this))
+	{
+		Reinstancer->SetCompiledStruct(this, this);
+		Reinstancer->ReinstanceObjects();
+	}
+	PRAGMA_ENABLE_INTERNAL_WARNINGS
+#endif
+
 	if (bPendingPostChange)
 	{
 		bPendingPostChange = false;

@@ -6,7 +6,14 @@
 #include "UnrealSharpUtils.h"
 
 #if WITH_EDITOR
+#include "Misc/EngineVersionComparison.h"
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
+
+#if !UE_VERSION_OLDER_THAN(5, 8, 0)
+PRAGMA_DISABLE_INTERNAL_WARNINGS
+#include "StructUtils/StructReinstancer.h"
+PRAGMA_ENABLE_INTERNAL_WARNINGS
+#endif
 #endif
 
 UCSManagedStructCompiler::UCSManagedStructCompiler()
@@ -20,6 +27,14 @@ void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr
 	TSharedPtr<FCSStructReflectionData> StructReflectionData = ManagedTypeDefinition->GetReflectionData<FCSStructReflectionData>();
 	
 #if WITH_EDITOR
+#if !UE_VERSION_OLDER_THAN(5, 8, 0)
+	// Struct reinstancer for this rebuild, as in FUserDefinedStructureCompilerUtils::CompileStruct. PrepareForRecompile
+	// saves the instanced structs, instanced struct containers and property bags holding the struct, and
+	// FinishRecompile loads them back with the new layout.
+	PRAGMA_DISABLE_INTERNAL_WARNINGS
+	UE::StructUtils::FStructReinstancerScope ReinstancerScope;
+	PRAGMA_ENABLE_INTERNAL_WARNINGS
+#endif
 	Struct->PrepareForRecompile();
 #endif
 
