@@ -40,6 +40,7 @@ void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr
 	RegisterFieldToLoader(TypeToRecompile, ENotifyRegistrationType::NRT_Struct);
 
 #if WITH_EDITOR
+	Struct->FinishRecompile();
 	UCSManager::Get().OnNewStructEvent().Broadcast(Struct);
 #endif
 }

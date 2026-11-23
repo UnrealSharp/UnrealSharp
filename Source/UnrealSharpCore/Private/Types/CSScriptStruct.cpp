@@ -1,9 +1,12 @@
 #include "Types/CSScriptStruct.h"
 
 #if WITH_EDITOR
+#include "Kismet2/StructureEditorUtils.h"
 #include "UObject/FieldIterator.h"
 #include "UObject/UObjectIterator.h"
 #include "UObject/UnrealType.h"
+
+UClass* UCSScriptStruct::SnapshotEditorDataClass = nullptr;
 
 void UCSScriptStruct::PrepareForRecompile()
 {
@@ -28,6 +31,16 @@ void UCSScriptStruct::PrepareForRecompile()
 	Duplicate->DefaultStructInstance.Recreate(Duplicate);
 	Duplicate->CopyScriptStruct(Duplicate->DefaultStructInstance.GetStructMemory(), GetDefaultInstance());
 
+	// Same order as FUserDefinedStructureCompilerUtils::CompileStruct: once the snapshot exists, notify the editor while
+	// the old layout is still linked. Data tables save their rows, and listeners such as StructUtils, RigVM, Optimus and
+	// Python keep or release what they hold. The editor data is dropped when the struct is purged.
+	if (SnapshotEditorDataClass)
+	{
+		EditorData = NewObject<UObject>(this, SnapshotEditorDataClass, NAME_None, RF_Transient);
+		FStructureEditorUtils::BroadcastPreChange(this);
+		bPendingPostChange = true;
+	}
+
 	TSet<UStruct*> Owners;
 	for (TAllFieldsIterator<FStructProperty> It(RF_NoFlags); It; ++It)
 	{
@@ -42,6 +55,15 @@ void UCSScriptStruct::PrepareForRecompile()
 	for (UStruct* Owner : Owners)
 	{
 		Owner->CollectBytecodeAndPropertyReferencedObjects();
+	}
+}
+
+void UCSScriptStruct::FinishRecompile()
+{
+	if (bPendingPostChange)
+	{
+		bPendingPostChange = false;
+		FStructureEditorUtils::BroadcastPostChange(this);
 	}
 }
 #endif

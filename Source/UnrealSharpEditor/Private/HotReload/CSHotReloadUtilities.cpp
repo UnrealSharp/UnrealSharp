@@ -218,7 +218,6 @@ void FCSHotReloadUtilities::RefreshStructs(const TSet<FCSObjectID>& RebuiltTypes
 		}
 		
 		RebuiltStruct->OnChanged();
-		FStructureEditorUtils::BroadcastPostChange(RebuiltStruct);
 	}
 }
 

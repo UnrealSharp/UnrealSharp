@@ -18,10 +18,24 @@ public:
 	void Initialize();
 
 #if WITH_EDITOR
+	/** Moves everything holding the current layout onto a snapshot of it and notifies the editor that the struct is about to change. */
 	void PrepareForRecompile();
+
+	/** Notifies the editor that the struct has been rebuilt, pairing the notification sent by PrepareForRecompile. */
+	void FinishRecompile();
+
+	/**
+	 * Editor data class (a UUserDefinedStructEditorData) attached while the struct is rebuilt. The editor's struct change
+	 * listeners snapshot user defined structs through it, so notifications are only sent when the editor module set it.
+	 */
+	static UNREALSHARPCORE_API UClass* SnapshotEditorDataClass;
 #endif
 	
 private:
 	void InitializeStructDefaults();
 	TUniquePtr<uint8[]> StructDefaults;
+
+#if WITH_EDITOR
+	bool bPendingPostChange = false;
+#endif
 };
