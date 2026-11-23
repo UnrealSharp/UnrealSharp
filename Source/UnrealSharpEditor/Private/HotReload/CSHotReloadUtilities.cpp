@@ -208,16 +208,78 @@ void FCSHotReloadUtilities::RefreshBlueprintActionDatabase(const TSet<FCSObjectI
 
 void FCSHotReloadUtilities::RefreshStructs(const TSet<FCSObjectID>& RebuiltTypes)
 {
+	TSet<const UScriptStruct*> RebuiltStructs;
 	for (const FCSObjectID& ObjectID : RebuiltTypes)
 	{
 		UCSScriptStruct* RebuiltStruct = ObjectID.GetUObject<UCSScriptStruct>();
-		
+
 		if (!IsValid(RebuiltStruct))
 		{
 			continue;
 		}
-		
+
 		RebuiltStruct->OnChanged();
+		RebuiltStructs.Add(RebuiltStruct);
+	}
+
+	RecompileUserStructsUsingRebuiltStructs(RebuiltStructs);
+}
+
+void FCSHotReloadUtilities::RecompileUserStructsUsingRebuiltStructs(const TSet<const UScriptStruct*>& RebuiltStructs)
+{
+	if (RebuiltStructs.IsEmpty())
+	{
+		return;
+	}
+
+	// Rebuilding a struct points members of other structs at a snapshot of its previous layout. Managed structs are
+	// recompiled with it; user defined structs are recompiled by the editor, as it does for their own member structs.
+	auto ReferencesPreviousLayout = [&RebuiltStructs](const FProperty* Property, auto& Self) -> bool
+	{
+		if (const FStructProperty* StructProperty = CastField<FStructProperty>(Property))
+		{
+			const UUserDefinedStruct* Snapshot = Cast<UUserDefinedStruct>(StructProperty->Struct);
+			if (Snapshot && Snapshot->Status == UDSS_Duplicate && RebuiltStructs.Contains(Snapshot->PrimaryStruct.Get()))
+			{
+				return true;
+			}
+		}
+
+		TArray<FField*> InnerFields;
+		const_cast<FProperty*>(Property)->GetInnerFields(InnerFields);
+		for (const FField* InnerField : InnerFields)
+		{
+			const FProperty* InnerProperty = CastField<FProperty>(InnerField);
+			if (InnerProperty && Self(InnerProperty, Self))
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	TArray<UUserDefinedStruct*> UserStructsToRecompile;
+	for (TObjectIterator<UUserDefinedStruct> It; It; ++It)
+	{
+		UUserDefinedStruct* UserStruct = *It;
+		if (!IsValid(UserStruct) || UserStruct->IsA<UCSScriptStruct>() || UserStruct->Status == UDSS_Duplicate)
+		{
+			continue;
+		}
+
+		for (TFieldIterator<FProperty> PropertyIt(UserStruct, EFieldIteratorFlags::ExcludeSuper); PropertyIt; ++PropertyIt)
+		{
+			if (ReferencesPreviousLayout(*PropertyIt, ReferencesPreviousLayout))
+			{
+				UserStructsToRecompile.Add(UserStruct);
+				break;
+			}
+		}
+	}
+
+	for (UUserDefinedStruct* UserStruct : UserStructsToRecompile)
+	{
+		FStructureEditorUtils::OnStructureChanged(UserStruct, FStructureEditorUtils::Unknown);
 	}
 }
 

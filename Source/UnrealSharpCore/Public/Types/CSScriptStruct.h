@@ -18,8 +18,11 @@ public:
 	void Initialize();
 
 #if WITH_EDITOR
-	/** Moves everything holding the current layout onto a snapshot of it and notifies the editor that the struct is about to change. */
-	void PrepareForRecompile();
+	/**
+	 * Moves everything holding the current layout onto a snapshot of it and notifies the editor that the struct is about
+	 * to change. Returns the managed structs embedding this struct, which must be rebuilt once it has been.
+	 */
+	void PrepareForRecompile(TArray<TSharedPtr<FCSManagedTypeDefinition>>& OutManagedOwners);
 
 	/** Notifies the editor that the struct has been rebuilt, pairing the notification sent by PrepareForRecompile. */
 	void FinishRecompile();

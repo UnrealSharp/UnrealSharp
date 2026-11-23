@@ -15,7 +15,7 @@ PRAGMA_ENABLE_INTERNAL_WARNINGS
 
 UClass* UCSScriptStruct::SnapshotEditorDataClass = nullptr;
 
-void UCSScriptStruct::PrepareForRecompile()
+void UCSScriptStruct::PrepareForRecompile(TArray<TSharedPtr<FCSManagedTypeDefinition>>& OutManagedOwners)
 {
 	if (GetStructureSize() == 0)
 	{
@@ -74,6 +74,14 @@ void UCSScriptStruct::PrepareForRecompile()
 	for (UStruct* Owner : Owners)
 	{
 		Owner->CollectBytecodeAndPropertyReferencedObjects();
+
+		// Managed classes are recompiled and reinstanced once the assembly has loaded; managed structs embedding
+		// this one have no such pass and would keep the snapshot as their member type.
+		UCSScriptStruct* OwnerStruct = Cast<UCSScriptStruct>(Owner);
+		if (OwnerStruct && OwnerStruct->Status != UDSS_Duplicate && OwnerStruct->HasManagedTypeDefinition())
+		{
+			OutManagedOwners.AddUnique(OwnerStruct->GetManagedTypeDefinition());
+		}
 	}
 
 #if !UE_VERSION_OLDER_THAN(5, 8, 0)

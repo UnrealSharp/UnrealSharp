@@ -35,7 +35,8 @@ void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr
 	UE::StructUtils::FStructReinstancerScope ReinstancerScope;
 	PRAGMA_ENABLE_INTERNAL_WARNINGS
 #endif
-	Struct->PrepareForRecompile();
+	TArray<TSharedPtr<FCSManagedTypeDefinition>> ManagedOwners;
+	Struct->PrepareForRecompile(ManagedOwners);
 #endif
 
 	PurgeStruct(Struct);
@@ -57,6 +58,14 @@ void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr
 #if WITH_EDITOR
 	Struct->FinishRecompile();
 	UCSManager::Get().OnNewStructEvent().Broadcast(Struct);
+
+	// Structs embedding this one still point at its previous layout and must be rebuilt against the new one,
+	// as the editor recompiles user defined structs that contain a changed struct.
+	for (const TSharedPtr<FCSManagedTypeDefinition>& ManagedOwner : ManagedOwners)
+	{
+		ManagedOwner->SetDirtyFlags(StructuralChanges);
+		ManagedOwner->Compile();
+	}
 #endif
 }
 
