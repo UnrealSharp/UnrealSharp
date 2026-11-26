@@ -59,10 +59,16 @@ public static class ClassExporter
         // For manual exports we just want to generate attributes
         if (!isManualExport)
         {
+            Dictionary<string, GetterSetterPair> staticGetterSetters = new(exportedGetterSetters);
+            foreach (GetterSetterPair pair in getSetOverrides.Values)
+            {
+                staticGetterSetters.TryAdd(pair.Accessors.First().EngineName, pair);
+            }
+
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj,
                 exportedProperties,
                 exportedFunctions,
-                exportedGetterSetters,
+                staticGetterSetters,
                 getSetBackedProperties,
                 exportedOverrides);
 
