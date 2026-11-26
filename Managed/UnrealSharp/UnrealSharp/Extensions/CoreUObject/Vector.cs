@@ -183,6 +183,19 @@ public partial record struct FVector
         return Transform(this, rotation);
     }
 
+    public static FVector CubicInterp(FVector p0, FVector t0, FVector p1, FVector t1, double alpha)
+    {
+        double a2 = alpha * alpha;
+        double a3 = a2 * alpha;
+        return (2 * a3 - 3 * a2 + 1) * p0 + (a3 - 2 * a2 + alpha) * t0 + (a3 - a2) * t1 + (3 * a2 - 2 * a3) * p1;
+    }
+
+    public static FVector CubicInterpDerivative(FVector p0, FVector t0, FVector p1, FVector t1, double alpha)
+    {
+        double a2 = alpha * alpha;
+        return (6 * a2 - 6 * alpha) * p0 + (3 * a2 - 4 * alpha + 1) * t0 + (3 * a2 - 2 * alpha) * t1 + (6 * alpha - 6 * a2) * p1;
+    }
+
     /// <summary>
     /// Computes the cross product of two vectors.
     /// </summary>
