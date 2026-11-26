@@ -89,7 +89,7 @@ public struct TSubclassOf<T>
     /// <exception cref="InvalidOperationException">Thrown if the class is not a subclass of the specified type.</exception>
     public TSubclassOf<TChildClass> As<TChildClass>()
     {
-        if (!IsChildOf(typeof(TChildClass)))
+        if (NativeClass != IntPtr.Zero && !IsChildOf(typeof(TChildClass)))
         {
             throw new InvalidOperationException($"Cannot cast to {typeof(TChildClass).Name}. The class is not a subclass of {typeof(TChildClass).Name}.");
         }
