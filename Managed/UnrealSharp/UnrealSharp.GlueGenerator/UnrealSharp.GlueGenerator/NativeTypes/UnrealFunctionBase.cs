@@ -181,7 +181,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         IMethodSymbol methodSymbol = (IMethodSymbol)symbol;
 
         UnrealFunctionBase unrealFunction;
-        if (methodSymbol.IsAsync)
+        if (methodSymbol.IsAsync || (methodSymbol.PartialImplementationPart?.IsAsync ?? false))
         {
             UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(methodSymbol, outer!);
             unrealClass.AddAsyncFunction(asyncFunction);
