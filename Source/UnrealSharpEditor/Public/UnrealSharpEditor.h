@@ -24,6 +24,7 @@ class FCSScriptBuilder;
 class FCSSourceCodeNavigation;
 class FCSSubobjectEditorCustomization;
 class FCSBlueprintEditorCustomization;
+struct FObjectPostCDOCompiledContext;
 
 struct FCSManagedEditorCallbacks
 {
@@ -82,6 +83,7 @@ public:
 
 private:
     void RegisterSubobjectEditorCustomization();
+    void OnObjectPostCDOCompiled(UObject* Object, const FObjectPostCDOCompiledContext& Context);
 
     TSharedPtr<FCSSourceCodeNavigation> SourceCodeNavigation;
     TSharedPtr<FCSSubobjectEditorCustomization> SubobjectEditorCustomization;
