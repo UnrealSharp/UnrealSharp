@@ -1,3 +1,6 @@
 {
-  "ScriptDirectoryName": "Script"
+  "ScriptDirectoryName": "Script",
+  "ExcludedHeaderPaths": [
+    "Engine/Source/Editor/JsonUtilitiesEditor/Private/Tests/JsonSchemaGeneratorTests.h"
+  ]
 }

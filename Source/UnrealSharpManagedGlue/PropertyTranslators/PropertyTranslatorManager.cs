@@ -154,6 +154,14 @@ public static class PropertyTranslatorManager
         InclusionLists.BanProperty("UActorComponent", "bReplicates");
         InclusionLists.BanFunction("UActorComponent", "SetIsReplicated");
 
+        // Provided by the managed Actor and ActorComponent extensions.
+        InclusionLists.BanFunction("AActor", "AddReplicatedSubObject");
+        InclusionLists.BanFunction("AActor", "RemoveReplicatedSubObject");
+        InclusionLists.BanFunction("AActor", "IsReplicatedSubObjectRegistered");
+        InclusionLists.BanFunction("UActorComponent", "AddReplicatedSubObject");
+        InclusionLists.BanFunction("UActorComponent", "RemoveReplicatedSubObject");
+        InclusionLists.BanFunction("UActorComponent", "IsReplicatedSubObjectRegistered");
+
         // Doesn't have any fields
         InclusionLists.BanArithmetic("FSubsystemCollectionBaseRef");
         InclusionLists.BanArithmetic("FRandomStream");

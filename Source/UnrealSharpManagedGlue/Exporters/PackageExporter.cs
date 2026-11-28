@@ -37,6 +37,13 @@ public static class PackageExporter
         for (int i = 0; i < childrenCount; i++)
         {
             UhtType child = package.Children[i];
+            processedHeaders[i] = child.HeaderFile;
+            // Apply exclusions before both export and unchanged-file bookkeeping so
+            // cached fixture bindings are removed without hiding reusable test APIs.
+            if (UnrealSharpSettingsUtilities.IsHeaderExcluded(child.HeaderFile.FilePath))
+            {
+                continue;
+            }
             bool hasChanged = !generatedGlueFolderExists || PackageHeadersTracker.HasHeaderFileChanged(packageName, child.HeaderFile);
             Action<UhtType> processAction = hasChanged ? ExportType : FileExporter.AddUnchangedType;
 
@@ -47,7 +54,6 @@ public static class PackageExporter
                 processAction(type);
             }
             
-            processedHeaders[i] = child.HeaderFile;
         }
         
         PackageHeadersTracker.RecordPackageHeadersWriteTime(packageName, processedHeaders);

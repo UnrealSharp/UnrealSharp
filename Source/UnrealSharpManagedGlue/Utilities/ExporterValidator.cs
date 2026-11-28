@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Text.Json;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
 public static class ExporterValidator
 {
 	private static string AssemblyModificationTimeFile => Path.Combine(GeneratorStatics.PluginModule.OutputDirectory, "GlueGeneratorTimestamp");
+	private static string HeaderExclusionsFile => Path.Combine(GeneratorStatics.PluginModule.OutputDirectory, "GlueGeneratorHeaderExclusions.json");
 
 	static bool HasAssemblyRecentlyChanged()
 	{
@@ -33,7 +35,9 @@ public static class ExporterValidator
 	{
 		ConsoleUtilities.Log("Validating exporter...");
 
-		if (!HasAssemblyRecentlyChanged())
+		string exclusions = JsonSerializer.Serialize(UnrealSharpSettingsUtilities.ExcludedHeaderPaths);
+		bool exclusionsChanged = !File.Exists(HeaderExclusionsFile) || File.ReadAllText(HeaderExclusionsFile) != exclusions;
+		if (!HasAssemblyRecentlyChanged() && !exclusionsChanged)
 		{
 			PackageHeadersTracker.DeserializeModuleHeaders();
 			return;
@@ -42,6 +46,8 @@ public static class ExporterValidator
 		ConsoleUtilities.Log("Exporter is stale. Re-exporting all bindings...");
 		CleanModules();
 		CreateTimestamp();
+		// Changing an exclusion must also regenerate headers that were previously skipped.
+		File.WriteAllText(HeaderExclusionsFile, exclusions);
 	}
 
 	private static void CreateTimestamp()
