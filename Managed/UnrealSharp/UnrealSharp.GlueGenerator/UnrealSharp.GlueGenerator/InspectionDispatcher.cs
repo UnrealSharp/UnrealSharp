@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes;
@@ -297,27 +298,71 @@ public static class InspectionDispatcher
     }
 
     public static void InspectMembers(UnrealType topType, ITypeSymbol typeSymbol, TypeDeclarationSyntax typeDeclaration,
-        GeneratorAttributeSyntaxContext ctx)
+        GeneratorAttributeSyntaxContext ctx, CancellationToken cancellationToken = default)
     {
         if (typeDeclaration.ParameterList != null)
         {
             RunMemberInspections(topType, null, typeSymbol.GetMembers(), ctx);
+            return;
         }
-        else
+
+        if (typeSymbol.TypeKind is TypeKind.Class or TypeKind.Interface &&
+            typeSymbol.DeclaringSyntaxReferences.Length > 1)
         {
-            foreach (MemberDeclarationSyntax memberDeclaration in typeDeclaration.Members)
+            InspectPartialTypeMembers(topType, typeSymbol, ctx, cancellationToken);
+            return;
+        }
+
+        foreach (MemberDeclarationSyntax memberDeclaration in typeDeclaration.Members)
+        {
+            ImmutableArray<ISymbol> memberSymbols =
+                GetDeclaredSymbolsForMember(memberDeclaration, ctx.SemanticModel);
+
+            if (memberSymbols.IsDefaultOrEmpty)
             {
-                ImmutableArray<ISymbol> memberSymbols =
-                    GetDeclaredSymbolsForMember(memberDeclaration, ctx.SemanticModel);
+                continue;
+            }
 
-                if (memberSymbols.IsDefaultOrEmpty)
-                {
-                    continue;
-                }
+            RunMemberInspections(topType, memberDeclaration, memberSymbols, ctx);
+        }
+    }
 
-                RunMemberInspections(topType, memberDeclaration, memberSymbols, ctx);
+    private static void InspectPartialTypeMembers(UnrealType topType, ITypeSymbol typeSymbol,
+        GeneratorAttributeSyntaxContext ctx, CancellationToken cancellationToken)
+    {
+        foreach (ISymbol memberSymbol in typeSymbol.GetMembers())
+        {
+            if (memberSymbol.IsImplicitlyDeclared || memberSymbol is ITypeSymbol)
+            {
+                continue;
+            }
+
+            InspectMember(topType, memberSymbol, memberDecl: null, ctx, cancellationToken, resolveDeclaration: true);
+        }
+    }
+
+    private static MemberDeclarationSyntax? GetMemberDeclaration(ISymbol memberSymbol,
+        CancellationToken cancellationToken)
+    {
+        ISymbol syntaxSymbol = memberSymbol is IPropertySymbol { PartialImplementationPart: { } implementation }
+            ? implementation
+            : memberSymbol;
+
+        foreach (SyntaxReference syntaxReference in syntaxSymbol.DeclaringSyntaxReferences)
+        {
+            SyntaxNode syntax = syntaxReference.GetSyntax(cancellationToken);
+            if (syntax is MemberDeclarationSyntax memberDeclaration)
+            {
+                return memberDeclaration;
+            }
+
+            if (syntax is VariableDeclaratorSyntax { Parent.Parent: FieldDeclarationSyntax fieldDeclaration })
+            {
+                return fieldDeclaration;
             }
         }
+
+        return null;
     }
 
     private static void RunMemberInspections(UnrealType topType, MemberDeclarationSyntax? memberDecl,
@@ -325,50 +370,61 @@ public static class InspectionDispatcher
     {
         foreach (ISymbol memberSymbol in memberSymbols)
         {
-            List<InspectionContext>? inspections = null;
-            ImmutableArray<AttributeData> attributes = memberSymbol.GetAttributes();
+            InspectMember(topType, memberSymbol, memberDecl, ctx, CancellationToken.None, resolveDeclaration: false);
+        }
+    }
 
-            foreach (AttributeData attribute in attributes)
-            {
-                string? attributeName = attribute.AttributeClass?.Name;
+    private static void InspectMember(UnrealType topType, ISymbol memberSymbol, MemberDeclarationSyntax? memberDecl,
+        GeneratorAttributeSyntaxContext ctx, CancellationToken cancellationToken, bool resolveDeclaration)
+    {
+        List<InspectionContext>? inspections = null;
+        ImmutableArray<AttributeData> attributes = memberSymbol.GetAttributes();
 
-                if (attributeName is null || !TryGetInspectorData(attributeName, out InspectorData? inspectorData))
-                {
-                    continue;
-                }
+        foreach (AttributeData attribute in attributes)
+        {
+            string? attributeName = attribute.AttributeClass?.Name;
 
-                inspections ??= new List<InspectionContext>();
-
-                InspectionContext? foundContext = null;
-
-                foreach (InspectionContext existing in inspections)
-                {
-                    if (existing.InspectorData == inspectorData)
-                    {
-                        foundContext = existing;
-                        break;
-                    }
-                }
-
-                if (foundContext is null)
-                {
-                    foundContext = new InspectionContext(inspectorData!);
-                    inspections.Add(foundContext);
-                }
-
-                foundContext.Attributes.Add(attribute);
-            }
-
-            if (inspections is null)
+            if (attributeName is null || !TryGetInspectorData(attributeName, out InspectorData? inspectorData))
             {
                 continue;
             }
 
-            foreach (InspectionContext inspectionContext in inspections)
+            inspections ??= new List<InspectionContext>();
+
+            InspectionContext? foundContext = null;
+
+            foreach (InspectionContext existing in inspections)
             {
-                inspectionContext.InspectorData.ApplyInspection(topType, memberDecl, ctx, memberSymbol,
-                    inspectionContext.Attributes);
+                if (existing.InspectorData == inspectorData)
+                {
+                    foundContext = existing;
+                    break;
+                }
             }
+
+            if (foundContext is null)
+            {
+                foundContext = new InspectionContext(inspectorData!);
+                inspections.Add(foundContext);
+            }
+
+            foundContext.Attributes.Add(attribute);
+        }
+
+        if (inspections is null)
+        {
+            return;
+        }
+
+        if (memberDecl is null && resolveDeclaration)
+        {
+            memberDecl = GetMemberDeclaration(memberSymbol, cancellationToken);
+        }
+
+        foreach (InspectionContext inspectionContext in inspections)
+        {
+            inspectionContext.InspectorData.ApplyInspection(topType, memberDecl, ctx, memberSymbol,
+                inspectionContext.Attributes);
         }
     }
 

@@ -121,7 +121,7 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
             if (ctx.TargetNode is TypeDeclarationSyntax typeDeclarationSyntax)
             {
                 ITypeSymbol typeSymbol = (ITypeSymbol)ctx.TargetSymbol;
-                InspectionDispatcher.InspectMembers(newType, typeSymbol, typeDeclarationSyntax, ctx);
+                InspectionDispatcher.InspectMembers(newType, typeSymbol, typeDeclarationSyntax, ctx, cancellationToken);
             }
 
             newType.CollectDependencies();
