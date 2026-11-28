@@ -192,6 +192,10 @@ load_assembly_and_get_function_pointer_fn FCSDotNetRuntimeHost::ConfigureRuntime
 	UE_LOGFMT(LogUnrealSharp, Log, "Runtime config is self-contained: {0}",
 	          DotNetUtilities::IsSelfContainedRuntimeConfig(Layout.RuntimeConfigPath));
 
+#if WITH_EDITOR
+	FPlatformMisc::SetEnvironmentVar(TEXT("DOTNET_MODIFIABLE_ASSEMBLIES"), TEXT("debug"));
+#endif
+
 	const FString ExecutablePath = FPlatformProcess::ExecutablePath();
 
 	DotNetUtilities::FHostStringConversion DotNetRootConv = StringCast<DotNetUtilities::FHostChar>(*Layout.DotNetRoot);

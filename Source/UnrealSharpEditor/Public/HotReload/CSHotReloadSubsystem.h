@@ -19,6 +19,12 @@ enum class EHotReloadStatus : uint8
 	FailedToCompile
 };
 
+struct FCSHotReloadOptions
+{
+	bool bShowErrorDialog = true;
+	FString* OutError = nullptr;
+};
+
 UCLASS(BlueprintType)
 class UCSHotReloadSubsystem : public UEditorSubsystem
 {
@@ -48,8 +54,10 @@ public:
 	UNREALSHARPEDITOR_API bool HasPendingHotReloadChanges() const;
 	
 	/** Reloads pending changes when ready and outside PIE/SIE. */
-	UFUNCTION(BlueprintCallable, Category = "UnrealSharp | Hot Reload")
-	UNREALSHARPEDITOR_API void PerformHotReload();
+	UNREALSHARPEDITOR_API void PerformHotReload(const FCSHotReloadOptions& Options = FCSHotReloadOptions());
+
+	UFUNCTION(BlueprintCallable, Category = "UnrealSharp | Hot Reload", meta = (DisplayName = "Perform Hot Reload", ScriptName = "PerformHotReload"))
+	UNREALSHARPEDITOR_API void K2_PerformHotReload(bool bShowErrorDialog, FString& OutError);
 
 	UFUNCTION(BlueprintPure, Category = "UnrealSharp | Hot Reload")
 	UNREALSHARPEDITOR_API EHotReloadStatus GetHotReloadStatus() const { return CurrentHotReloadStatus; }
@@ -79,6 +87,7 @@ private:
 	void OnInterfaceRebuilt(UCSInterface* NewInterface);
 	
 	void AppendPendingFileChange(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
+	void ProcessPendingFileChanges();
 	
 	void AddReloadedType(const UObject* NewType)
 	{
@@ -105,6 +114,7 @@ private:
 	TArray<FString> WatchingDirectories;
 
 	TMap<FName, TArray<FFileChangeData>> PendingFileChanges;
+	double LastFileChangeTime = 0.0;
 
 	TSet<FCSObjectID> ReloadedTypes;
 	bool bDetectedNewManagedType = false;

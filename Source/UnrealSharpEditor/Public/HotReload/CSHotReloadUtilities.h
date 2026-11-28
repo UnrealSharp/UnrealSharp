@@ -26,7 +26,7 @@ namespace FCSHotReloadUtilities
 	void CollectDirtiedFiles(const TArray<FFileChangeData>& ChangedFiles, TArray<FCSChangedFile>& OutDirtied);
 	bool ApplyDirtiedFiles(const FString& ProjectName, const TArray<FCSChangedFile>& DirtyFiles, FString& OutException);
 	
-	bool RecompileDirtyProjects(const TArray<UCSManagedAssembly*>& Assemblies, FString& OutExceptionMessage);
+	bool RecompileDirtyProjects(const TArray<UCSManagedAssembly*>& Assemblies, bool bAllowFullReload, bool& bOutPatchedInPlace, FString& OutExceptionMessage);
 	
 	void RebuildDependentBlueprints(const TSet<FCSObjectID>& RebuiltTypes);
 	void RefreshPlacementMode();
