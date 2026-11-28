@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
+using UnrealSharp.Attributes;
 using UnrealSharp.Plugins;
 
 namespace UnrealSharp.Editor;
@@ -345,6 +346,12 @@ public static class LoadedAssemblyPatcher
         return newRequired > oldParameters.Length || newParameters.Length < oldRequired;
     }
 
+    private static bool IsModule(INamedTypeSymbol type)
+    {
+        string moduleAttribute = typeof(UModuleAttribute).FullName!;
+        return type.GetAttributes().Any(attribute => attribute.AttributeClass?.ToDisplayString() == moduleAttribute);
+    }
+
     private static bool HasOtherMemberWithName(INamedTypeSymbol type, string name, List<IMethodSymbol> added)
     {
         bool hasOther = type.GetMembers(name).Any(member => !added.Contains(member, SymbolEqualityComparer.Default));
@@ -399,13 +406,15 @@ public static class LoadedAssemblyPatcher
                 return true;
             }
 
+            ISymbol loadedOwner = OwnerOf(loadedModel, loadedBody);
             bool touchesHiddenMembers = CompilesToHiddenMembers(loadedBody) || CompilesToHiddenMembers(newBody);
-            if (loadedBody.Parent is ConstructorDeclarationSyntax || touchesHiddenMembers)
+            bool runsOnlyAtLoad = loadedBody.Parent is ConstructorDeclarationSyntax || IsModule(loadedOwner.ContainingType);
+            if (runsOnlyAtLoad || touchesHiddenMembers)
             {
                 return false;
             }
 
-            edits.Add(new(SemanticEditKind.Update, OwnerOf(loadedModel, loadedBody), OwnerOf(newModel, newBody)));
+            edits.Add(new(SemanticEditKind.Update, loadedOwner, OwnerOf(newModel, newBody)));
             return true;
         }
 
