@@ -16,6 +16,7 @@
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
 #include "CSSourceCodeNavigation.h"
+#include "CSScriptStructEditorData.h"
 #include "CSSubobjectEditorCustomization.h"
 #include "CSBlueprintEditorCustomization.h"
 #include "BlueprintEditorModule.h"
@@ -64,6 +65,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	}
 	SourceCodeNavigation = MakeShared<FCSSourceCodeNavigation>();
 	FSourceCodeNavigation::AddNavigationHandler(SourceCodeNavigation.Get());
+	UCSScriptStruct::SnapshotEditorDataClass = UCSScriptStructEditorData::StaticClass();
 	// Runtime glue can load this module before GEditor exists. Kismet requires an initialized editor.
 	if (GEditor)
 	{
@@ -104,6 +106,7 @@ void FUnrealSharpEditorModule::StartupModule()
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
+	UCSScriptStruct::SnapshotEditorDataClass = nullptr;
 #if UE_VERSION_OLDER_THAN(5, 8, 0)
 	FCoreDelegates::OnPostEngineInit.RemoveAll(this);
 #else
