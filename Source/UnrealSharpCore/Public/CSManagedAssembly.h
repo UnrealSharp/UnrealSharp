@@ -81,6 +81,12 @@ private:
 
 	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>> ManagedTypeRegistry;
 	TArray<TSharedPtr<FCSManagedTypeDefinition>> PendingCompilationTypes;
+
+#if WITH_EDITOR
+	// Types that the latest load of this assembly no longer defines, e.g. deleted or renamed C# types.
+	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>> RemovedManagedTypes;
+	TSet<FCSFieldName> TypesPendingRemoval;
+#endif
 	
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedTypeHandles;
 	TArray<TSharedPtr<FGCHandle>> ManagedHandles;
