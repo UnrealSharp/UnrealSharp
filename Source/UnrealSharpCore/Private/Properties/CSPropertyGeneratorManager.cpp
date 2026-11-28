@@ -1,4 +1,5 @@
 ﻿#include "Properties/CSPropertyGeneratorManager.h"
+#include "UObject/Utf8StrProperty.h"
 
 #include <array>
 #include "UnrealSharpCore.h"

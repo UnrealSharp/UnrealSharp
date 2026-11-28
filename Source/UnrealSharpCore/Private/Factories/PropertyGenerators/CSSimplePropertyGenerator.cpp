@@ -1,4 +1,5 @@
 #include "Factories/PropertyGenerators/CSSimplePropertyGenerator.h"
+#include "UObject/Utf8StrProperty.h"
 
 UCSSimplePropertyGenerator::UCSSimplePropertyGenerator(FObjectInitializer const& ObjectInitializer): Super(ObjectInitializer)
 {
