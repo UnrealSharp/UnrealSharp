@@ -1,5 +1,9 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
+#include "Blueprint/UserWidget.h"
+#include "UObject/ObjectCompileContext.h"
+#include "Compilers/CSManagedClassCompiler.h"
+#include "Utilities/CSClassUtilities.h"
 #include "CSBuildActionUtilities.h"
 #include "CSBuildUtilties.h"
 #include "CSDialogUtilities.h"
@@ -86,6 +90,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	}
 
 	FCSStyle::Initialize();
+	FCoreUObjectDelegates::OnObjectPostCDOCompiled.AddRaw(this, &FUnrealSharpEditorModule::OnObjectPostCDOCompiled);
 
 	RegisterCommands();
 	RegisterToolbar();
@@ -104,6 +109,7 @@ void FUnrealSharpEditorModule::ShutdownModule()
 #else
 	FCoreDelegates::GetOnPostEngineInit().RemoveAll(this);
 #endif
+	FCoreUObjectDelegates::OnObjectPostCDOCompiled.RemoveAll(this);
 	if (SubobjectEditorCustomization.IsValid())
 	{
 		if (FBlueprintEditorModule* BlueprintEditorModule = FModuleManager::GetModulePtr<FBlueprintEditorModule>(TEXT("Kismet")))
@@ -130,6 +136,23 @@ void FUnrealSharpEditorModule::ShutdownModule()
 	UToolMenus::UnRegisterStartupCallback(this);
 	UToolMenus::UnregisterOwner(this);
     UnregisterPluginTemplates();
+}
+
+void FUnrealSharpEditorModule::OnObjectPostCDOCompiled(UObject* Object, const FObjectPostCDOCompiledContext& Context)
+{
+	UClass* Class = Object->GetClass();
+	if (UUserWidget* DefaultWidget = Cast<UUserWidget>(Object))
+	{
+		DefaultWidget->bHasScriptImplementedTick |= Class->IsFunctionImplementedInScript(GET_FUNCTION_NAME_CHECKED(UUserWidget, Tick));
+		return;
+	}
+
+	if (!FCSClassUtilities::GetFirstManagedClass(Class))
+	{
+		return;
+	}
+
+	UCSManagedClassCompiler::SetupDefaultTickSettings(Object, Class);
 }
 
 void FUnrealSharpEditorModule::RegisterSubobjectEditorCustomization()

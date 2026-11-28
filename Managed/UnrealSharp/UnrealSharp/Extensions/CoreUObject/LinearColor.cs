@@ -42,7 +42,12 @@ public partial record struct FLinearColor
     {
         return new FLinearColor(a.R - b, a.G - b, a.B - b, a.A - b);
     }
-    
+
+    public static FLinearColor Lerp(FLinearColor a, FLinearColor b, float alpha)
+    {
+        return new FLinearColor(float.Lerp(a.R, b.R, alpha), float.Lerp(a.G, b.G, alpha), float.Lerp(a.B, b.B, alpha), float.Lerp(a.A, b.A, alpha));
+    }
+
     public bool IsZero()
     {
         return R == 0 && G == 0 && B == 0 && A == 0;

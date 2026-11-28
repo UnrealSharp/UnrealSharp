@@ -14,6 +14,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UFunction)
 	{
 		UClass* Outer = NativeFunction->GetOuterUClass();
 		UFunction* Specialization = NewObject<UFunction>(Outer, UFunction::StaticClass());
+		Specialization->AddToRoot();
 		Specialization->FunctionFlags = NativeFunction->FunctionFlags;
 		Specialization->SetSuperStruct(NativeFunction);
 		Specialization->SetNativeFunc(NativeFunction->GetNativeFunc());

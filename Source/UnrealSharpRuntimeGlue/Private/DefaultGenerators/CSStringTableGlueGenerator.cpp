@@ -19,7 +19,7 @@ void UCSStringTableGlueGenerator::Initialize()
 
 void UCSStringTableGlueGenerator::OnPackageSaved(const FString& PackageFileName, UPackage* Package, FObjectPostSaveContext SaveContext)
 {
-	if (!Package || !FindObjectWithOuter(Package, UStringTable::StaticClass()))
+	if (SaveContext.IsCooking() || !Package || !FindObjectWithOuter(Package, UStringTable::StaticClass()))
 	{
 		return;
 	}
