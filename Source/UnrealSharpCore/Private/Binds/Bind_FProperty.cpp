@@ -1,5 +1,6 @@
 ﻿#include "CSBindsRegistry.h"
 #include "INotifyFieldValueChanged.h"
+#include "UObject/UnrealType.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FProperty)
 {

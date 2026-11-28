@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CoreTypes.h"
+
 namespace UnrealSharp::BuildAction
 {
 	inline constexpr const TCHAR* GenerateProject = TEXT("GenerateProject");

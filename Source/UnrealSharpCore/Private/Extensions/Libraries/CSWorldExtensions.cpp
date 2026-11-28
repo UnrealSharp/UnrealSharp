@@ -1,4 +1,6 @@
 #include "Extensions/Libraries/CSWorldExtensions.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "UnrealSharpCore.h"
 #include "GameFramework/Actor.h"
 

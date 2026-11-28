@@ -1,4 +1,10 @@
 ﻿#include "Properties/CSPropertyGeneratorManager.h"
+#include "UObject/Utf8StrProperty.h"
+#include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MINOR_VERSION >= 6
+#include "UObject/TextProperty.h"
+#endif
 
 #include <array>
 #include "UnrealSharpCore.h"

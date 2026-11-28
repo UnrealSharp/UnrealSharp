@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CSAsyncActionBase.h"
+#include "UObject/PrimaryAssetId.h"
 #include "CSAsyncLoadPrimaryDataAssets.generated.h"
 
 UCLASS(meta = (InternalType))

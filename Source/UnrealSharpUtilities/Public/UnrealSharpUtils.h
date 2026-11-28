@@ -4,6 +4,9 @@
 #include "UnrealSharpUtilities.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Logging/StructuredLog.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include "UObject/Class.h"
+#include "UObject/UObjectIterator.h"
 
 #define UE_VERSION_VAL(Major, Minor) ((Major) * 10000 + (Minor))
 #define UE_CURRENT_VERSION UE_VERSION_VAL(ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION)

@@ -1,5 +1,11 @@
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Containers/StringView.h"
+#include "Internationalization/Text.h"
+#include "Misc/StringBuilder.h"
+#include "Runtime/Launch/Resources/Version.h"
+
 class FCSScriptBuilder
 {
 public:

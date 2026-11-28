@@ -1,4 +1,7 @@
 ﻿#include "CSBindsRegistry.h"
+#include <memory>
+#include "UObject/StrongObjectPtr.h"
+#include "UObject/Object.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_TStrongObjectPtr)
 {

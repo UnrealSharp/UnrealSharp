@@ -1,5 +1,8 @@
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Misc/Paths.h"
+
 struct FCSLoadOrderManifest
 {
 	FString Name;

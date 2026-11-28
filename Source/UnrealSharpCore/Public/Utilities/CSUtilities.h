@@ -1,5 +1,7 @@
 #pragma once
 
+#include "UObject/ObjectMacros.h"
+
 #include "CSFieldName.h"
 #include "CSFieldType.h"
 #include "UnrealSharpCore.h"

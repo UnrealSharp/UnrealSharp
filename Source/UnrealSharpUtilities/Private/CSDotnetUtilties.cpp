@@ -7,9 +7,10 @@
 #include "CSProjectUtilities.h"
 #include "UnrealSharpUtils.h"
 #include "HAL/FileManager.h"
+#include "HAL/IConsoleManager.h"
+#include "Misc/Paths.h"
 #include "HAL/PlatformProcess.h"
 #include "Misc/FileHelper.h"
-#include "Misc/Paths.h"
 
 #if !defined(_WIN32)
 #include <limits.h>

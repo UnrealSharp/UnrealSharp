@@ -1,4 +1,5 @@
 #include "Factories/PropertyGenerators/CSObjectPropertyGenerator.h"
+#include "UObject/LinkerLoad.h"
 #include "ReflectionData/CSDefaultComponentType.h"
 #include "ReflectionData/CSTemplateType.h"
 #include "ReflectionData/CSFieldType.h"
