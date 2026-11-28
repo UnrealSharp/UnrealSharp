@@ -136,12 +136,9 @@ public static class PropertyTranslatorManager
             "System.Collections.Generic.IReadOnlySet", 
             "System.Collections.Generic.ISet"));
         
-        AddPropertyTranslator(typeof(UhtOptionalProperty), new ContainerPropertyTranslator("OptionalMarshaller",
-            "OptionalMarshaller",
-            "OptionalMarshaller",
-            "UnrealSharp.TOptional",
-            "UnrealSharp.TOptional"));
+        AddPropertyTranslator(typeof(UhtOptionalProperty), new OptionalPropertyTranslator());
         
+        AddPropertyTranslator(typeof(UhtStructProperty), new SoftObjectPathPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
         

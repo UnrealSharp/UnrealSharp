@@ -191,6 +191,22 @@ public class FunctionExporter
 
         string paramString = "";
         bool hasDefaultParameters = false;
+        // Decide before constructing any overloads. One unsupported default must not
+        // leave optional parameters before required ones or references to missing locals.
+        bool exportFunctionDefaults = OverloadMode == OverloadMode.AllowOverloads;
+        foreach (UhtProperty candidate in Function.Properties)
+        {
+            if (candidate.HasAnyFlags(EPropertyFlags.ReturnParm)) continue;
+            PropertyTranslator? candidateTranslator = candidate.GetTranslator();
+            if (candidateTranslator == null) continue;
+            string value = candidateTranslator.GetCppDefaultValue(Function, candidate);
+            if (value.Length > 0 && value != "None" &&
+                !candidateTranslator.CanExportDefaultValue(Function, candidate, value))
+            {
+                exportFunctionDefaults = false;
+                break;
+            }
+        }
 
         if (SelfParameter != null)
         {
@@ -257,12 +273,7 @@ public class FunctionExporter
                 string cppDefaultValue = translator.GetCppDefaultValue(Function, parameter);
                 bool isGenericClassParam = HasGenericTypeSupport && parameter.IsGenericType() && !parameter.HasAnyFlags(EPropertyFlags.OutParm) && parameter is UhtClassProperty;
 
-                if (cppDefaultValue == "()" && parameter is UhtStructProperty structProperty)
-                {
-                    ParamsStringCall += $"new {structProperty.ScriptStruct.GetFullManagedName()}()";
-                    paramsStringCallGenerics += $"new {structProperty.ScriptStruct.GetFullManagedName()}()";
-                }
-                else if (isGenericClassParam)
+                if (isGenericClassParam)
                 {
                     ParamsStringCall += $"{refQualifier}{parameterName}";
                     paramsStringCallGenerics += $"typeof(DOT)";
@@ -275,7 +286,7 @@ public class FunctionExporter
                     paramsStringCallGenerics += $"{refQualifier}{parameterName}";
                 }
 
-                bool exportDefault = (hasDefaultParameters || cppDefaultValue.Length > 0) && OverloadMode == OverloadMode.AllowOverloads;
+                bool exportDefault = (hasDefaultParameters || cppDefaultValue.Length > 0) && exportFunctionDefaults;
                 string csharpDefaultValue = "";
                 if (exportDefault)
                 {
