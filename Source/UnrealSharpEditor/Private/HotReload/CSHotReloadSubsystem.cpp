@@ -120,7 +120,7 @@ void UCSHotReloadSubsystem::PerformHotReload(const FCSHotReloadOptions& Options)
 	CurrentHotReloadStatus = EHotReloadStatus::Active;
 	double StartTime = FPlatformTime::Seconds();
 
-	FScopedSlowTask Progress(4, LOCTEXT("HotReload", "Reloading C#..."));
+	FScopedSlowTask Progress(5, LOCTEXT("HotReload", "Reloading C#..."));
 	if (!UnrealSharp::Dialogs::IsHeadless() && !bIsInPlaySession)
 	{
 		Progress.MakeDialog(false, true);
@@ -164,12 +164,14 @@ void UCSHotReloadSubsystem::PerformHotReload(const FCSHotReloadOptions& Options)
 		return;
 	}
 
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Reloading Assemblies..."));
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Unloading Assemblies..."));
 	
 	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
 		Assembly->UnloadAssembly();
 	}
+	
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Loading Assemblies..."));
 	
 	for (int32 i = AssembliesSortedByDependencies.Num() - 1; i >= 0; --i)
 	{
